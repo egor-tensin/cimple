@@ -13,7 +13,7 @@ int connect_to_host(const char *host, const char *port);
 int send_all(int fd, const void *, size_t);
 int send_buf(int fd, const void *, size_t);
 
-int recv_all(int fd, void *, size_t);
+ssize_t recv_all(int fd, void *, size_t);
 int recv_buf(int fd, void **, size_t *);
 int recv_static(int fd, void *, size_t);
 

@@ -194,12 +194,14 @@ int send_all(int fd, const void *buf, size_t len)
 	return 0;
 }
 
-int recv_all(int fd, void *buf, size_t len)
+ssize_t recv_all(int fd, void *buf, size_t len)
 {
-	size_t read_total = 0;
+	ssize_t read_total = 0;
 
-	while (read_total < len) {
+	while ((size_t)read_total < len) {
 		ssize_t read_now = read(fd, buf, len);
+		if (!read_now)
+			break;
 
 		if (read_now < 0) {
 			print_errno("read");
@@ -229,28 +231,39 @@ int send_buf(int fd, const void *buf, size_t len)
 
 int recv_buf(int fd, void **buf, size_t *len)
 {
-	int ret = 0;
+	ssize_t nb = 0;
 
-	ret = recv_all(fd, len, sizeof(*len));
-	if (ret < 0)
-		return ret;
+	nb = recv_all(fd, len, sizeof(*len));
+	if (nb < 0)
+		goto fail;
+
+	if (nb != sizeof(*len)) {
+		print_error("Couldn't read buffer length\n");
+		goto fail;
+	}
 
 	*buf = malloc(*len);
 	if (!*buf) {
 		print_errno("malloc");
-		return -1;
+		goto fail;
 	}
 
-	ret = recv_all(fd, *buf, *len);
-	if (ret < 0)
+	nb = recv_all(fd, *buf, *len);
+	if (nb < 0)
 		goto free_buf;
 
-	return ret;
+	if ((size_t)nb != *len) {
+		print_error("Couldn't read the entire buffer\n");
+		goto free_buf;
+	}
+
+	return 0;
 
 free_buf:
 	free(*buf);
 
-	return ret;
+fail:
+	return -1;
 }
 
 int recv_static(int fd, void *buf, size_t len)
