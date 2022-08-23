@@ -1,5 +1,5 @@
 #include "client.h"
-#include "cmd.h"
+#include "msg.h"
 #include "net.h"
 
 #include <unistd.h>
@@ -21,9 +21,9 @@ void client_destroy(const struct client *client)
 int client_main(const struct client *client, int argc, char *argv[])
 {
 	int result, ret = 0;
-	struct cmd cmd = {argc, argv};
+	struct msg msg = {argc, argv};
 
-	ret = cmd_send_and_wait_for_result(client->fd, &cmd, &result);
+	ret = msg_send_and_wait_for_result(client->fd, &msg, &result);
 	if (ret < 0)
 		return ret;
 

@@ -1,5 +1,5 @@
 #include "server.h"
-#include "cmd.h"
+#include "msg.h"
 #include "net.h"
 
 #include <stdio.h>
@@ -19,16 +19,16 @@ void server_destroy(const struct server *server)
 	close(server->fd);
 }
 
-static int cmd_handle(const struct cmd *cmd, void *)
+static int msg_handle(const struct msg *msg, void *)
 {
-	for (int i = 0; i < cmd->argc; ++i)
-		printf("cmd[%d]: %s\n", i, cmd->argv[i]);
+	for (int i = 0; i < msg->argc; ++i)
+		printf("msg[%d]: %s\n", i, msg->argv[i]);
 	return 0;
 }
 
 static int server_handle(int fd, void *)
 {
-	return cmd_recv_and_send_result(fd, cmd_handle, NULL);
+	return msg_recv_and_send_result(fd, msg_handle, NULL);
 }
 
 static int server_accept(const struct server *server)

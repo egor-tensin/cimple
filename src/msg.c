@@ -1,28 +1,28 @@
-#include "cmd.h"
+#include "msg.h"
 #include "log.h"
 #include "net.h"
 
 #include <stdlib.h>
 #include <string.h>
 
-int cmd_from_argv(struct cmd *cmd, const char *argv[])
+int msg_from_argv(struct msg *msg, const char *argv[])
 {
 	int argc = 0;
 
 	for (const char **s = argv; *s; ++s)
 		++argc;
 
-	cmd->argc = argc;
-	cmd->argv = calloc(argc, sizeof(char *));
+	msg->argc = argc;
+	msg->argv = calloc(argc, sizeof(char *));
 
-	if (!cmd->argv) {
+	if (!msg->argv) {
 		print_errno("calloc");
 		return -1;
 	}
 
 	for (int i = 0; i < argc; ++i) {
-		cmd->argv[i] = strdup(argv[i]);
-		if (!cmd->argv[i]) {
+		msg->argv[i] = strdup(argv[i]);
+		if (!msg->argv[i]) {
 			print_errno("strdup");
 			goto free;
 		}
@@ -32,12 +32,12 @@ int cmd_from_argv(struct cmd *cmd, const char *argv[])
 
 free:
 	for (int i = 0; i < argc; ++i)
-		if (cmd->argv[i])
-			free(cmd->argv[i]);
+		if (msg->argv[i])
+			free(msg->argv[i]);
 		else
 			break;
 
-	free(cmd->argv);
+	free(msg->argv);
 	return -1;
 }
 
@@ -92,17 +92,17 @@ free:
 	return -1;
 }
 
-int cmd_send(int fd, const struct cmd *cmd)
+int msg_send(int fd, const struct msg *msg)
 {
 	int ret = 0;
 
-	size_t len = calc_buf_len(cmd->argc, cmd->argv);
+	size_t len = calc_buf_len(msg->argc, msg->argv);
 	char *buf = malloc(len);
 	if (!buf) {
 		print_errno("malloc");
 		return -1;
 	}
-	arr_pack(buf, cmd->argc, cmd->argv);
+	arr_pack(buf, msg->argc, msg->argv);
 
 	ret = send_buf(fd, buf, len);
 	if (ret < 0)
@@ -114,11 +114,11 @@ free_buf:
 	return ret;
 }
 
-int cmd_send_and_wait_for_result(int fd, const struct cmd *cmd, int *result)
+int msg_send_and_wait_for_result(int fd, const struct msg *msg, int *result)
 {
 	int ret = 0;
 
-	ret = cmd_send(fd, cmd);
+	ret = msg_send(fd, msg);
 	if (ret < 0)
 		return ret;
 
@@ -129,7 +129,7 @@ int cmd_send_and_wait_for_result(int fd, const struct cmd *cmd, int *result)
 	return ret;
 }
 
-int cmd_recv(int fd, struct cmd *cmd)
+int msg_recv(int fd, struct msg *msg)
 {
 	void *buf;
 	size_t len;
@@ -139,22 +139,22 @@ int cmd_recv(int fd, struct cmd *cmd)
 	if (ret < 0)
 		return ret;
 
-	cmd->argc = calc_arr_len(buf, len);
-	cmd->argv = calloc(cmd->argc, sizeof(char *));
-	if (!cmd->argv) {
+	msg->argc = calc_arr_len(buf, len);
+	msg->argv = calloc(msg->argc, sizeof(char *));
+	if (!msg->argv) {
 		print_errno("calloc");
 		ret = -1;
 		goto free_buf;
 	}
 
-	ret = arr_unpack(cmd->argv, cmd->argc, buf);
+	ret = arr_unpack(msg->argv, msg->argc, buf);
 	if (ret < 0)
 		goto free_argv;
 
 	goto free_buf;
 
 free_argv:
-	free(cmd->argv);
+	free(msg->argv);
 
 free_buf:
 	free(buf);
@@ -162,31 +162,31 @@ free_buf:
 	return ret;
 }
 
-int cmd_recv_and_send_result(int fd, cmd_handler handler, void *arg)
+int msg_recv_and_send_result(int fd, msg_handler handler, void *arg)
 {
-	struct cmd cmd;
+	struct msg msg;
 	int result;
 	int ret = 0;
 
-	ret = cmd_recv(fd, &cmd);
+	ret = msg_recv(fd, &msg);
 	if (ret < 0)
 		return ret;
 
-	result = handler(&cmd, arg);
+	result = handler(&msg, arg);
 
 	ret = send_buf(fd, &result, sizeof(result));
 	if (ret < 0)
-		goto free_cmd;
+		goto free_msg;
 
-free_cmd:
-	cmd_free(&cmd);
+free_msg:
+	msg_free(&msg);
 
 	return ret;
 }
 
-void cmd_free(const struct cmd *cmd)
+void msg_free(const struct msg *msg)
 {
-	for (int i = 0; i < cmd->argc; ++i)
-		free(cmd->argv[i]);
-	free(cmd->argv);
+	for (int i = 0; i < msg->argc; ++i)
+		free(msg->argv[i]);
+	free(msg->argv);
 }
