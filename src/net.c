@@ -50,7 +50,7 @@ int bind_to_port(const char *port)
 	}
 
 	for (it = result; it; it = it->ai_next) {
-		socket_fd = socket(it->ai_family, it->ai_socktype, it->ai_protocol);
+		socket_fd = socket(it->ai_family, it->ai_socktype | SOCK_CLOEXEC, it->ai_protocol);
 		if (socket_fd < 0) {
 			print_errno("socket");
 			continue;
@@ -105,7 +105,7 @@ int accept_connection(int fd, connection_handler handler, void *arg)
 {
 	int conn_fd, ret = 0;
 
-	ret = accept(fd, NULL, NULL);
+	ret = accept4(fd, NULL, NULL, SOCK_CLOEXEC);
 	if (ret < 0) {
 		print_errno("accept");
 		return ret;
@@ -149,7 +149,7 @@ int connect_to_host(const char *host, const char *port)
 	}
 
 	for (it = result; it; it = it->ai_next) {
-		socket_fd = socket(it->ai_family, it->ai_socktype, it->ai_protocol);
+		socket_fd = socket(it->ai_family, it->ai_socktype | SOCK_CLOEXEC, it->ai_protocol);
 		if (socket_fd < 0) {
 			print_errno("socket");
 			continue;
