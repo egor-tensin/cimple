@@ -5,6 +5,42 @@
 #include <stdlib.h>
 #include <string.h>
 
+int cmd_from_argv(struct cmd *cmd, const char *argv[])
+{
+	int argc = 0;
+
+	for (const char **s = argv; *s; ++s)
+		++argc;
+
+	cmd->argc = argc;
+	cmd->argv = calloc(argc, sizeof(char *));
+
+	if (!cmd->argv) {
+		print_errno("calloc");
+		return -1;
+	}
+
+	for (int i = 0; i < argc; ++i) {
+		cmd->argv[i] = strdup(argv[i]);
+		if (!cmd->argv[i]) {
+			print_errno("strdup");
+			goto free;
+		}
+	}
+
+	return 0;
+
+free:
+	for (int i = 0; i < argc; ++i)
+		if (cmd->argv[i])
+			free(cmd->argv[i]);
+		else
+			break;
+
+	free(cmd->argv);
+	return -1;
+}
+
 static size_t calc_buf_len(int argc, char **argv)
 {
 	size_t len = 0;

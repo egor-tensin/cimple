@@ -6,6 +6,8 @@ struct cmd {
 	char **argv;
 };
 
+int cmd_from_argv(struct cmd *, const char *argv[]);
+
 int cmd_send(int fd, const struct cmd *);
 int cmd_send_and_wait_for_result(int fd, const struct cmd *, int *result);
 
