@@ -67,9 +67,6 @@ static void arr_pack(char *dest, int argc, char **argv)
 
 static int arr_unpack(char **argv, int argc, const char *src)
 {
-	for (int i = 0; i < argc; ++i)
-		argv[i] = NULL;
-
 	for (int i = 0; i < argc; ++i) {
 		size_t len = strlen(src);
 
@@ -143,13 +140,12 @@ int cmd_recv(int fd, struct cmd *cmd)
 		return ret;
 
 	cmd->argc = calc_arr_len(buf, len);
-	cmd->argv = malloc(cmd->argc * sizeof(char *));
+	cmd->argv = calloc(cmd->argc, sizeof(char *));
 	if (!cmd->argv) {
-		print_errno("malloc");
+		print_errno("calloc");
 		ret = -1;
 		goto free_buf;
 	}
-	memset(cmd->argv, 0, cmd->argc * sizeof(char *));
 
 	ret = arr_unpack(cmd->argv, cmd->argc, buf);
 	if (ret < 0)
