@@ -17,4 +17,6 @@
 		fprintf(stderr, __VA_ARGS__);                                                      \
 	}
 
+#define print_log(...) printf(__VA_ARGS__)
+
 #endif
