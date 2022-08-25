@@ -5,6 +5,13 @@
 #include <stdlib.h>
 #include <string.h>
 
+void msg_free(const struct msg *msg)
+{
+	for (int i = 0; i < msg->argc; ++i)
+		free(msg->argv[i]);
+	free(msg->argv);
+}
+
 int msg_from_argv(struct msg *msg, const char *argv[])
 {
 	int argc = 0;
@@ -114,7 +121,7 @@ free_buf:
 	return ret;
 }
 
-int msg_send_and_wait_for_result(int fd, const struct msg *msg, int *result)
+int msg_send_and_wait(int fd, const struct msg *msg, int *result)
 {
 	int ret = 0;
 
@@ -162,7 +169,7 @@ free_buf:
 	return ret;
 }
 
-int msg_recv_and_send_result(int fd, msg_handler handler, void *arg)
+int msg_recv_and_handle(int fd, msg_handler handler, void *arg)
 {
 	struct msg msg;
 	int result;
@@ -182,13 +189,6 @@ free_msg:
 	msg_free(&msg);
 
 	return ret;
-}
-
-void msg_free(const struct msg *msg)
-{
-	for (int i = 0; i < msg->argc; ++i)
-		free(msg->argv[i]);
-	free(msg->argv);
 }
 
 int msg_dump_unknown(const struct msg *msg)

@@ -23,7 +23,7 @@ int client_main(const struct client *client, int argc, char *argv[])
 	int result, ret = 0;
 	struct msg msg = {argc, argv};
 
-	ret = msg_send_and_wait_for_result(client->fd, &msg, &result);
+	ret = msg_send_and_wait(client->fd, &msg, &result);
 	if (ret < 0)
 		return ret;
 

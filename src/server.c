@@ -22,14 +22,14 @@ void server_destroy(const struct server *server)
 	tcp_server_destroy(&server->tcp_server);
 }
 
-static int msg_handle(const struct msg *msg, void *)
+static int server_msg_handler(const struct msg *msg, void *)
 {
 	return msg_dump_unknown(msg);
 }
 
 static int server_conn_handler(int fd, void *)
 {
-	return msg_recv_and_send_result(fd, msg_handle, NULL);
+	return msg_recv_and_handle(fd, server_msg_handler, NULL);
 }
 
 int server_main(const struct server *server)
