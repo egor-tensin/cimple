@@ -1,12 +1,14 @@
 #ifndef __SERVER_H__
 #define __SERVER_H__
 
+#include "tcp_server.h"
+
 struct settings {
 	const char *port;
 };
 
 struct server {
-	int fd;
+	struct tcp_server tcp_server;
 };
 
 int server_create(struct server *, const struct settings *);

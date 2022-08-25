@@ -6,7 +6,7 @@
 
 int client_create(struct client *client, const struct settings *settings)
 {
-	client->fd = connect_to_host(settings->host, settings->port);
+	client->fd = net_connect(settings->host, settings->port);
 	if (client->fd < 0)
 		return client->fd;
 

@@ -2,7 +2,6 @@
 #include "log.h"
 
 #include <netdb.h>
-#include <signal.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
@@ -11,28 +10,7 @@
 
 #define gai_print_errno(ec) print_error("getaddrinfo: %s\n", gai_strerror(ec))
 
-static int ignore_signal(int signum)
-{
-	int ret = 0;
-	struct sigaction act;
-	memset(&act, 0, sizeof(act));
-	act.sa_handler = SIG_IGN;
-
-	ret = sigaction(signum, &act, NULL);
-	if (ret < 0) {
-		print_errno("sigaction");
-		return ret;
-	}
-
-	return ret;
-}
-
-static int ignore_sigchld()
-{
-	return ignore_signal(SIGCHLD);
-}
-
-int bind_to_port(const char *port)
+int net_bind(const char *port)
 {
 	struct addrinfo *result, *it = NULL;
 	struct addrinfo hints;
@@ -87,12 +65,6 @@ int bind_to_port(const char *port)
 		goto fail;
 	}
 
-	/* Don't make zombies. The alternative is wait()ing for the child in
-	 * the signal handler. */
-	ret = ignore_sigchld();
-	if (ret < 0)
-		goto fail;
-
 	return socket_fd;
 
 fail:
@@ -101,38 +73,20 @@ fail:
 	return ret;
 }
 
-int accept_connection(int fd, connection_handler handler, void *arg)
+int net_accept(int fd)
 {
-	int conn_fd, ret = 0;
+	int ret = 0;
 
 	ret = accept4(fd, NULL, NULL, SOCK_CLOEXEC);
 	if (ret < 0) {
 		print_errno("accept");
 		return ret;
 	}
-	conn_fd = ret;
-
-	pid_t child_pid = fork();
-	if (child_pid < 0) {
-		print_errno("fork");
-		ret = -1;
-		goto close_conn;
-	}
-
-	if (!child_pid) {
-		close(fd);
-		ret = handler(conn_fd, arg);
-		close(conn_fd);
-		exit(ret);
-	}
-
-close_conn:
-	close(conn_fd);
 
 	return ret;
 }
 
-int connect_to_host(const char *host, const char *port)
+int net_connect(const char *host, const char *port)
 {
 	struct addrinfo *result, *it = NULL;
 	struct addrinfo hints;
@@ -176,7 +130,7 @@ int connect_to_host(const char *host, const char *port)
 	return socket_fd;
 }
 
-int send_all(int fd, const void *buf, size_t len)
+int net_send_all(int fd, const void *buf, size_t len)
 {
 	size_t sent_total = 0;
 
@@ -194,7 +148,7 @@ int send_all(int fd, const void *buf, size_t len)
 	return 0;
 }
 
-ssize_t recv_all(int fd, void *buf, size_t len)
+ssize_t net_recv_all(int fd, void *buf, size_t len)
 {
 	ssize_t read_total = 0;
 
@@ -214,26 +168,26 @@ ssize_t recv_all(int fd, void *buf, size_t len)
 	return read_total;
 }
 
-int send_buf(int fd, const void *buf, size_t len)
+int net_send_buf(int fd, const void *buf, size_t len)
 {
 	int ret = 0;
 
-	ret = send_all(fd, &len, sizeof(len));
+	ret = net_send_all(fd, &len, sizeof(len));
 	if (ret < 0)
 		return ret;
 
-	ret = send_all(fd, buf, len);
+	ret = net_send_all(fd, buf, len);
 	if (ret < 0)
 		return ret;
 
 	return ret;
 }
 
-int recv_buf(int fd, void **buf, size_t *len)
+int net_recv_buf(int fd, void **buf, size_t *len)
 {
 	ssize_t nb = 0;
 
-	nb = recv_all(fd, len, sizeof(*len));
+	nb = net_recv_all(fd, len, sizeof(*len));
 	if (nb < 0)
 		goto fail;
 
@@ -248,7 +202,7 @@ int recv_buf(int fd, void **buf, size_t *len)
 		goto fail;
 	}
 
-	nb = recv_all(fd, *buf, *len);
+	nb = net_recv_all(fd, *buf, *len);
 	if (nb < 0)
 		goto free_buf;
 
@@ -266,13 +220,13 @@ fail:
 	return -1;
 }
 
-int recv_static(int fd, void *buf, size_t len)
+int net_recv_static(int fd, void *buf, size_t len)
 {
 	void *actual_buf;
 	size_t actual_len;
 	int ret = 0;
 
-	ret = recv_buf(fd, &actual_buf, &actual_len);
+	ret = net_recv_buf(fd, &actual_buf, &actual_len);
 	if (ret < 0)
 		return ret;
 

@@ -3,18 +3,15 @@
 
 #include <stdlib.h>
 
-int bind_to_port(const char *port);
+int net_bind(const char *port);
+int net_accept(int fd);
+int net_connect(const char *host, const char *port);
 
-typedef int (*connection_handler)(int fd, void *arg);
-int accept_connection(int fd, connection_handler, void *arg);
+int net_send_all(int fd, const void *, size_t);
+int net_send_buf(int fd, const void *, size_t);
 
-int connect_to_host(const char *host, const char *port);
-
-int send_all(int fd, const void *, size_t);
-int send_buf(int fd, const void *, size_t);
-
-ssize_t recv_all(int fd, void *, size_t);
-int recv_buf(int fd, void **, size_t *);
-int recv_static(int fd, void *, size_t);
+ssize_t net_recv_all(int fd, void *, size_t);
+int net_recv_buf(int fd, void **, size_t *);
+int net_recv_static(int fd, void *, size_t);
 
 #endif

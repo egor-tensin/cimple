@@ -104,7 +104,7 @@ int msg_send(int fd, const struct msg *msg)
 	}
 	arr_pack(buf, msg->argc, msg->argv);
 
-	ret = send_buf(fd, buf, len);
+	ret = net_send_buf(fd, buf, len);
 	if (ret < 0)
 		goto free_buf;
 
@@ -122,7 +122,7 @@ int msg_send_and_wait_for_result(int fd, const struct msg *msg, int *result)
 	if (ret < 0)
 		return ret;
 
-	ret = recv_static(fd, result, sizeof(*result));
+	ret = net_recv_static(fd, result, sizeof(*result));
 	if (ret < 0)
 		return ret;
 
@@ -135,7 +135,7 @@ int msg_recv(int fd, struct msg *msg)
 	size_t len;
 	int ret = 0;
 
-	ret = recv_buf(fd, &buf, &len);
+	ret = net_recv_buf(fd, &buf, &len);
 	if (ret < 0)
 		return ret;
 
@@ -174,7 +174,7 @@ int msg_recv_and_send_result(int fd, msg_handler handler, void *arg)
 
 	result = handler(&msg, arg);
 
-	ret = send_buf(fd, &result, sizeof(result));
+	ret = net_send_buf(fd, &result, sizeof(result));
 	if (ret < 0)
 		goto free_msg;
 
