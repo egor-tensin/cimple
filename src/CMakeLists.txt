@@ -12,7 +12,24 @@ add_compile_definitions(_GNU_SOURCE)
 
 add_compile_definitions(VERSION="${PROJECT_VERSION}")
 
-add_executable(server server_main.c server.c msg.c net.c tcp_server.c)
-add_executable(client client_main.c client.c msg.c net.c)
+add_executable(server server_main.c server.c
+    ci_queue.c
+    msg.c
+    net.c
+    tcp_server.c
+    worker_queue.c)
+
+add_executable(client client_main.c client.c
+    msg.c
+    net.c)
+
+add_executable(worker worker_main.c worker.c
+    ci.c
+    file.c
+    git.c
+    msg.c
+    net.c
+    process.c)
 
 target_link_libraries(server PRIVATE pthread)
+target_link_libraries(worker PRIVATE git2 pthread)
