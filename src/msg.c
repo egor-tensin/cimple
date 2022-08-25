@@ -190,3 +190,11 @@ void msg_free(const struct msg *msg)
 		free(msg->argv[i]);
 	free(msg->argv);
 }
+
+int msg_dump_unknown(const struct msg *msg)
+{
+	print_log("Received an unknown message:\n");
+	for (int i = 0; i < msg->argc; ++i)
+		print_log("\t%s\n", msg->argv[i]);
+	return -1;
+}

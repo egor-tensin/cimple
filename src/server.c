@@ -21,9 +21,7 @@ void server_destroy(const struct server *server)
 
 static int msg_handle(const struct msg *msg, void *)
 {
-	for (int i = 0; i < msg->argc; ++i)
-		printf("msg[%d]: %s\n", i, msg->argv[i]);
-	return 0;
+	return msg_dump_unknown(msg);
 }
 
 static int server_handle(int fd, void *)

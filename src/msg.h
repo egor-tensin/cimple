@@ -18,4 +18,6 @@ int msg_recv_and_send_result(int fd, msg_handler, void *arg);
 
 void msg_free(const struct msg *);
 
+int msg_dump_unknown(const struct msg *);
+
 #endif
