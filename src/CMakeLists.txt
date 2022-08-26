@@ -29,7 +29,8 @@ add_executable(worker worker_main.c worker.c
     git.c
     msg.c
     net.c
-    process.c)
+    process.c
+    signal.c)
 
 target_link_libraries(server PRIVATE pthread)
 target_link_libraries(worker PRIVATE git2 pthread)

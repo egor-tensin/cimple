@@ -1,4 +1,5 @@
 #include "const.h"
+#include "signal.h"
 #include "worker.h"
 
 #include <getopt.h>

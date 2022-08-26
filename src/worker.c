@@ -5,6 +5,7 @@
 #include "msg.h"
 #include "net.h"
 #include "process.h"
+#include "signal.h"
 
 #include <errno.h>
 #include <pthread.h>
@@ -45,6 +46,13 @@ git_shutdown:
 
 void worker_destroy(struct worker *worker)
 {
+	print_log("Shutting down\n");
+
+	if (worker->task_active) {
+		if (pthread_join(worker->task, NULL))
+			print_errno("pthread_join");
+		worker->task_active = 0;
+	}
 	if (pthread_mutex_destroy(&worker->task_mtx))
 		print_errno("pthread_mutex_destroy");
 	close(worker->fd);
@@ -141,6 +149,7 @@ static void *worker_task_wrapper(void *_ctx)
 static int worker_schedule_task(struct worker *worker, const struct msg *msg, worker_task_body body)
 {
 	struct worker_task_context *ctx;
+	pthread_attr_t attr;
 	int ret = 0;
 
 	ctx = malloc(sizeof(*ctx));
@@ -156,14 +165,28 @@ static int worker_schedule_task(struct worker *worker, const struct msg *msg, wo
 		goto free_ctx;
 	}
 
+	ret = pthread_attr_init(&attr);
+	if (ret < 0) {
+		print_errno("pthread_attr_init");
+		goto free_msg;
+	}
+
+	ret = signal_set_thread_attr(&attr);
+	if (ret < 0)
+		goto free_attr;
+
 	ret = pthread_create(&worker->task, NULL, worker_task_wrapper, ctx);
 	if (ret < 0) {
 		print_errno("pthread_create");
-		goto free_msg;
+		goto free_attr;
 	}
 	worker->task_active = 1;
+	pthread_attr_destroy(&attr);
 
 	return ret;
+
+free_attr:
+	pthread_attr_destroy(&attr);
 
 free_msg:
 	msg_free(ctx->msg);
@@ -245,11 +268,13 @@ int worker_main(struct worker *worker, int, char *[])
 	if (ret < 0)
 		return ret;
 
-	while (1) {
+	while (!global_stop_flag) {
 		print_log("Waiting for a new command\n");
 
 		ret = msg_recv_and_handle(worker->fd, worker_msg_handler_lock, worker);
 		if (ret < 0)
 			return ret;
 	}
+
+	return ret;
 }
