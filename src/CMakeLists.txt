@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.0)
 
-project(tinyCI VERSION 0.0.1 LANGUAGES C)
+project(cimple VERSION 0.0.1 LANGUAGES C)
 
 if(MSVC)
     add_compile_options(/W4 /WX)
