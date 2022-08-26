@@ -36,7 +36,7 @@ int worker_create(struct worker *worker, const struct settings *settings)
 	return ret;
 
 close:
-	close(worker->fd);
+	check_errno(close(worker->fd), "close");
 
 git_shutdown:
 	libgit_shutdown();
@@ -53,7 +53,7 @@ void worker_destroy(struct worker *worker)
 		worker->task_active = 0;
 	}
 	pthread_check(pthread_mutex_destroy(&worker->task_mtx), "pthread_mutex_destroy");
-	close(worker->fd);
+	check_errno(close(worker->fd), "close");
 	libgit_shutdown();
 }
 

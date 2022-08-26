@@ -49,7 +49,7 @@ int net_bind(const char *port)
 		break;
 
 	close_socket:
-		close(socket_fd);
+		check_errno(close(socket_fd), "close");
 	}
 
 	freeaddrinfo(result);
@@ -68,7 +68,7 @@ int net_bind(const char *port)
 	return socket_fd;
 
 fail:
-	close(socket_fd);
+	check_errno(close(socket_fd), "close");
 
 	return ret;
 }
@@ -117,7 +117,7 @@ int net_connect(const char *host, const char *port)
 		break;
 
 	close_socket:
-		close(socket_fd);
+		check_errno(close(socket_fd), "close");
 	}
 
 	freeaddrinfo(result);

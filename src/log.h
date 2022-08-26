@@ -15,6 +15,13 @@
 		perror(s);                                                                         \
 	} while (0)
 
+#define check_errno(expr, s)                                                                       \
+	do {                                                                                       \
+		int CONCAT(ret, __LINE__) = expr;                                                  \
+		if (CONCAT(ret, __LINE__) < 0)                                                     \
+			print_errno(s);                                                            \
+	} while (0)
+
 #define pthread_print_errno(var, s)                                                                \
 	do {                                                                                       \
 		errno = var;                                                                       \

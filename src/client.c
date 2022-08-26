@@ -1,4 +1,5 @@
 #include "client.h"
+#include "log.h"
 #include "msg.h"
 #include "net.h"
 
@@ -15,7 +16,7 @@ int client_create(struct client *client, const struct settings *settings)
 
 void client_destroy(const struct client *client)
 {
-	close(client->fd);
+	check_errno(close(client->fd), "close");
 }
 
 int client_main(const struct client *client, int argc, char *argv[])

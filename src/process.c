@@ -54,7 +54,7 @@ static int redirect_and_exec_child(int pipe_fds[2], const char *args[])
 {
 	int ret = 0;
 
-	close(pipe_fds[0]);
+	check_errno(close(pipe_fds[0]), "close");
 
 	ret = dup2(pipe_fds[1], STDOUT_FILENO);
 	if (ret < 0) {
@@ -91,7 +91,7 @@ int proc_capture(const char *args[], struct proc_output *result)
 	if (!child_pid)
 		exit(redirect_and_exec_child(pipe_fds, args));
 
-	close(pipe_fds[1]);
+	check_errno(close(pipe_fds[1]), "close");
 
 	ret = file_read(pipe_fds[0], &result->output, &result->output_len);
 	if (ret < 0)
@@ -107,7 +107,8 @@ free_output:
 	free(result->output);
 
 close_pipe:
-	close(pipe_fds[0]);
+	check_errno(close(pipe_fds[0]), "close");
+	/* No errno checking here, we might've already closed the write end. */
 	close(pipe_fds[1]);
 
 	return ret;

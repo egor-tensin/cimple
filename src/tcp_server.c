@@ -17,7 +17,7 @@ int tcp_server_create(struct tcp_server *server, const char *port)
 
 void tcp_server_destroy(const struct tcp_server *server)
 {
-	close(server->fd);
+	check_errno(close(server->fd), "close");
 }
 
 struct child_context {
@@ -30,7 +30,7 @@ static void *connection_thread(void *_ctx)
 {
 	struct child_context *ctx = (struct child_context *)_ctx;
 	ctx->handler(ctx->fd, ctx->arg);
-	close(ctx->fd);
+	check_errno(close(ctx->fd), "close");
 	free(ctx);
 	return NULL;
 }
@@ -86,7 +86,7 @@ free_ctx:
 	free(ctx);
 
 close_conn:
-	close(conn_fd);
+	check_errno(close(conn_fd), "close");
 
 	return ret;
 }

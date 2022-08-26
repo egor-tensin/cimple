@@ -24,14 +24,14 @@ int worker_queue_entry_create(struct worker_queue_entry **entry, int fd)
 	return 0;
 
 close_newfd:
-	close(newfd);
+	check_errno(close(newfd), "close");
 
 	return -1;
 }
 
 void worker_queue_entry_destroy(struct worker_queue_entry *entry)
 {
-	close(entry->fd);
+	check_errno(close(entry->fd), "close");
 	free(entry);
 }
 
