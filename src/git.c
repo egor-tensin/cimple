@@ -5,11 +5,11 @@
 #include <git2.h>
 
 #define git_print_error(fn)                                                                        \
-	{                                                                                          \
+	do {                                                                                       \
 		const git_error *error = git_error_last();                                         \
 		const char *msg = error && error->message ? error->message : "???";                \
 		print_error("%s: %s\n", fn, msg);                                                  \
-	}
+	} while (0)
 
 int libgit_init()
 {
