@@ -1,6 +1,7 @@
 #include "tcp_server.h"
 #include "log.h"
 #include "net.h"
+#include "signal.h"
 
 #include <pthread.h>
 #include <stdlib.h>
@@ -43,10 +44,8 @@ int tcp_server_accept(const struct tcp_server *server, tcp_server_conn_handler h
 	int conn_fd, ret = 0;
 
 	ret = net_accept(server->fd);
-	if (ret < 0) {
-		print_errno("accept");
+	if (ret < 0)
 		return ret;
-	}
 	conn_fd = ret;
 
 	ctx = malloc(sizeof(*ctx));
@@ -68,6 +67,10 @@ int tcp_server_accept(const struct tcp_server *server, tcp_server_conn_handler h
 		pthread_print_errno(ret, "pthread_attr_setdetachstate");
 		goto destroy_attr;
 	}
+
+	ret = signal_set_thread_attr(&child_attr);
+	if (ret < 0)
+		goto destroy_attr;
 
 	ret = pthread_create(&child, &child_attr, connection_thread, ctx);
 	if (ret) {

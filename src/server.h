@@ -12,13 +12,16 @@ struct settings {
 };
 
 struct server {
+	pthread_mutex_t server_mtx;
+	pthread_cond_t server_cv;
+
+	int stopping;
+
 	struct tcp_server tcp_server;
 
 	struct worker_queue worker_queue;
 	struct ci_queue ci_queue;
 
-	pthread_mutex_t scheduler_mtx;
-	pthread_cond_t scheduler_cv;
 	pthread_t scheduler;
 };
 
