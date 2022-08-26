@@ -27,8 +27,8 @@ int worker_create(struct worker *worker, const struct settings *settings)
 	worker->fd = ret;
 
 	ret = pthread_mutex_init(&worker->task_mtx, NULL);
-	if (ret < 0) {
-		print_errno("pthread_mutex_init");
+	if (ret) {
+		pthread_print_errno(ret, "pthread_mutex_init");
 		goto close;
 	}
 
@@ -49,12 +49,10 @@ void worker_destroy(struct worker *worker)
 	print_log("Shutting down\n");
 
 	if (worker->task_active) {
-		if (pthread_join(worker->task, NULL))
-			print_errno("pthread_join");
+		pthread_check(pthread_join(worker->task, NULL), "pthread_join");
 		worker->task_active = 0;
 	}
-	if (pthread_mutex_destroy(&worker->task_mtx))
-		print_errno("pthread_mutex_destroy");
+	pthread_check(pthread_mutex_destroy(&worker->task_mtx), "pthread_mutex_destroy");
 	close(worker->fd);
 	libgit_shutdown();
 }
@@ -166,8 +164,8 @@ static int worker_schedule_task(struct worker *worker, const struct msg *msg, wo
 	}
 
 	ret = pthread_attr_init(&attr);
-	if (ret < 0) {
-		print_errno("pthread_attr_init");
+	if (ret) {
+		pthread_print_errno(ret, "pthread_attr_init");
 		goto free_msg;
 	}
 
@@ -176,17 +174,17 @@ static int worker_schedule_task(struct worker *worker, const struct msg *msg, wo
 		goto free_attr;
 
 	ret = pthread_create(&worker->task, NULL, worker_task_wrapper, ctx);
-	if (ret < 0) {
-		print_errno("pthread_create");
+	if (ret) {
+		pthread_print_errno(ret, "pthread_create");
 		goto free_attr;
 	}
 	worker->task_active = 1;
-	pthread_attr_destroy(&attr);
+	pthread_check(pthread_attr_destroy(&attr), "pthread_attr_destroy");
 
 	return ret;
 
 free_attr:
-	pthread_attr_destroy(&attr);
+	pthread_check(pthread_attr_destroy(&attr), "pthread_attr_destroy");
 
 free_msg:
 	msg_free(ctx->msg);
@@ -209,7 +207,7 @@ static int worker_msg_handler(struct worker *worker, const struct msg *msg)
 		case EBUSY:
 			break;
 		default:
-			print_errno("pthread_tryjoin_np");
+			pthread_print_errno(ret, "pthread_tryjoin_np");
 			return ret;
 		}
 	}
@@ -247,15 +245,14 @@ static int worker_msg_handler_lock(const struct msg *msg, void *_worker)
 	int ret = 0;
 
 	ret = pthread_mutex_lock(&worker->task_mtx);
-	if (ret < 0) {
-		print_errno("pthread_mutex_lock");
+	if (ret) {
+		pthread_print_errno(ret, "pthread_mutex_lock");
 		return -1;
 	}
 
 	ret = worker_msg_handler(worker, msg);
 
-	if (pthread_mutex_unlock(&worker->task_mtx))
-		print_errno("pthread_mutex_unlock");
+	pthread_check(pthread_mutex_unlock(&worker->task_mtx), "pthread_mutex_lock");
 
 	return ret;
 }

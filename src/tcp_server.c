@@ -58,29 +58,29 @@ int tcp_server_accept(const struct tcp_server *server, tcp_server_conn_handler h
 	*ctx = (struct child_context){conn_fd, handler, arg};
 
 	ret = pthread_attr_init(&child_attr);
-	if (ret < 0) {
-		print_errno("pthread_attr_init");
+	if (ret) {
+		pthread_print_errno(ret, "pthread_attr_init");
 		goto free_ctx;
 	}
 
 	ret = pthread_attr_setdetachstate(&child_attr, PTHREAD_CREATE_DETACHED);
-	if (ret < 0) {
-		print_errno("pthread_attr_setdetachstate");
+	if (ret) {
+		pthread_print_errno(ret, "pthread_attr_setdetachstate");
 		goto destroy_attr;
 	}
 
 	ret = pthread_create(&child, &child_attr, connection_thread, ctx);
-	if (ret < 0) {
-		print_errno("pthread_create");
+	if (ret) {
+		pthread_print_errno(ret, "pthread_create");
 		goto destroy_attr;
 	}
 
-	pthread_attr_destroy(&child_attr);
+	pthread_check(pthread_attr_destroy(&child_attr), "pthread_attr_destroy");
 
 	return ret;
 
 destroy_attr:
-	pthread_attr_destroy(&child_attr);
+	pthread_check(pthread_attr_destroy(&child_attr), "pthread_attr_destroy");
 
 free_ctx:
 	free(ctx);

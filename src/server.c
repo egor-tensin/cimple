@@ -65,16 +65,16 @@ static void *server_scheduler(void *_server)
 	int ret = 0;
 
 	ret = pthread_mutex_lock(&server->scheduler_mtx);
-	if (ret < 0) {
-		print_errno("pthread_mutex_lock");
+	if (ret) {
+		pthread_print_errno(ret, "pthread_mutex_lock");
 		goto exit;
 	}
 
 	while (1) {
 		while (!server_has_runs_and_workers(server)) {
 			ret = pthread_cond_wait(&server->scheduler_cv, &server->scheduler_mtx);
-			if (ret < 0) {
-				print_errno("pthread_cond_wait");
+			if (ret) {
+				pthread_print_errno(ret, "pthread_cond_wait");
 				goto unlock;
 			}
 		}
@@ -85,8 +85,7 @@ static void *server_scheduler(void *_server)
 	}
 
 unlock:
-	if (pthread_mutex_unlock(&server->scheduler_mtx))
-		print_errno("pthread_mutex_unlock");
+	pthread_check(pthread_mutex_unlock(&server->scheduler_mtx), "pthread_mutex_unlock");
 
 exit:
 	return NULL;
@@ -105,32 +104,30 @@ int server_create(struct server *server, const struct settings *settings)
 	ci_queue_create(&server->ci_queue);
 
 	ret = pthread_mutex_init(&server->scheduler_mtx, NULL);
-	if (ret < 0) {
-		print_errno("pthread_mutex_init");
+	if (ret) {
+		pthread_print_errno(ret, "pthread_mutex_init");
 		goto destroy_tcp_server;
 	}
 
 	ret = pthread_cond_init(&server->scheduler_cv, NULL);
-	if (ret < 0) {
-		print_errno("pthread_cond_init");
+	if (ret) {
+		pthread_print_errno(ret, "pthread_cond_init");
 		goto destroy_scheduler_mtx;
 	}
 
 	ret = pthread_create(&server->scheduler, NULL, server_scheduler, server);
-	if (ret < 0) {
-		print_errno("pthread_create");
+	if (ret) {
+		pthread_print_errno(ret, "pthread_create");
 		goto destroy_scheduler_cv;
 	}
 
 	return ret;
 
 destroy_scheduler_cv:
-	if (pthread_cond_destroy(&server->scheduler_cv))
-		print_errno("pthread_cond_destroy");
+	pthread_check(pthread_cond_destroy(&server->scheduler_cv), "pthread_cond_destroy");
 
 destroy_scheduler_mtx:
-	if (pthread_mutex_destroy(&server->scheduler_mtx))
-		print_errno("pthread_mutex_destroy");
+	pthread_check(pthread_mutex_destroy(&server->scheduler_mtx), "pthread_mutex_destroy");
 
 	ci_queue_destroy(&server->ci_queue);
 
@@ -144,12 +141,9 @@ destroy_tcp_server:
 
 void server_destroy(struct server *server)
 {
-	if (pthread_join(server->scheduler, NULL))
-		print_errno("pthread_join");
-	if (pthread_cond_destroy(&server->scheduler_cv))
-		print_errno("pthread_cond_destroy");
-	if (pthread_mutex_destroy(&server->scheduler_mtx))
-		print_errno("pthread_mutex_destroy");
+	pthread_check(pthread_join(server->scheduler, NULL), "pthread_join");
+	pthread_check(pthread_cond_destroy(&server->scheduler_cv), "pthread_cond_destroy");
+	pthread_check(pthread_mutex_destroy(&server->scheduler_mtx), "pthread_mutex_destroy");
 	ci_queue_destroy(&server->ci_queue);
 	worker_queue_destroy(&server->worker_queue);
 	tcp_server_destroy(&server->tcp_server);
@@ -218,8 +212,8 @@ int server_new_worker(struct server *server, int fd)
 	print_log("Registering a new worker\n");
 
 	ret = pthread_mutex_lock(&server->scheduler_mtx);
-	if (ret < 0) {
-		print_errno("pthread_mutex_lock");
+	if (ret) {
+		pthread_print_errno(ret, "pthread_mutex_lock");
 		return ret;
 	}
 
@@ -230,14 +224,13 @@ int server_new_worker(struct server *server, int fd)
 	worker_queue_push(&server->worker_queue, entry);
 
 	ret = pthread_cond_signal(&server->scheduler_cv);
-	if (ret < 0) {
-		print_errno("pthread_cond_signal");
+	if (ret) {
+		pthread_print_errno(ret, "pthread_cond_signal");
 		goto unlock;
 	}
 
 unlock:
-	if (pthread_mutex_unlock(&server->scheduler_mtx))
-		print_errno("pthread_mutex_unlock");
+	pthread_check(pthread_mutex_unlock(&server->scheduler_mtx), "pthread_mutex_unlock");
 
 	return ret;
 }
@@ -250,8 +243,8 @@ int server_ci_run(struct server *server, const char *url, const char *rev)
 	print_log("Scheduling a new CI run for repository %s\n", url);
 
 	ret = pthread_mutex_lock(&server->scheduler_mtx);
-	if (ret < 0) {
-		print_errno("pthread_mutex_lock");
+	if (ret) {
+		pthread_print_errno(ret, "pthread_mutex_lock");
 		return ret;
 	}
 
@@ -262,14 +255,13 @@ int server_ci_run(struct server *server, const char *url, const char *rev)
 	ci_queue_push(&server->ci_queue, entry);
 
 	ret = pthread_cond_signal(&server->scheduler_cv);
-	if (ret < 0) {
-		print_errno("pthread_cond_signal");
+	if (ret) {
+		pthread_print_errno(ret, "pthread_cond_signal");
 		goto unlock;
 	}
 
 unlock:
-	if (pthread_mutex_unlock(&server->scheduler_mtx))
-		print_errno("pthread_mutex_unlock");
+	pthread_check(pthread_mutex_unlock(&server->scheduler_mtx), "pthread_mutex_unlock");
 
 	return ret;
 }
