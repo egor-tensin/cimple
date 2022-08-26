@@ -59,3 +59,41 @@ int file_exists(const char *path)
 	int ret = lstat(path, &stat);
 	return !ret && S_ISREG(stat.st_mode);
 }
+
+int file_read(int fd, char **output, size_t *len)
+{
+	char buf[128];
+	size_t buf_len = sizeof(buf) / sizeof(buf[0]);
+	int ret = 0;
+
+	*output = NULL;
+	*len = 0;
+
+	while (1) {
+		ssize_t read_now = read(fd, buf, buf_len);
+
+		if (read_now < 0) {
+			print_errno("read");
+			ret = read_now;
+			goto free_output;
+		}
+
+		if (!read_now)
+			goto exit;
+
+		*output = realloc(*output, *len + read_now + 1);
+		if (!*output) {
+			print_errno("realloc");
+			return -1;
+		}
+		memcpy(*output + *len, buf, read_now);
+		*len += read_now;
+		*(*output + *len) = '\0';
+	}
+
+free_output:
+	free(*output);
+
+exit:
+	return ret;
+}

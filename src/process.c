@@ -1,9 +1,22 @@
 #include "process.h"
+#include "file.h"
 #include "log.h"
 
+#include <fcntl.h>
 #include <stdlib.h>
 #include <sys/wait.h>
 #include <unistd.h>
+
+static int exec_child(const char *args[])
+{
+	int ret = execv(args[0], (char *const *)args);
+	if (ret < 0) {
+		print_errno("execv");
+		return ret;
+	}
+
+	return ret;
+}
 
 static int wait_for_child(pid_t pid, int *ec)
 {
@@ -25,22 +38,77 @@ static int wait_for_child(pid_t pid, int *ec)
 
 int proc_spawn(const char *args[], int *ec)
 {
-	int ret = 0;
-
 	pid_t child_pid = fork();
 	if (child_pid < 0) {
 		print_errno("fork");
 		return child_pid;
 	}
 
-	if (child_pid)
-		return wait_for_child(child_pid, ec);
+	if (!child_pid)
+		exit(exec_child(args));
 
-	ret = execv(args[0], (char *const *)args);
+	return wait_for_child(child_pid, ec);
+}
+
+static int redirect_and_exec_child(int pipe_fds[2], const char *args[])
+{
+	int ret = 0;
+
+	close(pipe_fds[0]);
+
+	ret = dup2(pipe_fds[1], STDOUT_FILENO);
 	if (ret < 0) {
-		print_errno("execv");
-		exit(ret);
+		print_errno("dup2");
+		return ret;
 	}
 
-	return 0;
+	ret = dup2(pipe_fds[1], STDERR_FILENO);
+	if (ret < 0) {
+		print_errno("dup2");
+		return ret;
+	}
+
+	return exec_child(args);
+}
+
+int proc_capture(const char *args[], struct proc_output *result)
+{
+	int pipe_fds[2];
+	int ret = 0;
+
+	ret = pipe2(pipe_fds, O_CLOEXEC);
+	if (ret < 0) {
+		print_errno("pipe2");
+		return -1;
+	}
+
+	pid_t child_pid = fork();
+	if (child_pid < 0) {
+		print_errno("fork");
+		goto close_pipe;
+	}
+
+	if (!child_pid)
+		exit(redirect_and_exec_child(pipe_fds, args));
+
+	close(pipe_fds[1]);
+
+	ret = file_read(pipe_fds[0], &result->output, &result->output_len);
+	if (ret < 0)
+		goto close_pipe;
+
+	ret = wait_for_child(child_pid, &result->ec);
+	if (ret < 0)
+		goto free_output;
+
+	goto close_pipe;
+
+free_output:
+	free(result->output);
+
+close_pipe:
+	close(pipe_fds[0]);
+	close(pipe_fds[1]);
+
+	return ret;
 }

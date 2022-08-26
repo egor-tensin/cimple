@@ -18,30 +18,23 @@ static const char *ci_scripts[] = {
 };
 /* clang-format on */
 
-static run_result ci_run_script(const char *script, int *ec)
+static int ci_run_script(const char *script, struct proc_output *result)
 {
 	const char *args[] = {script, NULL};
-	int ret = 0;
-
-	ret = proc_spawn(args, ec);
-	if (ret < 0)
-		return RUN_ERROR;
-	if (*ec)
-		return RUN_FAILURE;
-	return RUN_SUCCESS;
+	return proc_capture(args, result);
 }
 
-run_result ci_run(int *ec)
+int ci_run(struct proc_output *result)
 {
 	for (const char **script = ci_scripts; *script; ++script) {
 		if (!file_exists(*script))
 			continue;
 		print_log("Going to run: %s\n", *script);
-		return ci_run_script(*script, ec);
+		return ci_run_script(*script, result);
 	}
 
 	print_log("Couldn't find any CI scripts to run\n");
-	return RUN_NO;
+	return -1;
 }
 
 static void ci_cleanup_git_repo(git_repository *repo)
@@ -60,21 +53,20 @@ static int ci_prepare_git_repo(git_repository **repo, const char *url, const cha
 
 	ret = libgit_checkout(*repo, rev);
 	if (ret < 0)
-		goto free_repo;
+		goto cleanup_repo;
 
 	return ret;
 
-free_repo:
+cleanup_repo:
 	ci_cleanup_git_repo(*repo);
 
 	return ret;
 }
 
-run_result ci_run_git_repo(const char *url, const char *rev, int *ec)
+int ci_run_git_repo(const char *url, const char *rev, struct proc_output *output)
 {
 	char *oldpwd;
 	git_repository *repo;
-	run_result result = RUN_ERROR;
 	int ret = 0;
 
 	ret = ci_prepare_git_repo(&repo, url, rev);
@@ -85,8 +77,8 @@ run_result ci_run_git_repo(const char *url, const char *rev, int *ec)
 	if (ret < 0)
 		goto free_repo;
 
-	result = ci_run(ec);
-	if (result < 0)
+	ret = ci_run(output);
+	if (ret < 0)
 		goto oldpwd;
 
 oldpwd:
@@ -97,5 +89,5 @@ free_repo:
 	ci_cleanup_git_repo(repo);
 
 exit:
-	return result;
+	return ret;
 }

@@ -1,14 +1,9 @@
 #ifndef __CI_H__
 #define __CI_H__
 
-typedef enum {
-	RUN_ERROR = -1,
-	RUN_SUCCESS,
-	RUN_FAILURE,
-	RUN_NO,
-} run_result;
+#include "process.h"
 
-run_result ci_run(int *ec);
+int ci_run(struct proc_output *);
 
 /*
  * This is a high-level function. It's basically equivalent to the following
@@ -23,6 +18,6 @@ run_result ci_run(int *ec);
  *     rm -rf "$dir"
  *
  */
-run_result ci_run_git_repo(const char *url, const char *rev, int *ec);
+int ci_run_git_repo(const char *url, const char *rev, struct proc_output *);
 
 #endif

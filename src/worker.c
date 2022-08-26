@@ -4,6 +4,7 @@
 #include "log.h"
 #include "msg.h"
 #include "net.h"
+#include "process.h"
 
 #include <errno.h>
 #include <pthread.h>
@@ -82,9 +83,22 @@ static int msg_body_ci_run(const struct msg *msg)
 {
 	const char *url = msg->argv[1];
 	const char *rev = msg->argv[2];
-	int ec = 0;
+	struct proc_output result;
+	int ret = 0;
 
-	return ci_run_git_repo(url, rev, &ec);
+	ret = ci_run_git_repo(url, rev, &result);
+	if (ret < 0) {
+		print_error("Run failed with an error\n");
+		return ret;
+	}
+
+	print_log("Process exit code: %d\n", result.ec);
+	print_log("Process output:\n%s", result.output);
+	if (!result.output || !result.output_len || result.output[result.output_len - 1] != '\n')
+		print_log("\n");
+	free(result.output);
+
+	return ret;
 }
 
 typedef worker_task_body (*worker_msg_parser)(const struct msg *);
