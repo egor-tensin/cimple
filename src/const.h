@@ -6,4 +6,7 @@
 #endif
 #define DEFAULT_PORT "5556"
 
+#define CMD_CI_RUN "ci-run"
+#define CMD_WORKER_NEW "worker-new"
+
 #endif

@@ -1,6 +1,7 @@
 #include "server.h"
 #include "ci_queue.h"
 #include "compiler.h"
+#include "const.h"
 #include "log.h"
 #include "msg.h"
 #include "signal.h"
@@ -67,7 +68,7 @@ static int worker_ci_run(int fd, const struct ci_queue_entry *ci_run)
 	struct msg request, response;
 	int ret = 0;
 
-	char *argv[] = {"ci_run", ci_run->url, ci_run->rev, NULL};
+	char *argv[] = {CMD_CI_RUN, ci_run->url, ci_run->rev, NULL};
 
 	ret = msg_from_argv(&request, argv);
 	if (ret < 0)
@@ -186,13 +187,13 @@ static int worker_thread(struct server *server, int fd)
 	return ret;
 }
 
-static int msg_new_worker_handler(struct server *server, int client_fd,
+static int msg_worker_new_handler(struct server *server, int client_fd,
                                   UNUSED const struct msg *request)
 {
 	return worker_thread(server, client_fd);
 }
 
-static int msg_new_worker_parser(UNUSED const struct msg *msg)
+static int msg_worker_new_parser(UNUSED const struct msg *msg)
 {
 	return 1;
 }
@@ -267,8 +268,8 @@ struct msg_descr {
 };
 
 struct msg_descr messages[] = {
-    {"new_worker", msg_new_worker_parser, msg_new_worker_handler},
-    {"ci_run", msg_ci_run_parser, msg_ci_run_handler},
+    {CMD_WORKER_NEW, msg_worker_new_parser, msg_worker_new_handler},
+    {CMD_CI_RUN, msg_ci_run_parser, msg_ci_run_handler},
 };
 
 static int server_msg_handler(struct server *server, int client_fd, const struct msg *request)

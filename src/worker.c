@@ -1,5 +1,6 @@
 #include "worker.h"
 #include "ci.h"
+#include "const.h"
 #include "git.h"
 #include "log.h"
 #include "msg.h"
@@ -42,9 +43,9 @@ void worker_destroy(struct worker *worker)
 	libgit_shutdown();
 }
 
-static int msg_send_new_worker(const struct worker *worker)
+static int msg_send_worker_new(const struct worker *worker)
 {
-	static char *argv[] = {"new_worker", NULL};
+	static char *argv[] = {CMD_WORKER_NEW, NULL};
 	struct msg msg;
 	int ret = 0;
 
@@ -124,7 +125,7 @@ struct msg_descr {
 };
 
 struct msg_descr messages[] = {
-    {"ci_run", msg_ci_run_parser, msg_ci_run_handler},
+    {CMD_CI_RUN, msg_ci_run_parser, msg_ci_run_handler},
 };
 
 static int worker_msg_handler(struct worker *worker, const struct msg *request)
@@ -154,7 +155,7 @@ int worker_main(struct worker *worker, UNUSED int argc, UNUSED char *argv[])
 {
 	int ret = 0;
 
-	ret = msg_send_new_worker(worker);
+	ret = msg_send_worker_new(worker);
 	if (ret < 0)
 		return ret;
 
