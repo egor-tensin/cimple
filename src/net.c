@@ -130,18 +130,27 @@ int net_connect(const char *host, const char *port)
 	return socket_fd;
 }
 
+static ssize_t net_send(int fd, const void *buf, size_t len)
+{
+	static const int flags = MSG_NOSIGNAL;
+
+	ssize_t ret = send(fd, buf, len, flags);
+	if (ret < 0) {
+		print_errno("send");
+		return -1;
+	}
+
+	return ret;
+}
+
 int net_send_all(int fd, const void *buf, size_t len)
 {
 	size_t sent_total = 0;
 
 	while (sent_total < len) {
-		ssize_t sent_now = write(fd, (const char *)buf + sent_total, len - sent_total);
-
-		if (sent_now < 0) {
-			print_errno("write");
+		ssize_t sent_now = net_send(fd, (const char *)buf + sent_total, len - sent_total);
+		if (sent_now < 0)
 			return -1;
-		}
-
 		sent_total += sent_now;
 	}
 
