@@ -129,7 +129,7 @@ static int argv_unpack(struct msg *msg, const char *src)
 	for (int i = 0; i < msg->argc; ++i) {
 		size_t len = strlen(src);
 
-		msg->argv[i] = malloc(len);
+		msg->argv[i] = malloc(len + 1);
 		if (!msg->argv[i]) {
 			print_errno("malloc");
 			goto free;
