@@ -2,9 +2,9 @@
 #define __LOG_H__
 
 #include <errno.h>
+#include <libgen.h>
 #include <netdb.h>
 #include <stdio.h>
-#include <string.h>
 
 #define CONCAT_INNER(a, b) a##b
 #define CONCAT(a, b) CONCAT_INNER(a, b)
