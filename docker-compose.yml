@@ -1,0 +1,25 @@
+version: '3'
+
+x-cimple: &common
+  build: .
+  image: egortensin/cimple
+  restart: always
+
+services:
+  server:
+    <<: *common
+    ports:
+      - 5556
+  worker1:
+    <<: *common
+    command: ["./cimple-worker", "--host", "server"]
+    depends_on: [server]
+  worker2:
+    <<: *common
+    command: ["./cimple-worker", "--host", "server"]
+    depends_on: [server]
+  client:
+    <<: *common
+    command: []
+    entrypoint: ["./cimple-client", "--host", "server"]
+    restart: 'no'
