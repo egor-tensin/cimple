@@ -30,7 +30,15 @@ struct child_context {
 static void *connection_thread(void *_ctx)
 {
 	struct child_context *ctx = (struct child_context *)_ctx;
+	int ret = 0;
+
+	ret = signal_block_child();
+	if (ret < 0)
+		goto close;
+
 	ctx->handler(ctx->fd, ctx->arg);
+
+close:
 	check_errno(close(ctx->fd), "close");
 	free(ctx);
 	return NULL;
@@ -40,6 +48,7 @@ int tcp_server_accept(const struct tcp_server *server, tcp_server_conn_handler h
 {
 	struct child_context *ctx;
 	pthread_attr_t child_attr;
+	sigset_t old_mask;
 	pthread_t child;
 	int conn_fd, ret = 0;
 
@@ -68,19 +77,24 @@ int tcp_server_accept(const struct tcp_server *server, tcp_server_conn_handler h
 		goto destroy_attr;
 	}
 
-	ret = signal_set_thread_attr(&child_attr);
+	ret = signal_block_parent(&old_mask);
 	if (ret < 0)
 		goto destroy_attr;
 
 	ret = pthread_create(&child, &child_attr, connection_thread, ctx);
 	if (ret) {
 		pthread_print_errno(ret, "pthread_create");
-		goto destroy_attr;
+		goto restore_mask;
 	}
+
+	signal_set(&old_mask, NULL);
 
 	pthread_check(pthread_attr_destroy(&child_attr), "pthread_attr_destroy");
 
 	return ret;
+
+restore_mask:
+	signal_set(&old_mask, NULL);
 
 destroy_attr:
 	pthread_check(pthread_attr_destroy(&child_attr), "pthread_attr_destroy");

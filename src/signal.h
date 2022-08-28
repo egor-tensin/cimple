@@ -3,7 +3,6 @@
 
 #include "compiler.h"
 
-#include <pthread.h>
 #include <signal.h>
 #include <string.h>
 
@@ -25,6 +24,9 @@ static __attribute__((constructor)) void signal_handler_install()
 	sigaction(SIGTERM, &sa, NULL);
 }
 
-int signal_set_thread_attr(pthread_attr_t *attr);
+int signal_set(const sigset_t *new, sigset_t *old);
+
+int signal_block_parent(sigset_t *old);
+int signal_block_child();
 
 #endif
