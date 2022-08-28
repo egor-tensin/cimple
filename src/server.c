@@ -138,6 +138,14 @@ static int worker_requeue_run(struct server *server, struct ci_queue_entry *ci_r
 	ci_queue_push_head(&server->ci_queue, ci_run);
 	print_log("Requeued a CI run for repository %s\n", ci_run->url);
 
+	ret = pthread_cond_signal(&server->server_cv);
+	if (ret) {
+		pthread_print_errno(ret, "pthread_cond_signal");
+		ret = 0;
+		goto unlock;
+	}
+
+unlock:
 	pthread_check(pthread_mutex_unlock(&server->server_mtx), "pthread_mutex_unlock");
 
 	return ret;
