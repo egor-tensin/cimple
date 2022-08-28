@@ -313,7 +313,7 @@ static int server_set_stopping(struct server *server)
 
 	server->stopping = 1;
 
-	ret = pthread_cond_signal(&server->server_cv);
+	ret = pthread_cond_broadcast(&server->server_cv);
 	if (ret) {
 		pthread_print_errno(ret, "pthread_cond_signal");
 		goto unlock;
