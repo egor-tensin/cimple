@@ -1,5 +1,6 @@
 #include "server.h"
 #include "ci_queue.h"
+#include "compiler.h"
 #include "log.h"
 #include "msg.h"
 #include "signal.h"
@@ -144,7 +145,7 @@ static int worker_requeue_run(struct server *server, struct ci_queue_entry *ci_r
 
 static int worker_iteration(struct server *server, int fd)
 {
-	struct ci_queue_entry *ci_run;
+	struct ci_queue_entry *ci_run = NULL;
 	int ret = 0;
 
 	ret = worker_dequeue_run(server, &ci_run);
@@ -177,12 +178,13 @@ static int worker_thread(struct server *server, int fd)
 	return ret;
 }
 
-static int msg_new_worker_handler(struct server *server, int client_fd, const struct msg *)
+static int msg_new_worker_handler(struct server *server, int client_fd,
+                                  UNUSED const struct msg *request)
 {
 	return worker_thread(server, client_fd);
 }
 
-static int msg_new_worker_parser(const struct msg *)
+static int msg_new_worker_parser(UNUSED const struct msg *msg)
 {
 	return 1;
 }

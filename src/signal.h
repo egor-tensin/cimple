@@ -1,13 +1,15 @@
 #ifndef __SIGNAL_H__
 #define __SIGNAL_H__
 
+#include "compiler.h"
+
 #include <pthread.h>
 #include <signal.h>
 #include <string.h>
 
 extern volatile sig_atomic_t global_stop_flag;
 
-static void signal_handler(int)
+static void signal_handler(UNUSED int signum)
 {
 	global_stop_flag = 1;
 }

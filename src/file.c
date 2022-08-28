@@ -1,4 +1,5 @@
 #include "file.h"
+#include "compiler.h"
 #include "log.h"
 
 #include <ftw.h>
@@ -7,7 +8,8 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-static int unlink_cb(const char *fpath, const struct stat *, int, struct FTW *)
+static int unlink_cb(const char *fpath, UNUSED const struct stat *sb, UNUSED int typeflag,
+                     UNUSED struct FTW *ftwbuf)
 {
 	int ret = 0;
 

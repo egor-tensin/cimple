@@ -143,7 +143,7 @@ unknown_request:
 	return msg_send(worker->fd, &response);
 }
 
-int worker_main(struct worker *worker, int, char *[])
+int worker_main(struct worker *worker, UNUSED int argc, UNUSED char *argv[])
 {
 	int ret = 0;
 
