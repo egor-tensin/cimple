@@ -113,3 +113,8 @@ close_pipe:
 
 	return ret;
 }
+
+void proc_output_free(const struct proc_output *output)
+{
+	free(output->output);
+}

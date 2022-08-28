@@ -21,12 +21,22 @@ void client_destroy(const struct client *client)
 
 int client_main(const struct client *client, int argc, char *argv[])
 {
-	int result, ret = 0;
-	struct msg msg = {argc, argv};
+	struct msg request = {argc, argv};
+	struct msg response;
+	int ret = 0;
 
-	ret = msg_send_and_wait(client->fd, &msg, &result);
+	ret = msg_send_and_wait(client->fd, &request, &response);
 	if (ret < 0)
 		return ret;
 
-	return result;
+	if (msg_is_error(&response)) {
+		print_error("Server failed to process the request\n");
+		ret = -1;
+		goto free_response;
+	}
+
+free_response:
+	msg_free(&response);
+
+	return ret;
 }

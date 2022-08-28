@@ -5,6 +5,28 @@
 #include <stdlib.h>
 #include <string.h>
 
+void msg_success(struct msg *msg)
+{
+	msg->argc = 0;
+	msg->argv = NULL;
+}
+
+void msg_error(struct msg *msg)
+{
+	msg->argc = -1;
+	msg->argv = NULL;
+}
+
+int msg_is_success(const struct msg *msg)
+{
+	return msg->argc == 0;
+}
+
+int msg_is_error(const struct msg *msg)
+{
+	return msg->argc < 0;
+}
+
 static int msg_copy_argv(struct msg *msg, char **argv)
 {
 	msg->argv = calloc(msg->argc, sizeof(char *));
@@ -147,15 +169,15 @@ free_buf:
 	return ret;
 }
 
-int msg_send_and_wait(int fd, const struct msg *msg, int *result)
+int msg_send_and_wait(int fd, const struct msg *request, struct msg *response)
 {
 	int ret = 0;
 
-	ret = msg_send(fd, msg);
+	ret = msg_send(fd, request);
 	if (ret < 0)
 		return ret;
 
-	ret = net_recv_static(fd, result, sizeof(*result));
+	ret = msg_recv(fd, response);
 	if (ret < 0)
 		return ret;
 
@@ -184,32 +206,9 @@ free_buf:
 	return ret;
 }
 
-int msg_recv_and_handle(int fd, msg_handler handler, void *arg)
+void msg_dump(const struct msg *msg)
 {
-	struct msg msg;
-	int result;
-	int ret = 0;
-
-	ret = msg_recv(fd, &msg);
-	if (ret < 0)
-		return ret;
-
-	result = handler(&msg, arg);
-
-	ret = net_send_buf(fd, &result, sizeof(result));
-	if (ret < 0)
-		goto free_msg;
-
-free_msg:
-	msg_free(&msg);
-
-	return ret;
-}
-
-int msg_dump_unknown(const struct msg *msg)
-{
-	print_log("Received an unknown message:\n");
+	print_log("Message[%d]:\n", msg->argc);
 	for (int i = 0; i < msg->argc; ++i)
 		print_log("\t%s\n", msg->argv[i]);
-	return -1;
 }

@@ -17,8 +17,7 @@ add_executable(server server_main.c server.c
     msg.c
     net.c
     signal.c
-    tcp_server.c
-    worker_queue.c)
+    tcp_server.c)
 
 add_executable(client client_main.c client.c
     msg.c

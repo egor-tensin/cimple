@@ -18,4 +18,6 @@ int proc_spawn(const char *args[], int *ec);
  * In that case, you'll need to free the output. */
 int proc_capture(const char *args[], struct proc_output *result);
 
+void proc_output_free(const struct proc_output *);
+
 #endif
