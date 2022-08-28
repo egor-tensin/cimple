@@ -2,6 +2,7 @@
 #define __NET_H__
 
 #include <stdlib.h>
+#include <sys/types.h>
 
 int net_bind(const char *port);
 int net_accept(int fd);
