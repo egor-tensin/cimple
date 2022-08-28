@@ -115,6 +115,7 @@ static int worker_dequeue_run(struct server *server, struct ci_queue_entry **ci_
 	}
 
 	*ci_run = ci_queue_pop(&server->ci_queue);
+	print_log("Removed a CI run for repository %s from the queue\n", (*ci_run)->url);
 	goto unlock;
 
 unlock:
@@ -134,6 +135,7 @@ static int worker_requeue_run(struct server *server, struct ci_queue_entry *ci_r
 	}
 
 	ci_queue_push_head(&server->ci_queue, ci_run);
+	print_log("Requeued a CI run for repository %s\n", ci_run->url);
 
 	pthread_check(pthread_mutex_unlock(&server->server_mtx), "pthread_mutex_unlock");
 
@@ -190,8 +192,6 @@ static int msg_ci_run_queue(struct server *server, const char *url, const char *
 	struct ci_queue_entry *entry;
 	int ret = 0;
 
-	print_log("Scheduling a new CI run for repository %s\n", url);
-
 	ret = pthread_mutex_lock(&server->server_mtx);
 	if (ret) {
 		pthread_print_errno(ret, "pthread_mutex_lock");
@@ -203,6 +203,7 @@ static int msg_ci_run_queue(struct server *server, const char *url, const char *
 		goto unlock;
 
 	ci_queue_push(&server->ci_queue, entry);
+	print_log("Added a new CI run for repository %s to the queue\n", url);
 
 	ret = pthread_cond_signal(&server->server_cv);
 	if (ret) {
