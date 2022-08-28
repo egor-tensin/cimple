@@ -5,26 +5,26 @@
 #include <stdlib.h>
 #include <string.h>
 
-void msg_success(struct msg *msg)
+int msg_success(struct msg *msg)
 {
-	msg->argc = 0;
-	msg->argv = NULL;
+	char *argv[] = {"success", NULL};
+	return msg_from_argv(msg, argv);
 }
 
-void msg_error(struct msg *msg)
+int msg_error(struct msg *msg)
 {
-	msg->argc = -1;
-	msg->argv = NULL;
+	char *argv[] = {"error", NULL};
+	return msg_from_argv(msg, argv);
 }
 
 int msg_is_success(const struct msg *msg)
 {
-	return msg->argc == 0;
+	return msg->argc == 1 && !strcmp(msg->argv[0], "success");
 }
 
 int msg_is_error(const struct msg *msg)
 {
-	return msg->argc < 0;
+	return msg->argc == 1 && !strcmp(msg->argv[0], "error");
 }
 
 static int msg_copy_argv(struct msg *msg, char **argv)

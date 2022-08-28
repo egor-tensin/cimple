@@ -227,11 +227,16 @@ static int msg_ci_run_handler(struct server *server, int client_fd, const struct
 
 	ret = msg_ci_run_queue(server, msg->argv[1], msg->argv[2]);
 	if (ret < 0)
-		msg_error(&response);
+		ret = msg_error(&response);
 	else
-		msg_success(&response);
+		ret = msg_success(&response);
 
-	return msg_send(client_fd, &response);
+	if (ret < 0)
+		return ret;
+
+	ret = msg_send(client_fd, &response);
+	msg_free(&response);
+	return ret;
 }
 
 static int msg_ci_run_parser(const struct msg *msg)

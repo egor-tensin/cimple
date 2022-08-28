@@ -88,13 +88,19 @@ static int msg_ci_run_handler(struct worker *worker, const struct msg *request)
 	int ret = 0;
 
 	ret = msg_ci_run_do(request->argv[1], request->argv[2], &result);
-	if (ret < 0)
-		msg_error(&response);
-	else
-		msg_success(&response);
 	proc_output_free(&result);
 
-	return msg_send(worker->fd, &response);
+	if (ret < 0)
+		ret = msg_error(&response);
+	else
+		ret = msg_success(&response);
+
+	if (ret < 0)
+		return ret;
+
+	ret = msg_send(worker->fd, &response);
+	msg_free(&response);
+	return ret;
 }
 
 static int msg_ci_run_parser(const struct msg *msg)

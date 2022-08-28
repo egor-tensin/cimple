@@ -6,8 +6,8 @@ struct msg {
 	char **argv;
 };
 
-void msg_success(struct msg *);
-void msg_error(struct msg *);
+int msg_success(struct msg *);
+int msg_error(struct msg *);
 
 int msg_is_success(const struct msg *);
 int msg_is_error(const struct msg *);
