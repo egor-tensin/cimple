@@ -6,6 +6,8 @@ FROM base AS builder
 
 RUN apk add --no-cache bsd-compat-headers build-base clang cmake libgit2-dev
 
+ARG default_host=127.0.0.1
+
 ARG src_dir="/app/src"
 ARG build_dir="/app/build"
 ARG install_dir
@@ -15,6 +17,7 @@ COPY [".", "$src_dir"]
 RUN mkdir -- "$build_dir" && \
     cd -- "$build_dir" && \
     cmake \
+         -D "DEFAULT_HOST=$default_host" \
          -D CMAKE_C_COMPILER=clang \
          -D CMAKE_BUILD_TYPE=Release \
          -D "CMAKE_INSTALL_PREFIX=$install_dir" \

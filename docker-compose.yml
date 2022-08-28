@@ -1,7 +1,10 @@
 version: '3'
 
 x-cimple: &common
-  build: .
+  build:
+    context: .
+    args:
+      default_host: server
   image: egortensin/cimple
   restart: always
 
@@ -12,14 +15,15 @@ services:
       - 5556
   worker1:
     <<: *common
-    command: ["./cimple-worker", "--host", "server"]
+    command: ["./cimple-worker"]
     depends_on: [server]
   worker2:
     <<: *common
-    command: ["./cimple-worker", "--host", "server"]
+    command: ["./cimple-worker"]
     depends_on: [server]
   client:
     <<: *common
     command: []
-    entrypoint: ["./cimple-client", "--host", "server"]
+    depends_on: [server]
+    entrypoint: ["./cimple-client"]
     restart: 'no'
