@@ -114,6 +114,13 @@ close_pipe:
 	return ret;
 }
 
+void proc_output_init(struct proc_output *output)
+{
+	output->ec = 0;
+	output->output = NULL;
+	output->output_len = 0;
+}
+
 void proc_output_free(const struct proc_output *output)
 {
 	free(output->output);

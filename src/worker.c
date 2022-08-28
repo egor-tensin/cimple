@@ -87,6 +87,7 @@ static int msg_ci_run_handler(struct worker *worker, const struct msg *request)
 	struct proc_output result;
 	int ret = 0;
 
+	proc_output_init(&result);
 	ret = msg_ci_run_do(request->argv[1], request->argv[2], &result);
 	proc_output_free(&result);
 
