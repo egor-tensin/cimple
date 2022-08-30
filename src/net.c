@@ -17,7 +17,7 @@ int net_bind(const char *port)
 	int socket_fd, ret = 0;
 
 	memset(&hints, 0, sizeof(hints));
-	hints.ai_family = AF_UNSPEC;
+	hints.ai_family = AF_INET6;
 	hints.ai_socktype = SOCK_STREAM;
 	hints.ai_flags = AI_PASSIVE;
 
@@ -35,8 +35,16 @@ int net_bind(const char *port)
 		}
 
 		static const int yes = 1;
+		static const int no = 0;
 
-		if (setsockopt(socket_fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes)) == -1) {
+		if (it->ai_family == AF_INET6) {
+			if (setsockopt(socket_fd, IPPROTO_IPV6, IPV6_V6ONLY, &no, sizeof(no)) < 0) {
+				print_errno("setsockopt");
+				goto close_socket;
+			}
+		}
+
+		if (setsockopt(socket_fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes)) < 0) {
 			print_errno("setsockopt");
 			goto close_socket;
 		}
