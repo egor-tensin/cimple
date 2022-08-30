@@ -14,6 +14,5 @@ int net_send_buf(int fd, const void *, uint32_t);
 
 int net_recv_all(int fd, void *, size_t);
 int net_recv_buf(int fd, void **, uint32_t *);
-int net_recv_static(int fd, void *, size_t);
 
 #endif

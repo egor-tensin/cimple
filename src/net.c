@@ -240,27 +240,3 @@ free_buf:
 fail:
 	return -1;
 }
-
-int net_recv_static(int fd, void *buf, size_t len)
-{
-	void *actual_buf;
-	uint32_t actual_len;
-	int ret = 0;
-
-	ret = net_recv_buf(fd, &actual_buf, &actual_len);
-	if (ret < 0)
-		return ret;
-
-	if (actual_len != len) {
-		print_error("Expected message length: %lu, actual: %u\n", len, actual_len);
-		ret = -1;
-		goto free_buf;
-	}
-
-	memcpy(buf, actual_buf, len);
-
-free_buf:
-	free(actual_buf);
-
-	return ret;
-}
