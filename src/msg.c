@@ -2,6 +2,7 @@
 #include "log.h"
 #include "net.h"
 
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -94,9 +95,9 @@ int msg_from_argv(struct msg *msg, char **argv)
 	return msg_copy_argv(msg, argv);
 }
 
-static size_t calc_buf_len(const struct msg *msg)
+static uint32_t calc_buf_len(const struct msg *msg)
 {
-	size_t len = 0;
+	uint32_t len = 0;
 	for (int i = 0; i < msg->argc; ++i)
 		len += strlen(msg->argv[i]) + 1;
 	return len;
@@ -151,7 +152,7 @@ int msg_send(int fd, const struct msg *msg)
 {
 	int ret = 0;
 
-	size_t len = calc_buf_len(msg);
+	uint32_t len = calc_buf_len(msg);
 	char *buf = malloc(len);
 	if (!buf) {
 		print_errno("malloc");
@@ -187,7 +188,7 @@ int msg_send_and_wait(int fd, const struct msg *request, struct msg *response)
 int msg_recv(int fd, struct msg *msg)
 {
 	void *buf;
-	size_t len;
+	uint32_t len;
 	int ret = 0;
 
 	ret = net_recv_buf(fd, &buf, &len);

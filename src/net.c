@@ -2,6 +2,7 @@
 #include "log.h"
 
 #include <netdb.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
@@ -185,13 +186,15 @@ ssize_t net_recv_all(int fd, void *buf, size_t len)
 	return read_total;
 }
 
-int net_send_buf(int fd, const void *buf, size_t len)
+int net_send_buf(int fd, const void *buf, uint32_t len)
 {
 	int ret = 0;
 
+	len = htonl(len);
 	ret = net_send_all(fd, &len, sizeof(len));
 	if (ret < 0)
 		return ret;
+	len = ntohl(len);
 
 	ret = net_send_all(fd, buf, len);
 	if (ret < 0)
@@ -200,7 +203,7 @@ int net_send_buf(int fd, const void *buf, size_t len)
 	return ret;
 }
 
-int net_recv_buf(int fd, void **buf, size_t *len)
+int net_recv_buf(int fd, void **buf, uint32_t *len)
 {
 	ssize_t nb = 0;
 
@@ -212,6 +215,8 @@ int net_recv_buf(int fd, void **buf, size_t *len)
 		print_error("Couldn't read buffer length\n");
 		goto fail;
 	}
+
+	*len = ntohl(*len);
 
 	*buf = malloc(*len);
 	if (!*buf) {
@@ -240,7 +245,7 @@ fail:
 int net_recv_static(int fd, void *buf, size_t len)
 {
 	void *actual_buf;
-	size_t actual_len;
+	uint32_t actual_len;
 	int ret = 0;
 
 	ret = net_recv_buf(fd, &actual_buf, &actual_len);
@@ -248,7 +253,7 @@ int net_recv_static(int fd, void *buf, size_t len)
 		return ret;
 
 	if (actual_len != len) {
-		print_error("Expected message length: %lu, actual: %lu\n", len, actual_len);
+		print_error("Expected message length: %lu, actual: %u\n", len, actual_len);
 		ret = -1;
 		goto free_buf;
 	}
