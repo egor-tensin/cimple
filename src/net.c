@@ -166,7 +166,7 @@ int net_send_all(int fd, const void *buf, size_t len)
 	return 0;
 }
 
-ssize_t net_recv_all(int fd, void *buf, size_t len)
+int net_recv_all(int fd, void *buf, size_t len)
 {
 	ssize_t read_total = 0;
 
@@ -183,7 +183,12 @@ ssize_t net_recv_all(int fd, void *buf, size_t len)
 		read_total += read_now;
 	}
 
-	return read_total;
+	if ((size_t)read_total < len) {
+		print_error("Received only %zd bytes out of %zu\n", read_total, len);
+		return -1;
+	}
+
+	return 0;
 }
 
 int net_send_buf(int fd, const void *buf, uint32_t len)
@@ -205,13 +210,10 @@ int net_send_buf(int fd, const void *buf, uint32_t len)
 
 int net_recv_buf(int fd, void **buf, uint32_t *len)
 {
-	ssize_t nb = 0;
+	int ret = 0;
 
-	nb = net_recv_all(fd, len, sizeof(*len));
-	if (nb < 0)
-		goto fail;
-
-	if (nb != sizeof(*len)) {
+	ret = net_recv_all(fd, len, sizeof(*len));
+	if (ret < 0) {
 		print_error("Couldn't read buffer length\n");
 		goto fail;
 	}
@@ -224,12 +226,9 @@ int net_recv_buf(int fd, void **buf, uint32_t *len)
 		goto fail;
 	}
 
-	nb = net_recv_all(fd, *buf, *len);
-	if (nb < 0)
-		goto free_buf;
-
-	if ((size_t)nb != *len) {
-		print_error("Couldn't read the entire buffer\n");
+	ret = net_recv_all(fd, *buf, *len);
+	if (ret < 0) {
+		print_error("Couldn't read buffer\n");
 		goto free_buf;
 	}
 
