@@ -31,7 +31,8 @@ RUN apk add --no-cache tini libgit2
 ARG install_dir
 COPY --from=builder ["$install_dir", "$install_dir"]
 
+ENV PATH="$install_dir/bin:${PATH}"
 WORKDIR "$install_dir/bin"
 
 ENTRYPOINT ["/sbin/tini", "--"]
-CMD ["./cimple-server"]
+CMD ["cimple-server"]

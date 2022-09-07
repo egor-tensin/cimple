@@ -15,15 +15,15 @@ services:
       - 5556
   worker1:
     <<: *common
-    command: ["./cimple-worker"]
+    command: ["cimple-worker"]
     depends_on: [server]
   worker2:
     <<: *common
-    command: ["./cimple-worker"]
+    command: ["cimple-worker"]
     depends_on: [server]
   client:
     <<: *common
     command: []
     depends_on: [server]
-    entrypoint: ["./cimple-client"]
+    entrypoint: ["cimple-client"]
     restart: 'no'
