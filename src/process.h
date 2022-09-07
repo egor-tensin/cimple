@@ -10,13 +10,13 @@ struct proc_output {
 };
 
 /* The exit code is only valid if the functions returns a non-negative number. */
-int proc_spawn(const char *args[], int *ec);
+int proc_spawn(const char *args[], const char *envp[], int *ec);
 
 /* Similarly, the contents of the proc_output structure is only valid if the function returns a
  * non-negative number.
  *
  * In that case, you'll need to free the output. */
-int proc_capture(const char *args[], struct proc_output *result);
+int proc_capture(const char *args[], const char *envp[], struct proc_output *result);
 
 void proc_output_init(struct proc_output *);
 void proc_output_free(const struct proc_output *);

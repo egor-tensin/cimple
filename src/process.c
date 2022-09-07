@@ -7,9 +7,14 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-static int exec_child(const char *args[])
+static int exec_child(const char *args[], const char *envp[])
 {
-	int ret = execv(args[0], (char *const *)args);
+	static const char *default_envp[] = {NULL};
+
+	if (!envp)
+		envp = default_envp;
+
+	int ret = execvpe(args[0], (char *const *)args, (char *const *)envp);
 	if (ret < 0) {
 		print_errno("execv");
 		return ret;
@@ -36,7 +41,7 @@ static int wait_for_child(pid_t pid, int *ec)
 	return 0;
 }
 
-int proc_spawn(const char *args[], int *ec)
+int proc_spawn(const char *args[], const char *envp[], int *ec)
 {
 	pid_t child_pid = fork();
 	if (child_pid < 0) {
@@ -45,12 +50,12 @@ int proc_spawn(const char *args[], int *ec)
 	}
 
 	if (!child_pid)
-		exit(exec_child(args));
+		exit(exec_child(args, envp));
 
 	return wait_for_child(child_pid, ec);
 }
 
-static int redirect_and_exec_child(int pipe_fds[2], const char *args[])
+static int redirect_and_exec_child(int pipe_fds[2], const char *args[], const char *envp[])
 {
 	int ret = 0;
 
@@ -68,10 +73,10 @@ static int redirect_and_exec_child(int pipe_fds[2], const char *args[])
 		return ret;
 	}
 
-	return exec_child(args);
+	return exec_child(args, envp);
 }
 
-int proc_capture(const char *args[], struct proc_output *result)
+int proc_capture(const char *args[], const char *envp[], struct proc_output *result)
 {
 	int pipe_fds[2];
 	int ret = 0;
@@ -89,7 +94,7 @@ int proc_capture(const char *args[], struct proc_output *result)
 	}
 
 	if (!child_pid)
-		exit(redirect_and_exec_child(pipe_fds, args));
+		exit(redirect_and_exec_child(pipe_fds, args, envp));
 
 	check_errno(close(pipe_fds[1]), "close");
 

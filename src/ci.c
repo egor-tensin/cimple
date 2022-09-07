@@ -16,12 +16,17 @@ static const char *ci_scripts[] = {
     "./ci",
     NULL,
 };
+
+static const char *ci_env[] = {
+    "CI=y",
+    "CIMPLE=y",
+};
 /* clang-format on */
 
 static int ci_run_script(const char *script, struct proc_output *result)
 {
 	const char *args[] = {script, NULL};
-	return proc_capture(args, result);
+	return proc_capture(args, ci_env, result);
 }
 
 int ci_run(struct proc_output *result)
