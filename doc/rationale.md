@@ -34,7 +34,7 @@ I wanted a CI system that adheres to the following criteria.
 9. You must be able to run pipelines locally to test your changes.
     * Pretty much none of the solutions (maybe only Concorse) make this an
       option.
-10. The UI should look like shit.
+10. The UI shouldn't look like shit.
     * Woodpecker, you're out.
 
 Pretty much I would like something like Drone.io, but free in spirit and in
