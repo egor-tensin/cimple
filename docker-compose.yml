@@ -4,7 +4,7 @@ x-cimple: &common
   build:
     context: .
     args:
-      default_host: server
+      DEFAULT_HOST: server
   image: egortensin/cimple
   restart: always
 

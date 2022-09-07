@@ -4,25 +4,23 @@ ARG install_dir="/app/install"
 
 FROM base AS builder
 
-RUN apk add --no-cache bsd-compat-headers build-base clang cmake libgit2-dev
+RUN apk add --no-cache bash bsd-compat-headers build-base clang cmake libgit2-dev
 
-ARG default_host=127.0.0.1
+ARG C_COMPILER=clang
+ARG BUILD_TYPE=Release
+ARG DEFAULT_HOST=127.0.0.1
 
 ARG src_dir="/app/src"
-ARG build_dir="/app/build"
 ARG install_dir
 
 COPY [".", "$src_dir"]
 
-RUN mkdir -- "$build_dir" && \
-    cd -- "$build_dir" && \
-    cmake \
-         -D "DEFAULT_HOST=$default_host" \
-         -D CMAKE_C_COMPILER=clang \
-         -D CMAKE_BUILD_TYPE=Release \
-         -D "CMAKE_INSTALL_PREFIX=$install_dir" \
-         "$src_dir" && \
-    make -j install
+RUN cd -- "$src_dir" && \
+    make install \
+        "C_COMPILER=$C_COMPILER" \
+        "BUILD_TYPE=$BUILD_TYPE" \
+        "DEFAULT_HOST=$DEFAULT_HOST" \
+        "INSTALL_PREFIX=$install_dir"
 
 FROM base
 
