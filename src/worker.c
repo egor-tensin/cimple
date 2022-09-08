@@ -1,5 +1,6 @@
 #include "worker.h"
 #include "ci.h"
+#include "compiler.h"
 #include "const.h"
 #include "git.h"
 #include "log.h"
@@ -8,8 +9,6 @@
 #include "process.h"
 #include "signal.h"
 
-#include <errno.h>
-#include <pthread.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>

@@ -1,8 +1,9 @@
 #include "git.h"
-#include "file.h"
 #include "log.h"
 
 #include <git2.h>
+
+#include <stdlib.h>
 
 #define git_print_error(fn)                                                                        \
 	do {                                                                                       \

@@ -10,7 +10,6 @@
 #include <pthread.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 
 int server_create(struct server *server, const struct settings *settings)
 {
