@@ -34,11 +34,11 @@ int ci_run(struct proc_output *result)
 	for (const char **script = ci_scripts; *script; ++script) {
 		if (!file_exists(*script))
 			continue;
-		print_log("Going to run: %s\n", *script);
+		log("Going to run: %s\n", *script);
 		return ci_run_script(*script, result);
 	}
 
-	print_log("Couldn't find any CI scripts to run\n");
+	log("Couldn't find any CI scripts to run\n");
 	return -1;
 }
 

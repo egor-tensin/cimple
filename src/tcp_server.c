@@ -19,7 +19,7 @@ int tcp_server_create(struct tcp_server *server, const char *port)
 
 void tcp_server_destroy(const struct tcp_server *server)
 {
-	check_errno(close(server->fd), "close");
+	log_errno_if(close(server->fd), "close");
 }
 
 struct child_context {
@@ -40,7 +40,7 @@ static void *connection_thread(void *_ctx)
 	ctx->handler(ctx->fd, ctx->arg);
 
 close:
-	check_errno(close(ctx->fd), "close");
+	log_errno_if(close(ctx->fd), "close");
 	free(ctx);
 	return NULL;
 }
@@ -60,7 +60,7 @@ int tcp_server_accept(const struct tcp_server *server, tcp_server_conn_handler h
 
 	ctx = malloc(sizeof(*ctx));
 	if (!ctx) {
-		print_errno("malloc");
+		log_errno("malloc");
 		ret = -1;
 		goto close_conn;
 	}
@@ -68,13 +68,13 @@ int tcp_server_accept(const struct tcp_server *server, tcp_server_conn_handler h
 
 	ret = pthread_attr_init(&child_attr);
 	if (ret) {
-		pthread_print_errno(ret, "pthread_attr_init");
+		pthread_errno(ret, "pthread_attr_init");
 		goto free_ctx;
 	}
 
 	ret = pthread_attr_setdetachstate(&child_attr, PTHREAD_CREATE_DETACHED);
 	if (ret) {
-		pthread_print_errno(ret, "pthread_attr_setdetachstate");
+		pthread_errno(ret, "pthread_attr_setdetachstate");
 		goto destroy_attr;
 	}
 
@@ -84,13 +84,13 @@ int tcp_server_accept(const struct tcp_server *server, tcp_server_conn_handler h
 
 	ret = pthread_create(&child, &child_attr, connection_thread, ctx);
 	if (ret) {
-		pthread_print_errno(ret, "pthread_create");
+		pthread_errno(ret, "pthread_create");
 		goto restore_mask;
 	}
 
 	signal_set(&old_mask, NULL);
 
-	pthread_check(pthread_attr_destroy(&child_attr), "pthread_attr_destroy");
+	pthread_errno_if(pthread_attr_destroy(&child_attr), "pthread_attr_destroy");
 
 	return ret;
 
@@ -98,13 +98,13 @@ restore_mask:
 	signal_set(&old_mask, NULL);
 
 destroy_attr:
-	pthread_check(pthread_attr_destroy(&child_attr), "pthread_attr_destroy");
+	pthread_errno_if(pthread_attr_destroy(&child_attr), "pthread_attr_destroy");
 
 free_ctx:
 	free(ctx);
 
 close_conn:
-	check_errno(close(conn_fd), "close");
+	log_errno_if(close(conn_fd), "close");
 
 	return ret;
 }

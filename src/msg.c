@@ -33,14 +33,14 @@ static int msg_copy_argv(struct msg *msg, char **argv)
 	msg->argv = calloc(msg->argc, sizeof(char *));
 
 	if (!msg->argv) {
-		print_errno("calloc");
+		log_errno("calloc");
 		return -1;
 	}
 
 	for (int i = 0; i < msg->argc; ++i) {
 		msg->argv[i] = strdup(argv[i]);
 		if (!msg->argv[i]) {
-			print_errno("strdup");
+			log_errno("strdup");
 			goto free;
 		}
 	}
@@ -60,7 +60,7 @@ struct msg *msg_copy(const struct msg *src)
 
 	dest = malloc(sizeof(*dest));
 	if (!dest) {
-		print_errno("calloc");
+		log_errno("calloc");
 		return NULL;
 	}
 	dest->argc = src->argc;
@@ -123,7 +123,7 @@ static int argv_unpack(struct msg *msg, const char *src)
 {
 	msg->argv = calloc(msg->argc, sizeof(char *));
 	if (!msg->argv) {
-		print_errno("calloc");
+		log_errno("calloc");
 		return -1;
 	}
 
@@ -132,7 +132,7 @@ static int argv_unpack(struct msg *msg, const char *src)
 
 		msg->argv[i] = malloc(len + 1);
 		if (!msg->argv[i]) {
-			print_errno("malloc");
+			log_errno("malloc");
 			goto free;
 		}
 
@@ -155,7 +155,7 @@ int msg_send(int fd, const struct msg *msg)
 	uint32_t len = calc_buf_len(msg);
 	char *buf = malloc(len);
 	if (!buf) {
-		print_errno("malloc");
+		log_errno("malloc");
 		return -1;
 	}
 	argv_pack(buf, msg);
@@ -209,7 +209,7 @@ free_buf:
 
 void msg_dump(const struct msg *msg)
 {
-	print_log("Message[%d]:\n", msg->argc);
+	log("Message[%d]:\n", msg->argc);
 	for (int i = 0; i < msg->argc; ++i)
-		print_log("\t%s\n", msg->argv[i]);
+		log("\t%s\n", msg->argv[i]);
 }

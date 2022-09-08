@@ -9,7 +9,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#define gai_print_errno(ec) print_error("getaddrinfo: %s\n", gai_strerror(ec))
+#define gai_log_errno(ec) log_err("getaddrinfo: %s\n", gai_strerror(ec))
 
 int net_bind(const char *port)
 {
@@ -24,14 +24,14 @@ int net_bind(const char *port)
 
 	ret = getaddrinfo(NULL, port, &hints, &result);
 	if (ret) {
-		gai_print_errno(ret);
+		gai_log_errno(ret);
 		return -1;
 	}
 
 	for (it = result; it; it = it->ai_next) {
 		socket_fd = socket(it->ai_family, it->ai_socktype | SOCK_CLOEXEC, it->ai_protocol);
 		if (socket_fd < 0) {
-			print_errno("socket");
+			log_errno("socket");
 			continue;
 		}
 
@@ -40,44 +40,44 @@ int net_bind(const char *port)
 
 		if (it->ai_family == AF_INET6) {
 			if (setsockopt(socket_fd, IPPROTO_IPV6, IPV6_V6ONLY, &no, sizeof(no)) < 0) {
-				print_errno("setsockopt");
+				log_errno("setsockopt");
 				goto close_socket;
 			}
 		}
 
 		if (setsockopt(socket_fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes)) < 0) {
-			print_errno("setsockopt");
+			log_errno("setsockopt");
 			goto close_socket;
 		}
 
 		if (bind(socket_fd, it->ai_addr, it->ai_addrlen) < 0) {
-			print_errno("bind");
+			log_errno("bind");
 			goto close_socket;
 		}
 
 		break;
 
 	close_socket:
-		check_errno(close(socket_fd), "close");
+		log_errno_if(close(socket_fd), "close");
 	}
 
 	freeaddrinfo(result);
 
 	if (!it) {
-		print_error("Couldn't bind to port %s\n", port);
+		log_err("Couldn't bind to port %s\n", port);
 		return -1;
 	}
 
 	ret = listen(socket_fd, 4096);
 	if (ret < 0) {
-		print_errno("listen");
+		log_errno("listen");
 		goto fail;
 	}
 
 	return socket_fd;
 
 fail:
-	check_errno(close(socket_fd), "close");
+	log_errno_if(close(socket_fd), "close");
 
 	return ret;
 }
@@ -88,7 +88,7 @@ int net_accept(int fd)
 
 	ret = accept4(fd, NULL, NULL, SOCK_CLOEXEC);
 	if (ret < 0) {
-		print_errno("accept");
+		log_errno("accept");
 		return ret;
 	}
 
@@ -107,32 +107,32 @@ int net_connect(const char *host, const char *port)
 
 	ret = getaddrinfo(host, port, &hints, &result);
 	if (ret) {
-		gai_print_errno(ret);
+		gai_log_errno(ret);
 		return -1;
 	}
 
 	for (it = result; it; it = it->ai_next) {
 		socket_fd = socket(it->ai_family, it->ai_socktype | SOCK_CLOEXEC, it->ai_protocol);
 		if (socket_fd < 0) {
-			print_errno("socket");
+			log_errno("socket");
 			continue;
 		}
 
 		if (connect(socket_fd, it->ai_addr, it->ai_addrlen) < 0) {
-			print_errno("connect");
+			log_errno("connect");
 			goto close_socket;
 		}
 
 		break;
 
 	close_socket:
-		check_errno(close(socket_fd), "close");
+		log_errno_if(close(socket_fd), "close");
 	}
 
 	freeaddrinfo(result);
 
 	if (!it) {
-		print_error("Couldn't connect to host %s, port %s\n", host, port);
+		log_err("Couldn't connect to host %s, port %s\n", host, port);
 		return -1;
 	}
 
@@ -145,7 +145,7 @@ static ssize_t net_send(int fd, const void *buf, size_t len)
 
 	ssize_t ret = send(fd, buf, len, flags);
 	if (ret < 0) {
-		print_errno("send");
+		log_errno("send");
 		return -1;
 	}
 
@@ -176,7 +176,7 @@ int net_recv_all(int fd, void *buf, size_t len)
 			break;
 
 		if (read_now < 0) {
-			print_errno("read");
+			log_errno("read");
 			return -1;
 		}
 
@@ -184,7 +184,7 @@ int net_recv_all(int fd, void *buf, size_t len)
 	}
 
 	if ((size_t)read_total < len) {
-		print_error("Received only %zd bytes out of %zu\n", read_total, len);
+		log_err("Received only %zd bytes out of %zu\n", read_total, len);
 		return -1;
 	}
 
@@ -214,7 +214,7 @@ int net_recv_buf(int fd, void **buf, uint32_t *len)
 
 	ret = net_recv_all(fd, len, sizeof(*len));
 	if (ret < 0) {
-		print_error("Couldn't read buffer length\n");
+		log_err("Couldn't read buffer length\n");
 		goto fail;
 	}
 
@@ -222,13 +222,13 @@ int net_recv_buf(int fd, void **buf, uint32_t *len)
 
 	*buf = malloc(*len);
 	if (!*buf) {
-		print_errno("malloc");
+		log_errno("malloc");
 		goto fail;
 	}
 
 	ret = net_recv_all(fd, *buf, *len);
 	if (ret < 0) {
-		print_error("Couldn't read buffer\n");
+		log_err("Couldn't read buffer\n");
 		goto free_buf;
 	}
 

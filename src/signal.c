@@ -11,7 +11,7 @@ int signal_set(const sigset_t *new, sigset_t *old)
 
 	ret = sigprocmask(SIG_SETMASK, new, old);
 	if (ret < 0) {
-		print_errno("sigprocmask");
+		log_errno("sigprocmask");
 		return ret;
 	}
 

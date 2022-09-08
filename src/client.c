@@ -16,7 +16,7 @@ int client_create(struct client *client, const struct settings *settings)
 
 void client_destroy(const struct client *client)
 {
-	check_errno(close(client->fd), "close");
+	log_errno_if(close(client->fd), "close");
 }
 
 int client_main(const struct client *client, int argc, char *argv[])
@@ -30,7 +30,7 @@ int client_main(const struct client *client, int argc, char *argv[])
 		return ret;
 
 	if (msg_is_error(&response)) {
-		print_error("Server failed to process the request\n");
+		log_err("Server failed to process the request\n");
 		ret = -1;
 		goto free_response;
 	}

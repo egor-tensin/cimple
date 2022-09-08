@@ -11,19 +11,19 @@ int ci_queue_entry_create(struct ci_queue_entry **entry, const char *_url, const
 
 	url = strdup(_url);
 	if (!url) {
-		print_errno("strdup");
+		log_errno("strdup");
 		goto fail;
 	}
 
 	rev = strdup(_rev);
 	if (!rev) {
-		print_errno("strdup");
+		log_errno("strdup");
 		goto free_url;
 	}
 
 	*entry = malloc(sizeof(struct ci_queue_entry));
 	if (!*entry) {
-		print_errno("malloc");
+		log_errno("malloc");
 		goto free_rev;
 	}
 	(*entry)->url = url;

@@ -16,7 +16,7 @@ static int exec_child(const char *args[], const char *envp[])
 
 	int ret = execvpe(args[0], (char *const *)args, (char *const *)envp);
 	if (ret < 0) {
-		print_errno("execv");
+		log_errno("execv");
 		return ret;
 	}
 
@@ -29,7 +29,7 @@ static int wait_for_child(pid_t pid, int *ec)
 
 	pid_t ret = waitpid(pid, &status, 0);
 	if (ret < 0) {
-		print_errno("waitpid");
+		log_errno("waitpid");
 		return ret;
 	}
 
@@ -45,7 +45,7 @@ int proc_spawn(const char *args[], const char *envp[], int *ec)
 {
 	pid_t child_pid = fork();
 	if (child_pid < 0) {
-		print_errno("fork");
+		log_errno("fork");
 		return child_pid;
 	}
 
@@ -59,17 +59,17 @@ static int redirect_and_exec_child(int pipe_fds[2], const char *args[], const ch
 {
 	int ret = 0;
 
-	check_errno(close(pipe_fds[0]), "close");
+	log_errno_if(close(pipe_fds[0]), "close");
 
 	ret = dup2(pipe_fds[1], STDOUT_FILENO);
 	if (ret < 0) {
-		print_errno("dup2");
+		log_errno("dup2");
 		return ret;
 	}
 
 	ret = dup2(pipe_fds[1], STDERR_FILENO);
 	if (ret < 0) {
-		print_errno("dup2");
+		log_errno("dup2");
 		return ret;
 	}
 
@@ -83,20 +83,20 @@ int proc_capture(const char *args[], const char *envp[], struct proc_output *res
 
 	ret = pipe2(pipe_fds, O_CLOEXEC);
 	if (ret < 0) {
-		print_errno("pipe2");
+		log_errno("pipe2");
 		return -1;
 	}
 
 	pid_t child_pid = fork();
 	if (child_pid < 0) {
-		print_errno("fork");
+		log_errno("fork");
 		goto close_pipe;
 	}
 
 	if (!child_pid)
 		exit(redirect_and_exec_child(pipe_fds, args, envp));
 
-	check_errno(close(pipe_fds[1]), "close");
+	log_errno_if(close(pipe_fds[1]), "close");
 
 	ret = file_read(pipe_fds[0], &result->output, &result->output_len);
 	if (ret < 0)
@@ -112,7 +112,7 @@ free_output:
 	free(result->output);
 
 close_pipe:
-	check_errno(close(pipe_fds[0]), "close");
+	log_errno_if(close(pipe_fds[0]), "close");
 	/* No errno checking here, we might've already closed the write end. */
 	close(pipe_fds[1]);
 

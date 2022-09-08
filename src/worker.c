@@ -36,9 +36,9 @@ git_shutdown:
 
 void worker_destroy(struct worker *worker)
 {
-	print_log("Shutting down\n");
+	log("Shutting down\n");
 
-	check_errno(close(worker->fd), "close");
+	log_errno_if(close(worker->fd), "close");
 	libgit_shutdown();
 }
 
@@ -68,15 +68,15 @@ static int msg_ci_run_do(const char *url, const char *rev, struct proc_output *r
 
 	ret = ci_run_git_repo(url, rev, result);
 	if (ret < 0) {
-		print_error("Run failed with an error\n");
+		log_err("Run failed with an error\n");
 		return ret;
 	}
 
-	print_log("Process exit code: %d\n", result->ec);
-	print_log("Process output:\n%s", result->output);
+	log("Process exit code: %d\n", result->ec);
+	log("Process output:\n%s", result->output);
 	if (!result->output || !result->output_len ||
 	    result->output[result->output_len - 1] != '\n')
-		print_log("\n");
+		log("\n");
 
 	return 0;
 }
@@ -107,7 +107,7 @@ static int msg_ci_run_handler(struct worker *worker, const struct msg *request)
 static int msg_ci_run_parser(const struct msg *msg)
 {
 	if (msg->argc != 3) {
-		print_error("Invalid number of arguments for a message: %d\n", msg->argc);
+		log_err("Invalid number of arguments for a message: %d\n", msg->argc);
 		return 0;
 	}
 
@@ -143,7 +143,7 @@ static int worker_msg_handler(struct worker *worker, const struct msg *request)
 	}
 
 unknown_request:
-	print_error("Received an unknown message\n");
+	log_err("Received an unknown message\n");
 	msg_dump(request);
 	struct msg response;
 	msg_error(&response);
@@ -161,7 +161,7 @@ int worker_main(struct worker *worker, UNUSED int argc, UNUSED char *argv[])
 	while (!global_stop_flag) {
 		struct msg request;
 
-		print_log("Waiting for a new command\n");
+		log("Waiting for a new command\n");
 
 		ret = msg_recv(worker->fd, &request);
 		if (ret < 0)
