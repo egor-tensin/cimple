@@ -13,6 +13,8 @@ services:
     <<: *common
     ports:
       - 5556
+    volumes:
+      - db:/var/lib/cimple
   worker1:
     <<: *common
     command: ["cimple-worker"]
@@ -27,3 +29,6 @@ services:
     depends_on: [server]
     entrypoint: ["cimple-client"]
     restart: 'no'
+
+volumes:
+  db:

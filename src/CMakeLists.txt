@@ -23,8 +23,10 @@ add_my_executable(server server_main.c server.c
     msg.c
     net.c
     signal.c
+    storage.c
+    storage_sqlite.c
     tcp_server.c)
-target_link_libraries(server PRIVATE pthread)
+target_link_libraries(server PRIVATE pthread sqlite3)
 
 add_my_executable(client client_main.c client.c
     msg.c

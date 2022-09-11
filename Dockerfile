@@ -4,7 +4,7 @@ ARG install_dir="/app/install"
 
 FROM base AS builder
 
-RUN apk add --no-cache bash bsd-compat-headers build-base clang cmake libgit2-dev
+RUN apk add --no-cache bash bsd-compat-headers build-base clang cmake libgit2-dev sqlite-dev
 
 ARG C_COMPILER=clang
 ARG BUILD_TYPE=Release
@@ -26,7 +26,7 @@ FROM base
 
 LABEL maintainer="Egor Tensin <Egor.Tensin@gmail.com>"
 
-RUN apk add --no-cache tini libgit2
+RUN apk add --no-cache tini libgit2 sqlite-dev
 
 ARG install_dir
 COPY --from=builder ["$install_dir", "$install_dir"]
@@ -35,4 +35,4 @@ ENV PATH="$install_dir/bin:${PATH}"
 WORKDIR "$install_dir/bin"
 
 ENTRYPOINT ["/sbin/tini", "--"]
-CMD ["cimple-server"]
+CMD ["cimple-server", "--sqlite", "/var/lib/cimple/cimple.sqlite"]

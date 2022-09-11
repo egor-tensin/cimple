@@ -5,6 +5,8 @@
 #include "log.h"
 #include "msg.h"
 #include "signal.h"
+#include "storage.h"
+#include "storage_sqlite.h"
 #include "tcp_server.h"
 
 #include <pthread.h>
@@ -13,6 +15,7 @@
 
 int server_create(struct server *server, const struct settings *settings)
 {
+	struct storage_settings storage_settings;
 	int ret = 0;
 
 	ret = pthread_mutex_init(&server->server_mtx, NULL);
@@ -29,13 +32,25 @@ int server_create(struct server *server, const struct settings *settings)
 
 	server->stopping = 0;
 
-	ret = tcp_server_create(&server->tcp_server, settings->port);
+	ret = storage_settings_create_sqlite(&storage_settings, settings->sqlite_path);
 	if (ret < 0)
 		goto destroy_cv;
+
+	ret = storage_create(&server->storage, &storage_settings);
+	storage_settings_destroy(&storage_settings);
+	if (ret < 0)
+		goto destroy_cv;
+
+	ret = tcp_server_create(&server->tcp_server, settings->port);
+	if (ret < 0)
+		goto destroy_storage;
 
 	ci_queue_create(&server->ci_queue);
 
 	return ret;
+
+destroy_storage:
+	storage_destroy(&server->storage);
 
 destroy_cv:
 	pthread_errno_if(pthread_cond_destroy(&server->server_cv), "pthread_cond_destroy");
@@ -53,6 +68,7 @@ void server_destroy(struct server *server)
 
 	ci_queue_destroy(&server->ci_queue);
 	tcp_server_destroy(&server->tcp_server);
+	storage_destroy(&server->storage);
 	pthread_errno_if(pthread_cond_destroy(&server->server_cv), "pthread_cond_destroy");
 	pthread_errno_if(pthread_mutex_destroy(&server->server_mtx), "pthread_mutex_destroy");
 }

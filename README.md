@@ -7,7 +7,7 @@ Development
 -----------
 
 Build using CMake.
-Depends on libgit2.
+Depends on libgit2 and SQLite.
 
 There's a Makefile with useful shortcuts to build the project in the .build/
 directory:

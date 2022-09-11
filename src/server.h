@@ -2,12 +2,15 @@
 #define __SERVER_H__
 
 #include "ci_queue.h"
+#include "storage.h"
 #include "tcp_server.h"
 
 #include <pthread.h>
 
 struct settings {
 	const char *port;
+
+	const char *sqlite_path;
 };
 
 struct server {
@@ -15,6 +18,8 @@ struct server {
 	pthread_cond_t server_cv;
 
 	int stopping;
+
+	struct storage storage;
 
 	struct tcp_server tcp_server;
 
