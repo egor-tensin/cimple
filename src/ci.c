@@ -1,3 +1,10 @@
+/*
+ * Copyright (c) 2022 Egor Tensin <Egor.Tensin@gmail.com>
+ * This file is part of the "cimple" project.
+ * For details, see https://github.com/egor-tensin/cimple.
+ * Distributed under the MIT License.
+ */
+
 #include "ci.h"
 #include "file.h"
 #include "git.h"
