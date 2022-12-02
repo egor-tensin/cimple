@@ -20,6 +20,14 @@ Set up the git pre-commit hook by running `./scripts/setup-hook`.
 This depends on `clang-format` and won't allow you to commit code that doesn't
 pass the formatting check.
 
+Rationale
+---------
+
+The goal it to make a CI system that doesn't suck.
+See [rationale.md] for details.
+
+[rationale.md]: doc/rationale.md
+
 License
 -------
 
