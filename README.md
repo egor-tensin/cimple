@@ -3,6 +3,8 @@ cimple
 
 My little CI system (hopefully).
 
+_This is work in progress; it doesn't quite work the way I want it to yet._
+
 Development
 -----------
 
