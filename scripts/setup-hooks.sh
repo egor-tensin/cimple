@@ -11,6 +11,6 @@ cd -- "$script_dir"
 gitdir="$( git rev-parse --git-dir )"
 hooks_dir="$gitdir/hooks"
 
-symlink_dest="$( realpath "--relative-to=$hooks_dir" -- "$script_dir/pre-commit" )"
+symlink_dest="$( realpath "--relative-to=$hooks_dir" -- "$script_dir/pre-commit.sh" )"
 
-ln -fs -- "$symlink_dest" "$hooks_dir/"
+ln -fs -- "$symlink_dest" "$hooks_dir/pre-commit"

@@ -18,7 +18,7 @@ directory:
 
 ### Code style
 
-Set up the git pre-commit hook by running `./scripts/setup-hook`.
+Set up the git pre-commit hook by running `./scripts/setup-hooks.sh`.
 This depends on `clang-format` and won't allow you to commit code that doesn't
 pass the formatting check.
 
