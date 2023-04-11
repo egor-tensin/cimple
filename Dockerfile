@@ -4,7 +4,7 @@ ARG install_dir="/app/install"
 
 FROM base AS builder
 
-RUN apk add -q --no-cache bash bsd-compat-headers build-base clang cmake libgit2-dev sqlite-dev
+RUN apk add -q --no-cache bash bsd-compat-headers build-base clang cmake libgit2-dev python3 sqlite-dev
 
 ARG C_COMPILER=clang
 ARG BUILD_TYPE=Release

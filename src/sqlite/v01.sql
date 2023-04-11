@@ -1,0 +1,13 @@
+CREATE TABLE cimple_repositories (
+	id INTEGER PRIMARY KEY,
+	url TEXT NOT NULL UNIQUE
+) STRICT;
+
+CREATE TABLE cimple_runs (
+	id INTEGER PRIMARY KEY,
+	result INTEGER NOT NULL,
+	output BLOB NOT NULL,
+	repo_id INTEGER NOT NULL,
+	FOREIGN KEY (repo_id) REFERENCES cimple_repositories(id)
+		ON DELETE CASCADE ON UPDATE CASCADE
+) STRICT;
