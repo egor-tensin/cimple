@@ -23,11 +23,11 @@ find_package(Python3 REQUIRED COMPONENTS Interpreter)
 function(generate_sql_header engine)
     file(GLOB sql_files "${CMAKE_CURRENT_SOURCE_DIR}/${engine}/*.sql")
     add_custom_command(
-        OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/${engine}_sql.h"
+        OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/sql/${engine}_sql.h"
         COMMAND Python3::Interpreter
             "${CMAKE_CURRENT_SOURCE_DIR}/generate-sql-header.py"
             "${CMAKE_CURRENT_SOURCE_DIR}/${engine}/"
-            -o "${CMAKE_CURRENT_BINARY_DIR}/${engine}_sql.h"
+            -o "${CMAKE_CURRENT_BINARY_DIR}/sql/${engine}_sql.h"
         DEPENDS ${sql_files})
 endfunction()
 
@@ -38,8 +38,8 @@ add_my_executable(server server_main.c server.c
     msg.c
     net.c
     signal.c
+    sql/sqlite_sql.h
     sqlite.c
-    sqlite_sql.h
     storage.c
     storage_sqlite.c
     tcp_server.c)

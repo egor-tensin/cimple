@@ -75,6 +75,8 @@ def open_output(path):
     if path is None:
         yield sys.stdout
     else:
+        path = os.path.abspath(path)
+        os.makedirs(os.path.dirname(path))
         with open(path, 'w') as fd:
             yield fd
 

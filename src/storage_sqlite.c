@@ -7,8 +7,8 @@
 
 #include "storage_sqlite.h"
 #include "log.h"
+#include "sql/sqlite_sql.h"
 #include "sqlite.h"
-#include "sqlite_sql.h"
 #include "storage.h"
 
 #include <sqlite3.h>
