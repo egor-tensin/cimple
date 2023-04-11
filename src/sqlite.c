@@ -228,7 +228,7 @@ free:
 	return ret;
 }
 
-int sqlite_get_user_version(sqlite3 *db, unsigned int *version)
+int sqlite_get_user_version(sqlite3 *db, unsigned int *output)
 {
 	sqlite3_stmt *stmt;
 	int result, ret = 0;
@@ -243,9 +243,10 @@ int sqlite_get_user_version(sqlite3 *db, unsigned int *version)
 	result = sqlite_column_int(stmt, 0);
 	if (result < 0) {
 		log_err("Invalid database version: %d\n", result);
-		return -1;
+		ret = -1;
+		goto finalize;
 	}
-	*version = (unsigned int)result;
+	*output = (unsigned int)result;
 
 	goto finalize;
 
