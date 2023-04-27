@@ -209,13 +209,13 @@ static int worker_thread(struct server *server, int fd)
 	return ret;
 }
 
-static int msg_worker_new_handler(struct server *server, int client_fd,
+static int msg_new_worker_handler(struct server *server, int client_fd,
                                   UNUSED const struct msg *request)
 {
 	return worker_thread(server, client_fd);
 }
 
-static int msg_worker_new_parser(UNUSED const struct msg *msg)
+static int msg_new_worker_parser(UNUSED const struct msg *msg)
 {
 	return 1;
 }
@@ -290,7 +290,7 @@ struct msg_descr {
 };
 
 struct msg_descr messages[] = {
-    {CMD_WORKER_NEW, msg_worker_new_parser, msg_worker_new_handler},
+    {CMD_NEW_WORKER, msg_new_worker_parser, msg_new_worker_handler},
     {CMD_CI_RUN, msg_ci_run_parser, msg_ci_run_handler},
 };
 

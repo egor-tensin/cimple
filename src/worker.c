@@ -49,9 +49,9 @@ void worker_destroy(struct worker *worker)
 	libgit_shutdown();
 }
 
-static int msg_send_worker_new(const struct worker *worker)
+static int msg_send_new_worker(const struct worker *worker)
 {
-	static char *argv[] = {CMD_WORKER_NEW, NULL};
+	static char *argv[] = {CMD_NEW_WORKER, NULL};
 	struct msg msg;
 	int ret = 0;
 
@@ -161,7 +161,7 @@ int worker_main(struct worker *worker, UNUSED int argc, UNUSED char *argv[])
 {
 	int ret = 0;
 
-	ret = msg_send_worker_new(worker);
+	ret = msg_send_new_worker(worker);
 	if (ret < 0)
 		return ret;
 
