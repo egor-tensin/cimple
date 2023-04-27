@@ -102,7 +102,7 @@ static int worker_ci_run(int fd, const struct ci_queue_entry *ci_run)
 		return ret;
 
 	if (response.argc < 0) {
-		log_err("Failed ot schedule a CI run: worker is busy?\n");
+		log_err("Failed to schedule a CI run: worker is busy?\n");
 		ret = -1;
 		goto free_response;
 	}
