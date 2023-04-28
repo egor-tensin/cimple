@@ -25,7 +25,7 @@ services:
     depends_on: [server]
   client:
     <<: *common
-    command: []
+    command: ["--version"]
     depends_on: [server]
     entrypoint: ["cimple-client"]
     restart: 'no'
