@@ -74,7 +74,7 @@ void server_destroy(struct server *server)
 	log("Shutting down\n");
 
 	ci_queue_destroy(&server->ci_queue);
-	tcp_server_destroy(&server->tcp_server);
+	tcp_server_destroy(server->tcp_server);
 	storage_destroy(&server->storage);
 	pthread_errno_if(pthread_cond_destroy(&server->server_cv), "pthread_cond_destroy");
 	pthread_errno_if(pthread_mutex_destroy(&server->server_mtx), "pthread_mutex_destroy");
@@ -363,7 +363,7 @@ int server_main(struct server *server)
 	while (!global_stop_flag) {
 		log("Waiting for new connections\n");
 
-		ret = tcp_server_accept(&server->tcp_server, server_conn_handler, server);
+		ret = tcp_server_accept(server->tcp_server, server_conn_handler, server);
 		if (ret < 0)
 			break;
 	}

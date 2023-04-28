@@ -28,7 +28,7 @@ struct server {
 
 	struct storage storage;
 
-	struct tcp_server tcp_server;
+	struct tcp_server *tcp_server;
 
 	struct ci_queue ci_queue;
 };

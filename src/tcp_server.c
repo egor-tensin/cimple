@@ -15,18 +15,39 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-int tcp_server_create(struct tcp_server *server, const char *port)
-{
-	server->fd = net_bind(port);
-	if (server->fd < 0)
-		return server->fd;
+struct tcp_server {
+	int fd;
+};
 
-	return 0;
+int tcp_server_create(struct tcp_server **_server, const char *port)
+{
+	struct tcp_server *server;
+	int ret = 0;
+
+	*_server = malloc(sizeof(struct tcp_server));
+	if (!*_server) {
+		log_errno("malloc");
+		return -1;
+	}
+	server = *_server;
+
+	ret = net_bind(port);
+	if (ret < 0)
+		goto free;
+	server->fd = ret;
+
+	return ret;
+
+free:
+	free(server);
+
+	return ret;
 }
 
-void tcp_server_destroy(const struct tcp_server *server)
+void tcp_server_destroy(struct tcp_server *server)
 {
 	log_errno_if(close(server->fd), "close");
+	free(server);
 }
 
 struct child_context {
