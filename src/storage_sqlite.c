@@ -17,21 +17,40 @@
 #include <stdlib.h>
 #include <string.h>
 
+struct storage_settings_sqlite {
+	char *path;
+};
+
 int storage_settings_create_sqlite(struct storage_settings *settings, const char *path)
 {
-	settings->sqlite.path = strdup(path);
-	if (!settings->sqlite.path) {
-		log_errno("strdup");
+	struct storage_settings_sqlite *sqlite;
+
+	sqlite = malloc(sizeof(struct storage_settings_sqlite));
+	if (!sqlite) {
+		log_errno("malloc");
 		return -1;
 	}
 
+	sqlite->path = strdup(path);
+	if (!sqlite->path) {
+		log_errno("strdup");
+		goto free;
+	}
+
 	settings->type = STORAGE_TYPE_SQLITE;
+	settings->sqlite = sqlite;
 	return 0;
+
+free:
+	free(sqlite);
+
+	return -1;
 }
 
 void storage_settings_destroy_sqlite(const struct storage_settings *settings)
 {
-	free(settings->sqlite.path);
+	free(settings->sqlite->path);
+	free(settings->sqlite);
 }
 
 struct storage_sqlite {
@@ -131,7 +150,7 @@ int storage_create_sqlite(struct storage *storage, const struct storage_settings
 {
 	int ret = 0;
 
-	log("Using SQLite database at %s\n", settings->sqlite.path);
+	log("Using SQLite database at %s\n", settings->sqlite->path);
 
 	storage->sqlite = malloc(sizeof(storage->sqlite));
 	if (!storage->sqlite) {
@@ -142,7 +161,7 @@ int storage_create_sqlite(struct storage *storage, const struct storage_settings
 	ret = sqlite_init();
 	if (ret < 0)
 		goto free;
-	ret = sqlite_open_rw(settings->sqlite.path, &storage->sqlite->db);
+	ret = sqlite_open_rw(settings->sqlite->path, &storage->sqlite->db);
 	if (ret < 0)
 		goto destroy;
 	ret = storage_prepare_sqlite(storage->sqlite);

@@ -9,10 +9,7 @@
 #define __STORAGE_SQLITE_H__
 
 struct storage_settings;
-
-struct storage_settings_sqlite {
-	char *path;
-};
+struct storage_settings_sqlite;
 
 struct storage;
 struct storage_sqlite;
