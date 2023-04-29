@@ -13,12 +13,10 @@ struct settings {
 	const char *port;
 };
 
-struct client {
-	int fd;
-};
+struct client;
 
-int client_create(struct client *, const struct settings *);
-void client_destroy(const struct client *);
+int client_create(struct client **, const struct settings *);
+void client_destroy(struct client *);
 
 int client_main(const struct client *, int argc, char *argv[]);
 

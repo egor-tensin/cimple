@@ -12,18 +12,39 @@
 
 #include <unistd.h>
 
-int client_create(struct client *client, const struct settings *settings)
-{
-	client->fd = net_connect(settings->host, settings->port);
-	if (client->fd < 0)
-		return client->fd;
+struct client {
+	int fd;
+};
 
-	return 0;
+int client_create(struct client **_client, const struct settings *settings)
+{
+	struct client *client;
+	int ret = 0;
+
+	*_client = malloc(sizeof(struct client));
+	if (!*_client) {
+		log_errno("malloc");
+		return -1;
+	}
+	client = *_client;
+
+	ret = net_connect(settings->host, settings->port);
+	if (ret < 0)
+		goto free;
+	client->fd = ret;
+
+	return ret;
+
+free:
+	free(client);
+
+	return ret;
 }
 
-void client_destroy(const struct client *client)
+void client_destroy(struct client *client)
 {
 	log_errno_if(close(client->fd), "close");
+	free(client);
 }
 
 int client_main(const struct client *client, int argc, char *argv[])

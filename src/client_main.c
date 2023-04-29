@@ -71,7 +71,7 @@ static int parse_settings(struct settings *settings, int argc, char *argv[])
 int main(int argc, char *argv[])
 {
 	struct settings settings;
-	struct client client;
+	struct client *client;
 	int ret = 0;
 
 	ret = parse_settings(&settings, argc, argv);
@@ -82,12 +82,12 @@ int main(int argc, char *argv[])
 	if (ret < 0)
 		return ret;
 
-	ret = client_main(&client, argc - optind, argv + optind);
+	ret = client_main(client, argc - optind, argv + optind);
 	if (ret < 0)
 		goto destroy_client;
 
 destroy_client:
-	client_destroy(&client);
+	client_destroy(client);
 
 	return ret;
 }
