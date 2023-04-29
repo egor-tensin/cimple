@@ -6,29 +6,68 @@
  */
 
 #include "cmd_line.h"
+#include "file.h"
+#include "log.h"
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
-void exit_with_usage(int ec, const char *argv0)
+static char *get_current_binary_path()
 {
-	FILE *dest = stdout;
+	return my_readlink("/proc/self/exe");
+}
+
+static char *get_current_binary_name()
+{
+	char *path, *name, *result;
+
+	path = get_current_binary_path();
+	if (!path)
+		return NULL;
+
+	name = basename(path);
+
+	result = strdup(name);
+	if (!result) {
+		log_errno("strdup");
+		goto free_path;
+	}
+
+free_path:
+	free(path);
+
+	return result;
+}
+
+void exit_with_usage(int ec)
+{
+	char *binary;
+	FILE *dest;
+
+	dest = stdout;
 	if (ec)
 		dest = stderr;
 
-	fprintf(dest, "usage: %s %s\n", argv0, get_usage_string());
+	binary = get_current_binary_name();
+
+	fprintf(dest, "usage: %s %s\n", binary ?: "prog", get_usage_string());
+	free(binary);
 	exit(ec);
 }
 
-void exit_with_usage_err(const char *argv0, const char *msg)
+void exit_with_usage_err(const char *msg)
 {
 	if (msg)
 		fprintf(stderr, "usage error: %s\n", msg);
-	exit_with_usage(1, argv0);
+	exit_with_usage(1);
 }
 
 void exit_with_version()
 {
-	printf("%s\n", VERSION);
+	char *binary = get_current_binary_name();
+
+	printf("%s %s\n", binary ?: "prog", VERSION);
+	free(binary);
 	exit(0);
 }

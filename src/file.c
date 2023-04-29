@@ -63,6 +63,40 @@ free_old:
 	return ret;
 }
 
+char *my_readlink(const char *path)
+{
+	size_t current_size = 256;
+	char *buf = NULL;
+
+	while (1) {
+		buf = realloc(buf, current_size);
+		if (!buf) {
+			log_errno("realloc");
+			goto free;
+		}
+
+		ssize_t res = readlink(path, buf, current_size);
+		if (res < 0) {
+			log_errno("readlink");
+			goto free;
+		}
+
+		if ((size_t)res == current_size) {
+			current_size *= 2;
+			continue;
+		}
+
+		break;
+	}
+
+	return buf;
+
+free:
+	free(buf);
+
+	return NULL;
+}
+
 int file_exists(const char *path)
 {
 	struct stat stat;

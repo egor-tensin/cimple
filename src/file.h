@@ -13,9 +13,9 @@
 int rm_rf(const char *dir);
 
 int my_chdir(const char *dir, char **old);
+char *my_readlink(const char *path);
 
 int file_exists(const char *path);
-
 int file_read(int fd, char **output, size_t *len);
 
 #endif

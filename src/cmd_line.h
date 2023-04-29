@@ -10,8 +10,8 @@
 
 const char *get_usage_string();
 
-void exit_with_usage(int ec, const char *argv0);
-void exit_with_usage_err(const char *argv0, const char *msg);
+void exit_with_usage(int ec);
+void exit_with_usage_err(const char *msg);
 void exit_with_version();
 
 #endif

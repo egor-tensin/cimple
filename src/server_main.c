@@ -39,7 +39,7 @@ static int parse_settings(struct settings *settings, int argc, char *argv[])
 	while ((opt = getopt_long(argc, argv, "hVp:s:", long_options, &longind)) != -1) {
 		switch (opt) {
 		case 'h':
-			exit_with_usage(0, argv[0]);
+			exit_with_usage(0);
 			break;
 		case 'V':
 			exit_with_version();
@@ -51,13 +51,13 @@ static int parse_settings(struct settings *settings, int argc, char *argv[])
 			settings->sqlite_path = optarg;
 			break;
 		default:
-			exit_with_usage(1, argv[0]);
+			exit_with_usage(1);
 			break;
 		}
 	}
 
 	if (!settings->sqlite_path) {
-		exit_with_usage_err(argv[0], "must specify the path to a SQLite database");
+		exit_with_usage_err("must specify the path to a SQLite database");
 		return -1;
 	}
 

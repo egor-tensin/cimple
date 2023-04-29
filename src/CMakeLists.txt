@@ -36,6 +36,7 @@ generate_sql_header(sqlite)
 add_my_executable(server server_main.c server.c
     ci_queue.c
     cmd_line.c
+    file.c
     msg.c
     net.c
     signal.c
@@ -49,6 +50,7 @@ target_include_directories(server PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
 
 add_my_executable(client client_main.c client.c
     cmd_line.c
+    file.c
     msg.c
     net.c)
 
