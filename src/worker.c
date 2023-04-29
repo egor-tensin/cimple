@@ -71,7 +71,7 @@ void worker_destroy(struct worker *worker)
 
 static int msg_send_new_worker(const struct worker *worker)
 {
-	static char *argv[] = {CMD_NEW_WORKER, NULL};
+	static const char *argv[] = {CMD_NEW_WORKER, NULL};
 	struct msg msg;
 	int ret = 0;
 

@@ -12,14 +12,28 @@
 #include <string.h>
 #include <sys/queue.h>
 
-int ci_queue_entry_create(struct ci_queue_entry **entry, const char *_url, const char *_rev)
+struct ci_queue_entry {
+	char *url;
+	char *rev;
+	STAILQ_ENTRY(ci_queue_entry) entries;
+};
+
+int ci_queue_entry_create(struct ci_queue_entry **_entry, const char *_url, const char *_rev)
 {
+	struct ci_queue_entry *entry;
 	char *url, *rev;
+
+	*_entry = malloc(sizeof(struct ci_queue_entry));
+	if (!*_entry) {
+		log_errno("malloc");
+		goto fail;
+	}
+	entry = *_entry;
 
 	url = strdup(_url);
 	if (!url) {
 		log_errno("strdup");
-		goto fail;
+		goto free_entry;
 	}
 
 	rev = strdup(_rev);
@@ -28,21 +42,16 @@ int ci_queue_entry_create(struct ci_queue_entry **entry, const char *_url, const
 		goto free_url;
 	}
 
-	*entry = malloc(sizeof(struct ci_queue_entry));
-	if (!*entry) {
-		log_errno("malloc");
-		goto free_rev;
-	}
-	(*entry)->url = url;
-	(*entry)->rev = rev;
+	entry->url = url;
+	entry->rev = rev;
 
 	return 0;
 
-free_rev:
-	free(rev);
-
 free_url:
 	free(url);
+
+free_entry:
+	free(entry);
 
 fail:
 	return -1;
@@ -53,6 +62,16 @@ void ci_queue_entry_destroy(struct ci_queue_entry *entry)
 	free(entry->rev);
 	free(entry->url);
 	free(entry);
+}
+
+const char *ci_queue_entry_get_url(const struct ci_queue_entry *entry)
+{
+	return entry->rev;
+}
+
+const char *ci_queue_entry_get_rev(const struct ci_queue_entry *entry)
+{
+	return entry->rev;
 }
 
 void ci_queue_create(struct ci_queue *queue)

@@ -15,13 +15,13 @@
 
 int msg_success(struct msg *msg)
 {
-	char *argv[] = {"success", NULL};
+	const char *argv[] = {"success", NULL};
 	return msg_from_argv(msg, argv);
 }
 
 int msg_error(struct msg *msg)
 {
-	char *argv[] = {"error", NULL};
+	const char *argv[] = {"error", NULL};
 	return msg_from_argv(msg, argv);
 }
 
@@ -35,9 +35,9 @@ int msg_is_error(const struct msg *msg)
 	return msg->argc == 1 && !strcmp(msg->argv[0], "error");
 }
 
-static int msg_copy_argv(struct msg *msg, char **argv)
+static int msg_copy_argv(struct msg *msg, const char **argv)
 {
-	msg->argv = calloc(msg->argc, sizeof(char *));
+	msg->argv = calloc(msg->argc, sizeof(const char *));
 
 	if (!msg->argv) {
 		log_errno("calloc");
@@ -72,7 +72,7 @@ struct msg *msg_copy(const struct msg *src)
 	}
 	dest->argc = src->argc;
 
-	ret = msg_copy_argv(dest, src->argv);
+	ret = msg_copy_argv(dest, (const char **)src->argv);
 	if (ret < 0)
 		goto free;
 
@@ -91,11 +91,11 @@ void msg_free(const struct msg *msg)
 	free(msg->argv);
 }
 
-int msg_from_argv(struct msg *msg, char **argv)
+int msg_from_argv(struct msg *msg, const char **argv)
 {
 	int argc = 0;
 
-	for (char **s = argv; *s; ++s)
+	for (const char **s = argv; *s; ++s)
 		++argc;
 
 	msg->argc = argc;

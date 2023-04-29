@@ -114,7 +114,8 @@ static int worker_ci_run(int fd, const struct ci_queue_entry *ci_run)
 	struct msg request, response;
 	int ret = 0;
 
-	char *argv[] = {CMD_CI_RUN, ci_run->url, ci_run->rev, NULL};
+	const char *argv[] = {CMD_CI_RUN, ci_queue_entry_get_url(ci_run),
+	                      ci_queue_entry_get_rev(ci_run), NULL};
 
 	ret = msg_from_argv(&request, argv);
 	if (ret < 0)
@@ -163,7 +164,7 @@ static int worker_dequeue_run(struct server *server, struct ci_queue_entry **ci_
 	}
 
 	*ci_run = ci_queue_pop(&server->ci_queue);
-	log("Removed a CI run for repository %s from the queue\n", (*ci_run)->url);
+	log("Removed a CI run for repository %s from the queue\n", ci_queue_entry_get_url(*ci_run));
 	goto unlock;
 
 unlock:
@@ -183,7 +184,7 @@ static int worker_requeue_run(struct server *server, struct ci_queue_entry *ci_r
 	}
 
 	ci_queue_push_head(&server->ci_queue, ci_run);
-	log("Requeued a CI run for repository %s\n", ci_run->url);
+	log("Requeued a CI run for repository %s\n", ci_queue_entry_get_url(ci_run));
 
 	ret = pthread_cond_signal(&server->server_cv);
 	if (ret) {

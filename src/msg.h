@@ -22,7 +22,7 @@ int msg_is_error(const struct msg *);
 struct msg *msg_copy(const struct msg *);
 void msg_free(const struct msg *);
 
-int msg_from_argv(struct msg *, char **argv);
+int msg_from_argv(struct msg *, const char **argv);
 
 int msg_recv(int fd, struct msg *);
 int msg_send(int fd, const struct msg *);

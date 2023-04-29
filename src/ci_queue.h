@@ -10,14 +10,13 @@
 
 #include <sys/queue.h>
 
-struct ci_queue_entry {
-	char *url;
-	char *rev;
-	STAILQ_ENTRY(ci_queue_entry) entries;
-};
+struct ci_queue_entry;
 
 int ci_queue_entry_create(struct ci_queue_entry **, const char *url, const char *rev);
 void ci_queue_entry_destroy(struct ci_queue_entry *);
+
+const char *ci_queue_entry_get_url(const struct ci_queue_entry *);
+const char *ci_queue_entry_get_rev(const struct ci_queue_entry *);
 
 STAILQ_HEAD(ci_queue, ci_queue_entry);
 
