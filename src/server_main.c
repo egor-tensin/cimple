@@ -13,7 +13,7 @@
 
 static struct settings default_settings()
 {
-	struct settings settings = {DEFAULT_PORT, NULL};
+	struct settings settings = {DEFAULT_PORT, DEFAULT_SQLITE_PATH};
 	return settings;
 }
 
@@ -54,11 +54,6 @@ static int parse_settings(struct settings *settings, int argc, char *argv[])
 			exit_with_usage(1);
 			break;
 		}
-	}
-
-	if (!settings->sqlite_path) {
-		exit_with_usage_err("must specify the path to a SQLite database");
-		return -1;
 	}
 
 	return 0;

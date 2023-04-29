@@ -35,4 +35,4 @@ ENV PATH="$install_dir/bin:${PATH}"
 WORKDIR "$install_dir/bin"
 
 ENTRYPOINT ["/sbin/tini", "--"]
-CMD ["cimple-server", "--sqlite", "/var/lib/cimple/cimple.sqlite"]
+CMD ["cimple-server"]
