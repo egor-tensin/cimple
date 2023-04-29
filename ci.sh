@@ -24,8 +24,8 @@ test_build_gcc() {
 }
 
 main() {
-    test_build_clang
     test_build_gcc
+    test_build_clang
 }
 
 main
