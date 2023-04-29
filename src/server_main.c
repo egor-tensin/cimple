@@ -5,12 +5,11 @@
  * Distributed under the MIT License.
  */
 
+#include "cmd_line.h"
 #include "const.h"
 #include "server.h"
 
 #include <getopt.h>
-#include <stdio.h>
-#include <stdlib.h>
 
 static struct settings default_settings()
 {
@@ -18,28 +17,9 @@ static struct settings default_settings()
 	return settings;
 }
 
-static void exit_with_usage(int ec, const char *argv0)
+const char *get_usage_string()
 {
-	FILE *dest = stdout;
-	if (ec)
-		dest = stderr;
-
-	fprintf(dest, "usage: %s [-h|--help] [-V|--version] [-p|--port PORT] [-s|--sqlite PATH]\n",
-	        argv0);
-	exit(ec);
-}
-
-static void exit_with_usage_err(const char *argv0, const char *msg)
-{
-	if (msg)
-		fprintf(stderr, "usage error: %s\n", msg);
-	exit_with_usage(1, argv0);
-}
-
-static void exit_with_version()
-{
-	printf("%s\n", VERSION);
-	exit(0);
+	return "[-h|--help] [-V|--version] [-p|--port PORT] [-s|--sqlite PATH]";
 }
 
 static int parse_settings(struct settings *settings, int argc, char *argv[])

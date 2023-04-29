@@ -5,13 +5,12 @@
  * Distributed under the MIT License.
  */
 
+#include "cmd_line.h"
 #include "const.h"
 #include "signal.h"
 #include "worker.h"
 
 #include <getopt.h>
-#include <stdio.h>
-#include <stdlib.h>
 
 static struct settings default_settings()
 {
@@ -19,14 +18,9 @@ static struct settings default_settings()
 	return settings;
 }
 
-static void print_usage(const char *argv0)
+const char *get_usage_string()
 {
-	printf("usage: %s [-h|--help] [-V|--version] [-H|--host HOST] [-p|--port PORT]\n", argv0);
-}
-
-static void print_version()
-{
-	printf("%s\n", VERSION);
+	return "[-h|--help] [-V|--version] [-H|--host HOST] [-p|--port PORT]";
 }
 
 static int parse_settings(struct settings *settings, int argc, char *argv[])
@@ -46,12 +40,10 @@ static int parse_settings(struct settings *settings, int argc, char *argv[])
 	while ((opt = getopt_long(argc, argv, "hVH:p:", long_options, &longind)) != -1) {
 		switch (opt) {
 		case 'h':
-			print_usage(argv[0]);
-			exit(0);
+			exit_with_usage(0, argv[0]);
 			break;
 		case 'V':
-			print_version();
-			exit(0);
+			exit_with_version();
 			break;
 		case 'H':
 			settings->host = optarg;
@@ -60,8 +52,7 @@ static int parse_settings(struct settings *settings, int argc, char *argv[])
 			settings->port = optarg;
 			break;
 		default:
-			print_usage(argv[0]);
-			exit(1);
+			exit_with_usage(1, argv[0]);
 			break;
 		}
 	}
