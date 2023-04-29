@@ -16,9 +16,17 @@ int net_accept(int fd);
 int net_connect(const char *host, const char *port);
 
 int net_send_all(int fd, const void *, size_t);
-int net_send_buf(int fd, const void *, uint32_t);
-
 int net_recv_all(int fd, void *, size_t);
-int net_recv_buf(int fd, void **, uint32_t *);
+
+struct buf;
+
+int buf_create(struct buf **, const void *, uint32_t);
+void buf_destroy(struct buf *);
+
+uint32_t buf_get_size(const struct buf *);
+void *buf_get_data(const struct buf *);
+
+int net_send_buf(int fd, const struct buf *);
+int net_recv_buf(int fd, struct buf **);
 
 #endif

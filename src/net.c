@@ -198,51 +198,108 @@ int net_recv_all(int fd, void *buf, size_t len)
 	return 0;
 }
 
-int net_send_buf(int fd, const void *buf, uint32_t len)
+struct buf {
+	uint32_t size;
+	void *data;
+};
+
+int buf_create(struct buf **_buf, const void *data, uint32_t size)
 {
+	struct buf *buf;
 	int ret = 0;
 
-	len = htonl(len);
-	ret = net_send_all(fd, &len, sizeof(len));
+	*_buf = malloc(sizeof(struct buf));
+	if (!*_buf) {
+		log_errno("malloc");
+		return -1;
+	}
+	buf = *_buf;
+
+	buf->data = malloc(size);
+	if (!buf->data) {
+		log_errno("malloc");
+		goto free;
+	}
+
+	buf->size = size;
+	memcpy(buf->data, data, size);
+
+	return ret;
+
+free:
+	free(buf);
+
+	return ret;
+}
+
+void buf_destroy(struct buf *buf)
+{
+	free(buf->data);
+	free(buf);
+}
+
+uint32_t buf_get_size(const struct buf *buf)
+{
+	return buf->size;
+}
+
+void *buf_get_data(const struct buf *buf)
+{
+	return buf->data;
+}
+
+int net_send_buf(int fd, const struct buf *buf)
+{
+	uint32_t size;
+	int ret = 0;
+
+	size = htonl(buf->size);
+	ret = net_send_all(fd, &size, sizeof(size));
 	if (ret < 0)
 		return ret;
-	len = ntohl(len);
 
-	ret = net_send_all(fd, buf, len);
+	ret = net_send_all(fd, buf->data, buf->size);
 	if (ret < 0)
 		return ret;
 
 	return ret;
 }
 
-int net_recv_buf(int fd, void **buf, uint32_t *len)
+int net_recv_buf(int fd, struct buf **buf)
 {
+	void *data;
+	uint32_t size;
 	int ret = 0;
 
-	ret = net_recv_all(fd, len, sizeof(*len));
+	ret = net_recv_all(fd, &size, sizeof(size));
 	if (ret < 0) {
-		log_err("Couldn't read buffer length\n");
+		log_err("Couldn't read buffer size\n");
 		goto fail;
 	}
+	size = ntohl(size);
 
-	*len = ntohl(*len);
-
-	*buf = malloc(*len);
-	if (!*buf) {
+	data = malloc(size);
+	if (!data) {
 		log_errno("malloc");
 		goto fail;
 	}
 
-	ret = net_recv_all(fd, *buf, *len);
+	ret = net_recv_all(fd, data, size);
 	if (ret < 0) {
 		log_err("Couldn't read buffer\n");
-		goto free_buf;
+		goto free_data;
 	}
 
-	return 0;
+	ret = buf_create(buf, data, size);
+	if (ret < 0)
+		goto free_data;
 
-free_buf:
-	free(*buf);
+	free(data);
+
+	return ret;
+
+free_data:
+	free(data);
 
 fail:
 	return -1;

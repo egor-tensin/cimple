@@ -102,7 +102,7 @@ int msg_from_argv(struct msg *msg, char **argv)
 	return msg_copy_argv(msg, argv);
 }
 
-static uint32_t calc_buf_len(const struct msg *msg)
+static uint32_t calc_buf_size(const struct msg *msg)
 {
 	uint32_t len = 0;
 	for (int i = 0; i < msg->argc; ++i)
@@ -157,22 +157,30 @@ free:
 
 int msg_send(int fd, const struct msg *msg)
 {
+	struct buf *buf;
 	int ret = 0;
 
-	uint32_t len = calc_buf_len(msg);
-	char *buf = malloc(len);
-	if (!buf) {
+	uint32_t size = calc_buf_size(msg);
+	char *data = malloc(size);
+	if (!data) {
 		log_errno("malloc");
 		return -1;
 	}
-	argv_pack(buf, msg);
+	argv_pack(data, msg);
 
-	ret = net_send_buf(fd, buf, len);
+	ret = buf_create(&buf, data, size);
 	if (ret < 0)
-		goto free_buf;
+		goto free_data;
 
-free_buf:
-	free(buf);
+	ret = net_send_buf(fd, buf);
+	if (ret < 0)
+		goto destroy_buf;
+
+destroy_buf:
+	buf_destroy(buf);
+
+free_data:
+	free(data);
 
 	return ret;
 }
@@ -194,22 +202,21 @@ int msg_send_and_wait(int fd, const struct msg *request, struct msg *response)
 
 int msg_recv(int fd, struct msg *msg)
 {
-	void *buf;
-	uint32_t len;
+	struct buf *buf;
 	int ret = 0;
 
-	ret = net_recv_buf(fd, &buf, &len);
+	ret = net_recv_buf(fd, &buf);
 	if (ret < 0)
 		return ret;
 
-	msg->argc = calc_argv_len(buf, len);
+	msg->argc = calc_argv_len(buf_get_data(buf), buf_get_size(buf));
 
-	ret = argv_unpack(msg, buf);
+	ret = argv_unpack(msg, buf_get_data(buf));
 	if (ret < 0)
-		goto free_buf;
+		goto destroy_buf;
 
-free_buf:
-	free(buf);
+destroy_buf:
+	buf_destroy(buf);
 
 	return ret;
 }
