@@ -146,11 +146,11 @@ int net_connect(const char *host, const char *port)
 	return socket_fd;
 }
 
-static ssize_t net_send(int fd, const void *buf, size_t len)
+static ssize_t net_send(int fd, const void *buf, size_t size)
 {
 	static const int flags = MSG_NOSIGNAL;
 
-	ssize_t ret = send(fd, buf, len, flags);
+	ssize_t ret = send(fd, buf, size, flags);
 	if (ret < 0) {
 		log_errno("send");
 		return -1;
@@ -159,12 +159,12 @@ static ssize_t net_send(int fd, const void *buf, size_t len)
 	return ret;
 }
 
-int net_send_all(int fd, const void *buf, size_t len)
+int net_send_all(int fd, const void *buf, size_t size)
 {
 	size_t sent_total = 0;
 
-	while (sent_total < len) {
-		ssize_t sent_now = net_send(fd, (const char *)buf + sent_total, len - sent_total);
+	while (sent_total < size) {
+		ssize_t sent_now = net_send(fd, (const char *)buf + sent_total, size - sent_total);
 		if (sent_now < 0)
 			return -1;
 		sent_total += sent_now;
@@ -173,12 +173,12 @@ int net_send_all(int fd, const void *buf, size_t len)
 	return 0;
 }
 
-int net_recv_all(int fd, void *buf, size_t len)
+int net_recv_all(int fd, void *buf, size_t size)
 {
 	ssize_t read_total = 0;
 
-	while ((size_t)read_total < len) {
-		ssize_t read_now = read(fd, buf, len);
+	while ((size_t)read_total < size) {
+		ssize_t read_now = read(fd, buf, size);
 		if (!read_now)
 			break;
 
@@ -190,8 +190,8 @@ int net_recv_all(int fd, void *buf, size_t len)
 		read_total += read_now;
 	}
 
-	if ((size_t)read_total < len) {
-		log_err("Received only %zd bytes out of %zu\n", read_total, len);
+	if ((size_t)read_total < size) {
+		log_err("Received only %zd bytes out of %zu\n", read_total, size);
 		return -1;
 	}
 
