@@ -8,7 +8,7 @@ if ! command -v git-clang-format &> /dev/null; then
 	exit 1
 fi
 
-output="$( git clang-format --style file --diff )"
+output="$( git clang-format --style file --diff )" || true
 
 ok1='no modified files to format'
 ok2='clang-format did not modify any files'
