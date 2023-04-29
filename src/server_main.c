@@ -87,7 +87,7 @@ static int parse_settings(struct settings *settings, int argc, char *argv[])
 int main(int argc, char *argv[])
 {
 	struct settings settings;
-	struct server server;
+	struct server *server;
 	int ret = 0;
 
 	ret = parse_settings(&settings, argc, argv);
@@ -98,12 +98,12 @@ int main(int argc, char *argv[])
 	if (ret < 0)
 		return ret;
 
-	ret = server_main(&server);
+	ret = server_main(server);
 	if (ret < 0)
 		goto destroy_server;
 
 destroy_server:
-	server_destroy(&server);
+	server_destroy(server);
 
 	return ret;
 }

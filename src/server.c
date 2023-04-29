@@ -20,15 +20,36 @@
 #include <stdlib.h>
 #include <string.h>
 
-int server_create(struct server *server, const struct settings *settings)
+struct server {
+	pthread_mutex_t server_mtx;
+	pthread_cond_t server_cv;
+
+	int stopping;
+
+	struct storage storage;
+
+	struct tcp_server *tcp_server;
+
+	struct ci_queue ci_queue;
+};
+
+int server_create(struct server **_server, const struct settings *settings)
 {
+	struct server *server;
 	struct storage_settings storage_settings;
 	int ret = 0;
+
+	*_server = malloc(sizeof(struct server));
+	if (!*_server) {
+		log_errno("malloc");
+		return -1;
+	}
+	server = *_server;
 
 	ret = pthread_mutex_init(&server->server_mtx, NULL);
 	if (ret) {
 		pthread_errno(ret, "pthread_mutex_init");
-		goto fail;
+		goto free;
 	}
 
 	ret = pthread_cond_init(&server->server_cv, NULL);
@@ -65,7 +86,9 @@ destroy_cv:
 destroy_mtx:
 	pthread_errno_if(pthread_mutex_destroy(&server->server_mtx), "pthread_mutex_destroy");
 
-fail:
+free:
+	free(server);
+
 	return ret;
 }
 
@@ -78,6 +101,7 @@ void server_destroy(struct server *server)
 	storage_destroy(&server->storage);
 	pthread_errno_if(pthread_cond_destroy(&server->server_cv), "pthread_cond_destroy");
 	pthread_errno_if(pthread_mutex_destroy(&server->server_mtx), "pthread_mutex_destroy");
+	free(server);
 }
 
 static int server_has_runs(const struct server *server)
