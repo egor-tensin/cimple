@@ -20,13 +20,29 @@
 #include <string.h>
 #include <unistd.h>
 
-int worker_create(struct worker *worker, const struct settings *settings)
+struct worker {
+	int fd;
+
+	pthread_mutex_t task_mtx;
+	pthread_t task;
+	int task_active;
+};
+
+int worker_create(struct worker **_worker, const struct settings *settings)
 {
+	struct worker *worker;
 	int ret = 0;
+
+	*_worker = malloc(sizeof(struct worker));
+	if (!*_worker) {
+		log_errno("malloc");
+		return -1;
+	}
+	worker = *_worker;
 
 	ret = libgit_init();
 	if (ret < 0)
-		return ret;
+		goto free;
 
 	ret = net_connect(settings->host, settings->port);
 	if (ret < 0)
@@ -38,6 +54,9 @@ int worker_create(struct worker *worker, const struct settings *settings)
 git_shutdown:
 	libgit_shutdown();
 
+free:
+	free(worker);
+
 	return ret;
 }
 
@@ -47,6 +66,7 @@ void worker_destroy(struct worker *worker)
 
 	log_errno_if(close(worker->fd), "close");
 	libgit_shutdown();
+	free(worker);
 }
 
 static int msg_send_new_worker(const struct worker *worker)

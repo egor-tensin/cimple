@@ -72,7 +72,7 @@ static int parse_settings(struct settings *settings, int argc, char *argv[])
 int main(int argc, char *argv[])
 {
 	struct settings settings;
-	struct worker worker;
+	struct worker *worker;
 	int ret = 0;
 
 	ret = parse_settings(&settings, argc, argv);
@@ -83,12 +83,12 @@ int main(int argc, char *argv[])
 	if (ret < 0)
 		return ret;
 
-	ret = worker_main(&worker, argc - optind, argv + optind);
+	ret = worker_main(worker, argc - optind, argv + optind);
 	if (ret < 0)
 		goto destroy_worker;
 
 destroy_worker:
-	worker_destroy(&worker);
+	worker_destroy(worker);
 
 	return ret;
 }
