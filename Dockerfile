@@ -4,7 +4,7 @@ ARG install_dir="/app/install"
 
 FROM base AS builder
 
-RUN build_deps='bash bsd-compat-headers build-base clang cmake libgit2-dev python3 sqlite-dev' && \
+RUN build_deps='bash bsd-compat-headers build-base clang cmake libgit2-dev py3-pytest sqlite-dev' && \
     apk add -q --no-cache $build_deps
 
 ARG C_COMPILER=clang
@@ -21,7 +21,8 @@ RUN cd -- "$src_dir" && \
         "C_COMPILER=$C_COMPILER" \
         "BUILD_TYPE=$BUILD_TYPE" \
         "DEFAULT_HOST=$DEFAULT_HOST" \
-        "INSTALL_PREFIX=$install_dir"
+        "INSTALL_PREFIX=$install_dir" && \
+    make test BUILD_TYPE="$BUILD_TYPE"
 
 FROM base
 

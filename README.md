@@ -16,6 +16,12 @@ directory:
 
     make build
 
+### Testing
+
+After building, you can run the "test suite" (depends on Pytest).
+
+    make test
+
 ### Code style
 
 Set up the git pre-commit hook by running `./scripts/setup-hooks.sh`.
