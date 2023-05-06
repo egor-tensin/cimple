@@ -4,7 +4,7 @@ ARG install_dir="/app/install"
 
 FROM base AS builder
 
-RUN build_deps='bash bsd-compat-headers build-base clang cmake libgit2-dev py3-pytest sqlite-dev' && \
+RUN build_deps='bash bsd-compat-headers build-base clang cmake coreutils libgit2-dev py3-pytest sqlite-dev valgrind' && \
     apk add -q --no-cache $build_deps
 
 ARG C_COMPILER=clang

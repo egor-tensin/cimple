@@ -9,23 +9,27 @@ import random
 
 from pytest import fixture
 
-from .lib.process import run, run_async
+from .lib.process import CmdLine, CmdLineBuilder, Runner
 
 
-class CmdLineOption:
-    def __init__(self, codename, help_string):
+class Param:
+    def __init__(self, codename, help_string, required=True):
         self.codename = codename
         self.help_string = help_string
+        self.required = required
 
     @property
     def cmd_line(self):
         return f"--{self.codename.replace('_', '-')}"
 
+    def add_to_parser(self, parser):
+        parser.addoption(self.cmd_line, required=self.required, help=self.help_string)
 
-class CmdLineBinary(CmdLineOption):
-    def __init__(self, name):
+
+class ParamBinary(Param):
+    def __init__(self, name, **kwargs):
         self.name = name
-        super().__init__(self.get_code_name(), self.get_help_string())
+        super().__init__(self.get_code_name(), self.get_help_string(), **kwargs)
 
     def get_code_name(self):
         return f'{self.name}_binary'
@@ -38,25 +42,34 @@ class CmdLineBinary(CmdLineOption):
         return f'{self.basename} binary path'
 
 
-CMD_LINE_BINARIES = [CmdLineBinary(name) for name in ('server', 'worker', 'client')]
+BINARY_PARAMS = [
+    ParamBinary(name) for name in ('server', 'worker', 'client')
+]
+
+PARAM_VALGRIND = ParamBinary('valgrind', required=False)
 
 
-class CmdLineVersion(CmdLineOption):
+class ParamVersion(Param):
     def __init__(self):
         super().__init__('project_version', 'project version')
 
 
-CMD_LINE_VERSION = CmdLineVersion()
-CMD_LINE_OPTIONS = CMD_LINE_BINARIES + [CMD_LINE_VERSION]
+PARAM_VERSION = ParamVersion()
+
+PARAMS = list(BINARY_PARAMS)
+PARAMS += [
+    PARAM_VALGRIND,
+    PARAM_VERSION,
+]
 
 
 def pytest_addoption(parser):
-    for opt in CMD_LINE_OPTIONS:
-        parser.addoption(opt.cmd_line, required=True, help=opt.help_string)
+    for opt in PARAMS:
+        opt.add_to_parser(parser)
 
 
 def pytest_generate_tests(metafunc):
-    for opt in CMD_LINE_OPTIONS:
+    for opt in PARAMS:
         if opt.codename in metafunc.fixturenames:
             metafunc.parametrize(opt.codename, metafunc.config.getoption(opt.codename))
 
@@ -68,10 +81,14 @@ def rng():
 
 class Paths:
     def __init__(self, pytestconfig):
-        for binary in CMD_LINE_BINARIES:
-            path = pytestconfig.getoption(binary.codename)
-            logging.info('%s path: %s', binary.basename, path)
-            setattr(self, binary.codename, path)
+        for opt in BINARY_PARAMS:
+            setattr(self, opt.codename, None)
+        for opt in BINARY_PARAMS:
+            path = pytestconfig.getoption(opt.codename)
+            if path is None:
+                continue
+            logging.info('%s path: %s', opt.basename, path)
+            setattr(self, opt.codename, path)
 
 
 @fixture(scope='session')
@@ -80,8 +97,17 @@ def paths(pytestconfig):
 
 
 @fixture(scope='session')
+def process_runner(pytestconfig):
+    runner = Runner()
+    valgrind = pytestconfig.getoption(PARAM_VALGRIND.codename)
+    if valgrind is not None:
+        runner.add_wrapper(CmdLine(valgrind))
+    return runner
+
+
+@fixture(scope='session')
 def version(pytestconfig):
-    return pytestconfig.getoption(CMD_LINE_VERSION.codename)
+    return pytestconfig.getoption(PARAM_VERSION.codename)
 
 
 @fixture
@@ -94,17 +120,31 @@ def sqlite_path(tmp_path):
     return os.path.join(tmp_path, 'cimple.sqlite')
 
 
+class CmdLineServer(CmdLine):
+    def log_line_means_launched(self, line):
+        return line.endswith('Waiting for new connections')
+
+
+class CmdLineWorker(CmdLine):
+    def log_line_means_launched(self, line):
+        return line.endswith('Waiting for a new command')
+
+
 @fixture
-def server(paths, server_port, sqlite_path):
-    with run_async(paths.server_binary, '--port', server_port, '--sqlite', sqlite_path) as server:
+def server(process_runner, paths, server_port, sqlite_path):
+    args = ['--port', server_port, '--sqlite', sqlite_path]
+    cmd_line = CmdLineServer(paths.server_binary, *args)
+    with process_runner.run_async(cmd_line) as server:
         yield
     assert server.returncode == 0
 
 
 @fixture
-def workers(paths, server_port):
-    args = [paths.worker_binary, '--host', '127.0.0.1', '--port', server_port]
-    with run_async(*args) as worker1, run_async(*args) as worker2:
+def workers(process_runner, paths, server_port):
+    args = ['--host', '127.0.0.1', '--port', server_port]
+    cmd_line = CmdLineWorker(paths.worker_binary, *args)
+    with process_runner.run_async(cmd_line) as worker1, \
+         process_runner.run_async(cmd_line) as worker2:
         yield
     assert worker1.returncode == 0
     assert worker2.returncode == 0
@@ -115,14 +155,8 @@ def server_and_workers(server, workers):
     yield
 
 
-class Client:
-    def __init__(self, binary):
-        self.binary = binary
-
-    def run(self, *args):
-        return run(self.binary, *args)
-
-
 @fixture
-def client(paths):
-    return Client(paths.client_binary)
+def client(process_runner, paths, server_port):
+    args = ['--port', server_port]
+    cmd_line = CmdLineBuilder(process_runner, paths.client_binary, *args)
+    return cmd_line

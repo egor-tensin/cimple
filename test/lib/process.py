@@ -6,9 +6,9 @@
 from contextlib import contextmanager
 import logging
 import os
+import shutil
 import subprocess
-from threading import Thread
-import time
+from threading import Event, Thread
 
 
 _COMMON_ARGS = {
@@ -19,32 +19,23 @@ _COMMON_ARGS = {
 }
 
 
-def _canonicalize_process_args(binary, *args):
-    binary = os.path.abspath(binary)
-    argv = list(args)
-    argv = [binary] + argv
-    return binary, argv
-
-
-def _log_process_args(binary, argv):
-    if argv:
-        logging.info('Executing binary %s with arguments: %s', binary, ' '.join(argv[1:]))
-    else:
-        logging.info('Executing binary %s', binary)
-
-
 class LoggingThread(Thread):
     def __init__(self, process):
         self.process = process
+        self.launched_event = Event()
         target = lambda pipe: self.consume(pipe)
         super().__init__(target=target, args=[process.stdout])
 
     def consume(self, pipe):
-        for line in iter(pipe):
+        for line in pipe:
+            line = line.removesuffix('\n')
             logging.info('%s: %s', self.process.log_id, line)
+            if self.process.cmd_line.log_line_means_launched(line):
+                self.launched_event.set()
 
     def __enter__(self):
         self.start()
+        self.launched_event.wait()
         return self
 
     def __exit__(self, *args):
@@ -52,17 +43,50 @@ class LoggingThread(Thread):
         self.join()
 
 
-class Process(subprocess.Popen):
-    def __init__(self, binary, *args):
-        binary, argv = _canonicalize_process_args(binary, *args)
-        _log_process_args(binary, argv)
+class CmdLine:
+    @staticmethod
+    def which(binary):
+        if os.path.split(binary)[0]:
+            # shutil.which('bin/bash') doesn't work.
+            return os.path.abspath(binary)
+        path = shutil.which(binary)
+        if path is None:
+            raise RuntimeError("couldn't find a binary: " + binary)
+        return path
+
+    def __init__(self, binary, *args, name=None):
+        binary = self.which(binary)
+        argv = [binary] + list(args)
 
         self.binary = binary
-        self.name = os.path.basename(binary)
+        self.argv = argv
 
-        super().__init__(argv, **_COMMON_ARGS)
-        # TODO: figure out how to remove this.
-        time.sleep(1)
+        if name is None:
+            name = os.path.basename(binary)
+        self.process_name = name
+
+    def log_line_means_launched(self, line):
+        return True
+
+    @classmethod
+    def wrap(cls, outer, inner):
+        return cls(outer.argv[0], *outer.argv[1:], *inner.argv, name=inner.process_name)
+
+    def log_process_start(self):
+        if len(self.argv) > 1:
+            logging.info('Executing binary %s with arguments: %s', self.binary, ' '.join(self.argv[1:]))
+        else:
+            logging.info('Executing binary %s', self.binary)
+
+
+class Process(subprocess.Popen):
+    def __init__(self, cmd_line):
+        self.cmd_line = cmd_line
+
+        cmd_line.log_process_start()
+        self.name = cmd_line.process_name
+
+        super().__init__(cmd_line.argv, **_COMMON_ARGS)
         logging.info('Process %s launched', self.log_id)
 
     @property
@@ -90,15 +114,47 @@ class Process(subprocess.Popen):
         self.wait(timeout=3)
 
 
-@contextmanager
-def run_async(binary, *args):
-    with Process(binary, *args) as process, \
-         LoggingThread(process):
-        yield process
+class Runner:
+    @staticmethod
+    def unbuffered():
+        return CmdLine('stdbuf', '-o0')
+
+    def __init__(self):
+        self.wrappers = []
+        self.add_wrapper(self.unbuffered())
+
+    def add_wrapper(self, cmd_line):
+        self.wrappers.append(cmd_line)
+
+    def _wrap(self, cmd_line):
+        for wrapper in self.wrappers:
+            cmd_line = cmd_line.wrap(wrapper, cmd_line)
+        return cmd_line
+
+    def run(self, cmd_line):
+        cmd_line = self._wrap(cmd_line)
+        cmd_line.log_process_start()
+        result = subprocess.run(cmd_line.argv, **_COMMON_ARGS)
+        return result.returncode, result.stdout
+
+    @contextmanager
+    def run_async(self, cmd_line):
+        cmd_line = self._wrap(cmd_line)
+        with Process(cmd_line) as process, LoggingThread(process):
+            yield process
 
 
-def run(binary, *args):
-    binary, argv = _canonicalize_process_args(binary, *args)
-    _log_process_args(binary, argv)
-    result = subprocess.run(argv, **_COMMON_ARGS)
-    return result.returncode, result.stdout
+class CmdLineBuilder:
+    def __init__(self, runner, binary, *args):
+        self.runner = runner
+        self.binary = binary
+        self.args = list(args)
+
+    def _build(self, *args):
+        return CmdLine(self.binary, *self.args, *args)
+
+    def run(self, *args):
+        return self.runner.run(self._build(*args))
+
+    def run_async(self, *args):
+        return self.runner.run_async(self._build(*args))
