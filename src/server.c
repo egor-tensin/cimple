@@ -393,8 +393,13 @@ int server_main(struct server *server)
 		log("Waiting for new connections\n");
 
 		ret = tcp_server_accept(server->tcp_server, server_conn_handler, server);
-		if (ret < 0)
-			break;
+		if (ret < 0) {
+			if (errno == EINVAL && global_stop_flag) {
+				ret = 0;
+				break;
+			}
+			return ret;
+		}
 	}
 
 	return server_set_stopping(server);

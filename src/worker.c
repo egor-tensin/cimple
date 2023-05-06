@@ -195,8 +195,13 @@ int worker_main(struct worker *worker, UNUSED int argc, UNUSED char *argv[])
 		log("Waiting for a new command\n");
 
 		ret = msg_recv(worker->fd, &request);
-		if (ret < 0)
+		if (ret < 0) {
+			if (errno == EINVAL && global_stop_flag) {
+				ret = 0;
+				break;
+			}
 			return ret;
+		}
 
 		ret = worker_msg_handler(worker, &request);
 		msg_free(&request);
