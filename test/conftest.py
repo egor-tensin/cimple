@@ -74,12 +74,12 @@ class Paths:
             setattr(self, binary.codename, path)
 
 
-@fixture
+@fixture(scope='session')
 def paths(pytestconfig):
     return Paths(pytestconfig)
 
 
-@fixture
+@fixture(scope='session')
 def version(pytestconfig):
     return pytestconfig.getoption(CMD_LINE_VERSION.codename)
 
