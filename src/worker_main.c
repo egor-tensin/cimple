@@ -7,7 +7,6 @@
 
 #include "cmd_line.h"
 #include "const.h"
-#include "signal.h"
 #include "worker.h"
 
 #include <getopt.h>

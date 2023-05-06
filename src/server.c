@@ -385,6 +385,10 @@ int server_main(struct server *server)
 {
 	int ret = 0;
 
+	ret = signal_install_global_handler();
+	if (ret < 0)
+		return ret;
+
 	while (!global_stop_flag) {
 		log("Waiting for new connections\n");
 

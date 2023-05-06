@@ -181,6 +181,10 @@ int worker_main(struct worker *worker, UNUSED int argc, UNUSED char *argv[])
 {
 	int ret = 0;
 
+	ret = signal_install_global_handler();
+	if (ret < 0)
+		return ret;
+
 	ret = msg_send_new_worker(worker);
 	if (ret < 0)
 		return ret;
