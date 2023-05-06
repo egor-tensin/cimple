@@ -4,7 +4,7 @@ set -o errexit -o nounset -o pipefail
 shopt -s inherit_errexit lastpipe
 
 if ! command -v git-clang-format &> /dev/null; then
-	echo "Please make sure git-clang-format is available." >&2
+	echo 'Please make sure git-clang-format is available.' >&2
 	exit 1
 fi
 
