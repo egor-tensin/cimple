@@ -23,6 +23,7 @@
 struct worker {
 	int fd;
 
+	/* TODO: these are not used, but they should be! */
 	pthread_mutex_t task_mtx;
 	pthread_t task;
 	int task_active;
