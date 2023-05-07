@@ -64,5 +64,3 @@ add_my_executable(worker worker_main.c worker.c
     process.c
     signal.c)
 target_link_libraries(worker PRIVATE git2 pthread)
-
-install(PROGRAMS valgrind.sh DESTINATION bin RENAME "${PROJECT_NAME}-valgrind")
