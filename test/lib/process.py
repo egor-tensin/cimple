@@ -22,7 +22,7 @@ _COMMON_ARGS = {
 class LoggingThread(Thread):
     def __init__(self, process):
         self.process = process
-        self.launched_event = Event()
+        self.ready_event = Event()
         target = lambda pipe: self.consume(pipe)
         super().__init__(target=target, args=[process.stdout])
 
@@ -30,12 +30,13 @@ class LoggingThread(Thread):
         for line in pipe:
             line = line.removesuffix('\n')
             logging.info('%s: %s', self.process.log_id, line)
-            if self.process.cmd_line.log_line_means_launched(line):
-                self.launched_event.set()
+            if self.process.cmd_line.log_line_means_ready(line):
+                logging.info('Process %s is ready', self.process.log_id)
+                self.ready_event.set()
 
     def __enter__(self):
         self.start()
-        self.launched_event.wait()
+        self.ready_event.wait()
         return self
 
     def __exit__(self, *args):
@@ -65,7 +66,7 @@ class CmdLine:
             name = os.path.basename(binary)
         self.process_name = name
 
-    def log_line_means_launched(self, line):
+    def log_line_means_ready(self, line):
         return True
 
     @classmethod
@@ -87,7 +88,7 @@ class Process(subprocess.Popen):
         self.name = cmd_line.process_name
 
         super().__init__(cmd_line.argv, **_COMMON_ARGS)
-        logging.info('Process %s launched', self.log_id)
+        logging.info('Process %s has started', self.log_id)
 
     @property
     def log_id(self):

@@ -121,12 +121,12 @@ def sqlite_path(tmp_path):
 
 
 class CmdLineServer(CmdLine):
-    def log_line_means_launched(self, line):
+    def log_line_means_ready(self, line):
         return line.endswith('Waiting for new connections')
 
 
 class CmdLineWorker(CmdLine):
-    def log_line_means_launched(self, line):
+    def log_line_means_ready(self, line):
         return line.endswith('Waiting for a new command')
 
 
