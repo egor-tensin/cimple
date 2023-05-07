@@ -30,7 +30,7 @@ class LoggingThread(Thread):
         for line in pipe:
             line = line.removesuffix('\n')
             logging.info('%s: %s', self.process.log_id, line)
-            if self.process.cmd_line.log_line_means_ready(line):
+            if not self.ready_event.is_set() and self.process.cmd_line.log_line_means_ready(line):
                 logging.info('Process %s is ready', self.process.log_id)
                 self.ready_event.set()
 
