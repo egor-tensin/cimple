@@ -8,7 +8,7 @@ if ! command -v valgrind &> /dev/null; then
     exit 1
 fi
 
-exec valgrind \
+exec valgrind -q \
     --leak-check=full \
     --show-leak-kinds=all \
     --track-origins=yes \
