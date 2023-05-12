@@ -21,7 +21,7 @@ endif
 endef
 
 src_dir := $(abspath .)
-build_dir := $(src_dir)/.build
+build_dir := $(src_dir)/build
 cmake_dir := $(build_dir)/cmake
 install_dir := $(build_dir)/install
 
