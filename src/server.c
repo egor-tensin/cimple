@@ -163,7 +163,7 @@ static int worker_dequeue_run(struct server *server, struct ci_queue_entry **ci_
 		goto unlock;
 	}
 
-	*ci_run = ci_queue_pop(&server->ci_queue);
+	*ci_run = ci_queue_remove_first(&server->ci_queue);
 	log("Removed a CI run for repository %s from the queue\n", ci_queue_entry_get_url(*ci_run));
 	goto unlock;
 
@@ -183,7 +183,7 @@ static int worker_requeue_run(struct server *server, struct ci_queue_entry *ci_r
 		return ret;
 	}
 
-	ci_queue_push_head(&server->ci_queue, ci_run);
+	ci_queue_add_first(&server->ci_queue, ci_run);
 	log("Requeued a CI run for repository %s\n", ci_queue_entry_get_url(ci_run));
 
 	ret = pthread_cond_signal(&server->server_cv);
@@ -260,7 +260,7 @@ static int msg_ci_run_queue(struct server *server, const char *url, const char *
 	if (ret < 0)
 		goto unlock;
 
-	ci_queue_push(&server->ci_queue, entry);
+	ci_queue_add_last(&server->ci_queue, entry);
 	log("Added a new CI run for repository %s to the queue\n", url);
 
 	ret = pthread_cond_signal(&server->server_cv);

@@ -25,9 +25,9 @@ void ci_queue_destroy(struct ci_queue *);
 
 int ci_queue_is_empty(const struct ci_queue *);
 
-void ci_queue_push(struct ci_queue *, struct ci_queue_entry *);
-void ci_queue_push_head(struct ci_queue *, struct ci_queue_entry *);
+void ci_queue_add_first(struct ci_queue *, struct ci_queue_entry *);
+void ci_queue_add_last(struct ci_queue *, struct ci_queue_entry *);
 
-struct ci_queue_entry *ci_queue_pop(struct ci_queue *);
+struct ci_queue_entry *ci_queue_remove_first(struct ci_queue *);
 
 #endif

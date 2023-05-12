@@ -97,17 +97,17 @@ int ci_queue_is_empty(const struct ci_queue *queue)
 	return STAILQ_EMPTY(queue);
 }
 
-void ci_queue_push(struct ci_queue *queue, struct ci_queue_entry *entry)
+void ci_queue_add_last(struct ci_queue *queue, struct ci_queue_entry *entry)
 {
 	STAILQ_INSERT_TAIL(queue, entry, entries);
 }
 
-void ci_queue_push_head(struct ci_queue *queue, struct ci_queue_entry *entry)
+void ci_queue_add_first(struct ci_queue *queue, struct ci_queue_entry *entry)
 {
 	STAILQ_INSERT_HEAD(queue, entry, entries);
 }
 
-struct ci_queue_entry *ci_queue_pop(struct ci_queue *queue)
+struct ci_queue_entry *ci_queue_remove_first(struct ci_queue *queue)
 {
 	struct ci_queue_entry *entry;
 
