@@ -292,7 +292,7 @@ static int msg_ci_run_handler(UNUSED int client_fd, const struct msg *request, v
 	return msg_success(response);
 }
 
-static struct command_def commands[] = {
+static struct cmd_desc commands[] = {
     {CMD_NEW_WORKER, msg_new_worker_handler},
     {CMD_CI_RUN, msg_ci_run_handler},
 };
@@ -323,23 +323,22 @@ unlock:
 
 int server_main(struct server *server)
 {
-	struct command_dispatcher *dispatcher = NULL;
+	struct cmd_dispatcher *dispatcher = NULL;
 	int ret = 0;
 
 	ret = signal_install_global_handler();
 	if (ret < 0)
 		return ret;
 
-	ret = command_dispatcher_create(&dispatcher, commands,
-	                                sizeof(commands) / sizeof(commands[0]), server);
+	ret = cmd_dispatcher_create(&dispatcher, commands, sizeof(commands) / sizeof(commands[0]),
+	                            server);
 	if (ret < 0)
 		return ret;
 
 	while (!global_stop_flag) {
 		log("Waiting for new connections\n");
 
-		ret = tcp_server_accept(server->tcp_server, command_dispatcher_conn_handler,
-		                        dispatcher);
+		ret = tcp_server_accept(server->tcp_server, cmd_dispatcher_handle_conn, dispatcher);
 		if (ret < 0) {
 			if (errno == EINVAL && global_stop_flag)
 				ret = 0;
@@ -348,7 +347,7 @@ int server_main(struct server *server)
 	}
 
 dispatcher_destroy:
-	command_dispatcher_destroy(dispatcher);
+	cmd_dispatcher_destroy(dispatcher);
 
 	return server_set_stopping(server);
 }

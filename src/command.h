@@ -12,24 +12,23 @@
 
 #include <stdlib.h>
 
-typedef int (*command_processor)(int conn_fd, const struct msg *request, void *ctx,
-                                 struct msg **response);
+typedef int (*cmd_handler)(int conn_fd, const struct msg *request, void *ctx,
+                           struct msg **response);
 
-struct command_def {
+struct cmd_desc {
 	char *name;
-	command_processor processor;
+	cmd_handler handler;
 };
 
-struct command_dispatcher;
+struct cmd_dispatcher;
 
-int command_dispatcher_create(struct command_dispatcher **, struct command_def *, size_t numof_defs,
-                              void *ctx);
-void command_dispatcher_destroy(struct command_dispatcher *);
+int cmd_dispatcher_create(struct cmd_dispatcher **, struct cmd_desc *, size_t numof_defs,
+                          void *ctx);
+void cmd_dispatcher_destroy(struct cmd_dispatcher *);
 
-int command_dispatcher_msg_handler(const struct command_dispatcher *, int conn_fd,
-                                   const struct msg *);
+int cmd_dispatcher_handle_msg(const struct cmd_dispatcher *, int conn_fd, const struct msg *);
 
 /* This is supposed to be used as an argument to tcp_server_accept. */
-int command_dispatcher_conn_handler(int conn_fd, void *dispatcher);
+int cmd_dispatcher_handle_conn(int conn_fd, void *dispatcher);
 
 #endif

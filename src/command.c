@@ -12,35 +12,35 @@
 #include <stdlib.h>
 #include <string.h>
 
-struct command_dispatcher {
-	struct command_def *defs;
-	size_t numof_defs;
+struct cmd_dispatcher {
+	struct cmd_desc *cmds;
+	size_t numof_cmds;
 	void *ctx;
 };
 
-static int copy_def(struct command_def *dest, const struct command_def *src)
+static int copy_cmd(struct cmd_desc *dest, const struct cmd_desc *src)
 {
 	dest->name = strdup(src->name);
 	if (!dest->name) {
 		log_errno("strdup");
 		return -1;
 	}
-	dest->processor = src->processor;
+	dest->handler = src->handler;
 	return 0;
 }
 
-static void free_def(struct command_def *def)
+static void free_cmd(struct cmd_desc *desc)
 {
-	free(def->name);
+	free(desc->name);
 }
 
-static int copy_defs(struct command_def *dest, const struct command_def *src, size_t numof_defs)
+static int copy_cmds(struct cmd_desc *dest, const struct cmd_desc *src, size_t numof_cmds)
 {
 	size_t numof_copied = 0;
 	int ret = 0;
 
-	for (numof_copied = 0; numof_copied < numof_defs; ++numof_copied) {
-		ret = copy_def(&dest[numof_copied], &src[numof_copied]);
+	for (numof_copied = 0; numof_copied < numof_cmds; ++numof_copied) {
+		ret = copy_cmd(&dest[numof_copied], &src[numof_copied]);
 		if (ret < 0)
 			goto free;
 	}
@@ -49,23 +49,23 @@ static int copy_defs(struct command_def *dest, const struct command_def *src, si
 
 free:
 	for (size_t i = 0; i < numof_copied; ++i)
-		free_def(&dest[numof_copied]);
+		free_cmd(&dest[numof_copied]);
 
 	return -1;
 }
 
-static void free_defs(struct command_def *defs, size_t numof_defs)
+static void free_cmds(struct cmd_desc *cmds, size_t numof_cmds)
 {
-	for (size_t i = 0; i < numof_defs; ++i)
-		free_def(&defs[i]);
+	for (size_t i = 0; i < numof_cmds; ++i)
+		free_cmd(&cmds[i]);
 }
 
-int command_dispatcher_create(struct command_dispatcher **_dispatcher, struct command_def *defs,
-                              size_t numof_defs, void *ctx)
+int cmd_dispatcher_create(struct cmd_dispatcher **_dispatcher, struct cmd_desc *cmds,
+                          size_t numof_cmds, void *ctx)
 {
 	int ret = 0;
 
-	struct command_dispatcher *dispatcher = malloc(sizeof(struct command_dispatcher));
+	struct cmd_dispatcher *dispatcher = malloc(sizeof(struct cmd_dispatcher));
 	if (!dispatcher) {
 		log_errno("malloc");
 		return -1;
@@ -73,22 +73,22 @@ int command_dispatcher_create(struct command_dispatcher **_dispatcher, struct co
 
 	dispatcher->ctx = ctx;
 
-	dispatcher->defs = malloc(sizeof(struct command_def) * numof_defs);
-	if (!dispatcher->defs) {
+	dispatcher->cmds = malloc(sizeof(struct cmd_desc) * numof_cmds);
+	if (!dispatcher->cmds) {
 		log_errno("malloc");
 		goto free;
 	}
-	dispatcher->numof_defs = numof_defs;
+	dispatcher->numof_cmds = numof_cmds;
 
-	ret = copy_defs(dispatcher->defs, defs, numof_defs);
+	ret = copy_cmds(dispatcher->cmds, cmds, numof_cmds);
 	if (ret < 0)
-		goto free_defs;
+		goto free_cmds;
 
 	*_dispatcher = dispatcher;
 	return 0;
 
-free_defs:
-	free(dispatcher->defs);
+free_cmds:
+	free(dispatcher->cmds);
 
 free:
 	free(dispatcher);
@@ -96,15 +96,15 @@ free:
 	return -1;
 }
 
-void command_dispatcher_destroy(struct command_dispatcher *dispatcher)
+void cmd_dispatcher_destroy(struct cmd_dispatcher *dispatcher)
 {
-	free_defs(dispatcher->defs, dispatcher->numof_defs);
-	free(dispatcher->defs);
+	free_cmds(dispatcher->cmds, dispatcher->numof_cmds);
+	free(dispatcher->cmds);
 	free(dispatcher);
 }
 
-int command_dispatcher_msg_handler(const struct command_dispatcher *dispatcher, int conn_fd,
-                                   const struct msg *request)
+int cmd_dispatcher_handle_msg(const struct cmd_dispatcher *dispatcher, int conn_fd,
+                              const struct msg *request)
 {
 	struct msg *response = NULL;
 	int ret = 0;
@@ -115,13 +115,13 @@ int command_dispatcher_msg_handler(const struct command_dispatcher *dispatcher, 
 
 	const char **words = msg_get_words(request);
 
-	for (size_t i = 0; i < dispatcher->numof_defs; ++i) {
-		struct command_def *def = &dispatcher->defs[i];
+	for (size_t i = 0; i < dispatcher->numof_cmds; ++i) {
+		struct cmd_desc *cmd = &dispatcher->cmds[i];
 
-		if (strcmp(def->name, words[0]))
+		if (strcmp(cmd->name, words[0]))
 			continue;
 
-		ret = def->processor(conn_fd, request, dispatcher->ctx, &response);
+		ret = cmd->handler(conn_fd, request, dispatcher->ctx, &response);
 		goto exit;
 	}
 
@@ -139,9 +139,9 @@ exit:
 	return ret;
 }
 
-int command_dispatcher_conn_handler(int conn_fd, void *_dispatcher)
+int cmd_dispatcher_handle_conn(int conn_fd, void *_dispatcher)
 {
-	struct command_dispatcher *dispatcher = (struct command_dispatcher *)_dispatcher;
+	struct cmd_dispatcher *dispatcher = (struct cmd_dispatcher *)_dispatcher;
 	struct msg *request = NULL;
 	int ret = 0;
 
@@ -149,7 +149,7 @@ int command_dispatcher_conn_handler(int conn_fd, void *_dispatcher)
 	if (ret < 0)
 		return ret;
 
-	ret = command_dispatcher_msg_handler(dispatcher, conn_fd, request);
+	ret = cmd_dispatcher_handle_msg(dispatcher, conn_fd, request);
 	msg_free(request);
 	return ret;
 }

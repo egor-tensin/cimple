@@ -128,13 +128,13 @@ static int msg_ci_run_handler(UNUSED int conn_fd, const struct msg *request, UNU
 	return msg_success(response);
 }
 
-static struct command_def commands[] = {
+static struct cmd_desc cmds[] = {
     {CMD_CI_RUN, msg_ci_run_handler},
 };
 
 int worker_main(struct worker *worker, UNUSED int argc, UNUSED char *argv[])
 {
-	struct command_dispatcher *dispatcher = NULL;
+	struct cmd_dispatcher *dispatcher = NULL;
 	int ret = 0;
 
 	ret = signal_install_global_handler();
@@ -145,8 +145,7 @@ int worker_main(struct worker *worker, UNUSED int argc, UNUSED char *argv[])
 	if (ret < 0)
 		return ret;
 
-	ret = command_dispatcher_create(&dispatcher, commands,
-	                                sizeof(commands) / sizeof(commands[0]), worker);
+	ret = cmd_dispatcher_create(&dispatcher, cmds, sizeof(cmds) / sizeof(cmds[0]), worker);
 	if (ret < 0)
 		return ret;
 
@@ -162,14 +161,14 @@ int worker_main(struct worker *worker, UNUSED int argc, UNUSED char *argv[])
 			goto dispatcher_destroy;
 		}
 
-		ret = command_dispatcher_msg_handler(dispatcher, worker->fd, request);
+		ret = cmd_dispatcher_handle_msg(dispatcher, worker->fd, request);
 		msg_free(request);
 		if (ret < 0)
 			goto dispatcher_destroy;
 	}
 
 dispatcher_destroy:
-	command_dispatcher_destroy(dispatcher);
+	cmd_dispatcher_destroy(dispatcher);
 
 	return ret;
 }
