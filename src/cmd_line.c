@@ -13,12 +13,12 @@
 #include <stdlib.h>
 #include <string.h>
 
-static char *get_current_binary_path()
+static char *get_current_binary_path(void)
 {
 	return my_readlink("/proc/self/exe");
 }
 
-static char *get_current_binary_name()
+static char *get_current_binary_name(void)
 {
 	char *path = get_current_binary_path();
 	if (!path)
@@ -46,7 +46,7 @@ void exit_with_usage(int ec)
 
 	char *binary = get_current_binary_name();
 
-	fprintf(dest, "usage: %s %s\n", binary ?: "prog", get_usage_string());
+	fprintf(dest, "usage: %s %s\n", binary ? binary : "prog", get_usage_string());
 	free(binary);
 	exit(ec);
 }
@@ -58,11 +58,11 @@ void exit_with_usage_err(const char *msg)
 	exit_with_usage(1);
 }
 
-void exit_with_version()
+void exit_with_version(void)
 {
 	char *binary = get_current_binary_name();
 
-	printf("%s %s\n", binary ?: "prog", VERSION);
+	printf("%s %s\n", binary ? binary : "prog", VERSION);
 	free(binary);
 	exit(0);
 }

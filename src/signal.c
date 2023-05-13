@@ -32,7 +32,7 @@ static int my_sigaction(int signo, const struct sigaction *act)
 	return ret;
 }
 
-int signal_install_global_handler()
+int signal_install_global_handler(void)
 {
 	int ret = 0;
 
@@ -75,7 +75,7 @@ int signal_block_parent(sigset_t *old)
 	return signal_set(&new, old);
 }
 
-int signal_block_child()
+int signal_block_child(void)
 {
 	sigset_t set;
 	sigemptyset(&set);

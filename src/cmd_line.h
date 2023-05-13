@@ -8,10 +8,10 @@
 #ifndef __CMD_LINE_H__
 #define __CMD_LINE_H__
 
-const char *get_usage_string();
+const char *get_usage_string(void);
 
 void exit_with_usage(int ec);
 void exit_with_usage_err(const char *msg);
-void exit_with_version();
+void exit_with_version(void);
 
 #endif

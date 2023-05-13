@@ -11,13 +11,13 @@
 
 #include <getopt.h>
 
-static struct settings default_settings()
+static struct settings default_settings(void)
 {
 	struct settings settings = {DEFAULT_PORT, DEFAULT_SQLITE_PATH};
 	return settings;
 }
 
-const char *get_usage_string()
+const char *get_usage_string(void)
 {
 	return "[-h|--help] [-V|--version] [-p|--port PORT] [-s|--sqlite PATH]";
 }

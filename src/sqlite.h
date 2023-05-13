@@ -10,8 +10,8 @@
 
 #include <sqlite3.h>
 
-int sqlite_init();
-void sqlite_destroy();
+int sqlite_init(void);
+void sqlite_destroy(void);
 
 int sqlite_open(const char *path, sqlite3 **db, int flags);
 int sqlite_open_rw(const char *path, sqlite3 **db);

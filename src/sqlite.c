@@ -28,7 +28,7 @@
 			sqlite_errno(CONCAT(ret, __LINE__), fn);                                   \
 	} while (0)
 
-int sqlite_init()
+int sqlite_init(void)
 {
 	int ret = 0;
 
@@ -41,7 +41,7 @@ int sqlite_init()
 	return ret;
 }
 
-void sqlite_destroy()
+void sqlite_destroy(void)
 {
 	sqlite_errno_if(sqlite3_shutdown(), "sqlite3_shutdown");
 }

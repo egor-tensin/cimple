@@ -10,8 +10,8 @@
 
 #include <git2.h>
 
-int libgit_init();
-void libgit_shutdown();
+int libgit_init(void);
+void libgit_shutdown(void);
 
 /* These never check out any files (so that we don't have to do 2 checkouts). */
 int libgit_clone(git_repository **, const char *url, const char *dir);

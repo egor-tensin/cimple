@@ -19,7 +19,7 @@
 		log_err("%s: %s\n", fn, msg);                                                      \
 	} while (0)
 
-int libgit_init()
+int libgit_init(void)
 {
 	int ret = 0;
 
@@ -32,7 +32,7 @@ int libgit_init()
 	return 0;
 }
 
-void libgit_shutdown()
+void libgit_shutdown(void)
 {
 	git_libgit2_shutdown();
 }

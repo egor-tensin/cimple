@@ -27,7 +27,7 @@ static const struct storage_api apis[] = {
     },
 };
 
-static size_t numof_apis()
+static size_t numof_apis(void)
 {
 	return sizeof(apis) / sizeof(apis[0]);
 }
