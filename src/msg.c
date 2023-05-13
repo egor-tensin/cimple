@@ -13,13 +13,28 @@
 #include <stdlib.h>
 #include <string.h>
 
-int msg_success(struct msg *msg)
+struct msg {
+	size_t argc;
+	const char **argv;
+};
+
+size_t msg_get_length(const struct msg *msg)
+{
+	return msg->argc;
+}
+
+const char **msg_get_words(const struct msg *msg)
+{
+	return msg->argv;
+}
+
+int msg_success(struct msg **msg)
 {
 	const char *argv[] = {"success", NULL};
 	return msg_from_argv(msg, argv);
 }
 
-int msg_error(struct msg *msg)
+int msg_error(struct msg **msg)
 {
 	const char *argv[] = {"error", NULL};
 	return msg_from_argv(msg, argv);
@@ -37,82 +52,107 @@ int msg_is_error(const struct msg *msg)
 
 static int msg_copy_argv(struct msg *msg, const char **argv)
 {
-	msg->argv = calloc(msg->argc, sizeof(const char *));
+	size_t copied = 0;
 
+	msg->argv = calloc(msg->argc + 1, sizeof(const char *));
 	if (!msg->argv) {
 		log_errno("calloc");
 		return -1;
 	}
 
-	for (int i = 0; i < msg->argc; ++i) {
-		msg->argv[i] = strdup(argv[i]);
-		if (!msg->argv[i]) {
+	for (copied = 0; copied < msg->argc; ++copied) {
+		msg->argv[copied] = strdup(argv[copied]);
+		if (!msg->argv[copied]) {
 			log_errno("strdup");
-			goto free;
+			goto free_copied;
 		}
 	}
 
 	return 0;
 
-free:
-	msg_free(msg);
+free_copied:
+	for (size_t i = 0; i < copied; ++i) {
+		free((char *)msg->argv[i]);
+	}
+
+	free(msg->argv);
 
 	return -1;
 }
 
-struct msg *msg_copy(const struct msg *src)
+int msg_copy(struct msg **_dest, const struct msg *src)
 {
-	struct msg *dest;
+	struct msg *dest = NULL;
 	int ret = 0;
 
-	dest = malloc(sizeof(*dest));
-	if (!dest) {
-		log_errno("calloc");
-		return NULL;
+	*_dest = malloc(sizeof(struct msg));
+	if (!_dest) {
+		log_errno("malloc");
+		return -1;
 	}
+	dest = *_dest;
+
 	dest->argc = src->argc;
 
 	ret = msg_copy_argv(dest, (const char **)src->argv);
 	if (ret < 0)
 		goto free;
 
-	return dest;
+	return 0;
 
 free:
 	free(dest);
 
-	return NULL;
+	return -1;
 }
 
-void msg_free(const struct msg *msg)
+void msg_free(struct msg *msg)
 {
-	for (int i = 0; i < msg->argc; ++i)
+	for (size_t i = 0; i < msg->argc; ++i)
 		free((char *)msg->argv[i]);
 	free(msg->argv);
+	free(msg);
 }
 
-int msg_from_argv(struct msg *msg, const char **argv)
+int msg_from_argv(struct msg **_msg, const char **argv)
 {
-	int argc = 0;
+	struct msg *msg = NULL;
+	int ret = 0;
 
+	*_msg = malloc(sizeof(struct msg));
+	if (!*_msg) {
+		log_errno("malloc");
+		return -1;
+	}
+	msg = *_msg;
+
+	msg->argc = 0;
 	for (const char **s = argv; *s; ++s)
-		++argc;
+		++msg->argc;
 
-	msg->argc = argc;
-	return msg_copy_argv(msg, argv);
+	ret = msg_copy_argv(msg, argv);
+	if (ret < 0)
+		goto free;
+
+	return 0;
+
+free:
+	free(msg);
+
+	return -1;
 }
 
 static uint32_t calc_buf_size(const struct msg *msg)
 {
 	uint32_t len = 0;
-	for (int i = 0; i < msg->argc; ++i)
+	for (size_t i = 0; i < msg->argc; ++i)
 		len += strlen(msg->argv[i]) + 1;
 	return len;
 }
 
-static int calc_argv_len(const void *buf, size_t len)
+static size_t calc_argv_len(const void *buf, size_t len)
 {
-	int argc = 0;
+	size_t argc = 0;
 	for (const char *it = buf; it < (const char *)buf + len; it += strlen(it) + 1)
 		++argc;
 	return argc;
@@ -120,7 +160,7 @@ static int calc_argv_len(const void *buf, size_t len)
 
 static void argv_pack(char *dest, const struct msg *msg)
 {
-	for (int i = 0; i < msg->argc; ++i) {
+	for (size_t i = 0; i < msg->argc; ++i) {
 		strcpy(dest, msg->argv[i]);
 		dest += strlen(msg->argv[i]) + 1;
 	}
@@ -128,28 +168,31 @@ static void argv_pack(char *dest, const struct msg *msg)
 
 static int argv_unpack(struct msg *msg, const char *src)
 {
-	msg->argv = calloc(msg->argc, sizeof(char *));
+	size_t copied = 0;
+
+	msg->argv = calloc(msg->argc + 1, sizeof(const char *));
 	if (!msg->argv) {
 		log_errno("calloc");
 		return -1;
 	}
 
-	for (int i = 0; i < msg->argc; ++i) {
-		size_t len = strlen(src);
-
-		msg->argv[i] = malloc(len + 1);
-		if (!msg->argv[i]) {
-			log_errno("malloc");
+	for (copied = 0; copied < msg->argc; ++copied) {
+		msg->argv[copied] = strdup(src);
+		if (!msg->argv[copied]) {
+			log_errno("strdup");
 			goto free;
 		}
 
-		strcpy(msg->argv[i], src);
-		src += len + 1;
+		src += strlen(msg->argv[copied]) + 1;
 	}
 
 	return 0;
 
 free:
+	for (size_t i = 0; i < copied; ++i) {
+		free((char *)msg->argv[i]);
+	}
+
 	msg_free(msg);
 
 	return -1;
@@ -185,7 +228,7 @@ free_data:
 	return ret;
 }
 
-int msg_send_and_wait(int fd, const struct msg *request, struct msg *response)
+int msg_send_and_wait(int fd, const struct msg *request, struct msg **response)
 {
 	int ret = 0;
 
@@ -200,20 +243,34 @@ int msg_send_and_wait(int fd, const struct msg *request, struct msg *response)
 	return ret;
 }
 
-int msg_recv(int fd, struct msg *msg)
+int msg_recv(int fd, struct msg **_msg)
 {
-	struct buf *buf;
+	struct msg *msg = NULL;
+	struct buf *buf = NULL;
 	int ret = 0;
 
 	ret = net_recv_buf(fd, &buf);
 	if (ret < 0)
 		return ret;
 
+	*_msg = malloc(sizeof(struct msg));
+	if (!*_msg) {
+		log_errno("malloc");
+		ret = -1;
+		goto destroy_buf;
+	}
+	msg = *_msg;
+
 	msg->argc = calc_argv_len(buf_get_data(buf), buf_get_size(buf));
 
 	ret = argv_unpack(msg, buf_get_data(buf));
 	if (ret < 0)
-		goto destroy_buf;
+		goto free_msg;
+
+	goto destroy_buf;
+
+free_msg:
+	free(msg);
 
 destroy_buf:
 	buf_destroy(buf);
@@ -223,7 +280,7 @@ destroy_buf:
 
 void msg_dump(const struct msg *msg)
 {
-	log("Message[%d]:\n", msg->argc);
-	for (int i = 0; i < msg->argc; ++i)
+	log("Message[%zu]:\n", msg->argc);
+	for (size_t i = 0; i < msg->argc; ++i)
 		log("\t%s\n", msg->argv[i]);
 }

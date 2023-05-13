@@ -18,6 +18,6 @@ struct client;
 int client_create(struct client **, const struct settings *);
 void client_destroy(struct client *);
 
-int client_main(const struct client *, int argc, char *argv[]);
+int client_main(const struct client *, const char **argv);
 
 #endif

@@ -47,24 +47,31 @@ void client_destroy(struct client *client)
 	free(client);
 }
 
-int client_main(const struct client *client, int argc, char *argv[])
+int client_main(const struct client *client, const char **argv)
 {
-	struct msg request = {argc, argv};
-	struct msg response;
+	struct msg *request;
+	struct msg *response;
 	int ret = 0;
 
-	ret = msg_send_and_wait(client->fd, &request, &response);
+	ret = msg_from_argv(&request, argv);
 	if (ret < 0)
 		return ret;
 
-	if (msg_is_error(&response)) {
+	ret = msg_send_and_wait(client->fd, request, &response);
+	if (ret < 0)
+		goto free_request;
+
+	if (msg_is_error(response)) {
 		log_err("Server failed to process the request\n");
 		ret = -1;
 		goto free_response;
 	}
 
 free_response:
-	msg_free(&response);
+	msg_free(response);
+
+free_request:
+	msg_free(request);
 
 	return ret;
 }

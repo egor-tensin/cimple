@@ -7,6 +7,7 @@
 
 #include "server.h"
 #include "ci_queue.h"
+#include "command.h"
 #include "compiler.h"
 #include "const.h"
 #include "log.h"
@@ -18,7 +19,6 @@
 
 #include <pthread.h>
 #include <stdlib.h>
-#include <string.h>
 
 struct server {
 	pthread_mutex_t server_mtx;
@@ -111,7 +111,7 @@ static int server_has_runs(const struct server *server)
 
 static int worker_ci_run(int fd, const struct ci_queue_entry *ci_run)
 {
-	struct msg request, response;
+	struct msg *request, *response;
 	int ret = 0;
 
 	const char *argv[] = {CMD_CI_RUN, ci_queue_entry_get_url(ci_run),
@@ -121,21 +121,21 @@ static int worker_ci_run(int fd, const struct ci_queue_entry *ci_run)
 	if (ret < 0)
 		return ret;
 
-	ret = msg_send_and_wait(fd, &request, &response);
-	msg_free(&request);
+	ret = msg_send_and_wait(fd, request, &response);
+	msg_free(request);
 	if (ret < 0)
 		return ret;
 
-	if (response.argc < 0) {
+	if (!msg_is_success(response)) {
 		log_err("Failed to schedule a CI run: worker is busy?\n");
-		ret = -1;
+		msg_dump(response);
 		goto free_response;
 	}
 
 	/* TODO: handle the response. */
 
 free_response:
-	msg_free(&response);
+	msg_free(response);
 
 	return ret;
 }
@@ -234,15 +234,10 @@ static int worker_thread(struct server *server, int fd)
 	return ret;
 }
 
-static int msg_new_worker_handler(struct server *server, int client_fd,
-                                  UNUSED const struct msg *request)
+static int msg_new_worker_handler(int client_fd, UNUSED const struct msg *request, void *_server,
+                                  UNUSED struct msg **response)
 {
-	return worker_thread(server, client_fd);
-}
-
-static int msg_new_worker_parser(UNUSED const struct msg *msg)
-{
-	return 1;
+	return worker_thread((struct server *)_server, client_fd);
 }
 
 static int msg_ci_run_queue(struct server *server, const char *url, const char *rev)
@@ -276,86 +271,32 @@ unlock:
 	return ret;
 }
 
-static int msg_ci_run_handler(struct server *server, int client_fd, const struct msg *msg)
-{
-	struct msg response;
-	int ret = 0;
-
-	ret = msg_ci_run_queue(server, msg->argv[1], msg->argv[2]);
-	if (ret < 0)
-		ret = msg_error(&response);
-	else
-		ret = msg_success(&response);
-
-	if (ret < 0)
-		return ret;
-
-	ret = msg_send(client_fd, &response);
-	msg_free(&response);
-	return ret;
-}
-
-static int msg_ci_run_parser(const struct msg *msg)
-{
-	if (msg->argc != 3) {
-		log_err("Invalid number of arguments for a message: %d\n", msg->argc);
-		return 0;
-	}
-
-	return 1;
-}
-
-typedef int (*msg_parser)(const struct msg *msg);
-typedef int (*msg_handler)(struct server *, int client_fd, const struct msg *msg);
-
-struct msg_descr {
-	const char *cmd;
-	msg_parser parser;
-	msg_handler handler;
-};
-
-struct msg_descr messages[] = {
-    {CMD_NEW_WORKER, msg_new_worker_parser, msg_new_worker_handler},
-    {CMD_CI_RUN, msg_ci_run_parser, msg_ci_run_handler},
-};
-
-static int server_msg_handler(struct server *server, int client_fd, const struct msg *request)
-{
-	if (request->argc == 0)
-		goto unknown_request;
-
-	size_t numof_messages = sizeof(messages) / sizeof(messages[0]);
-
-	for (size_t i = 0; i < numof_messages; ++i) {
-		if (strcmp(messages[i].cmd, request->argv[0]))
-			continue;
-		if (!messages[i].parser(request))
-			continue;
-		return messages[i].handler(server, client_fd, request);
-	}
-
-unknown_request:
-	log_err("Received an unknown message\n");
-	msg_dump(request);
-	struct msg response;
-	msg_error(&response);
-	return msg_send(client_fd, &response);
-}
-
-static int server_conn_handler(int client_fd, void *_server)
+static int msg_ci_run_handler(UNUSED int client_fd, const struct msg *request, void *_server,
+                              struct msg **response)
 {
 	struct server *server = (struct server *)_server;
-	struct msg request;
 	int ret = 0;
 
-	ret = msg_recv(client_fd, &request);
+	if (msg_get_length(request) != 3) {
+		log_err("Invalid number of arguments for a message: %zu\n",
+		        msg_get_length(request));
+		msg_dump(request);
+		return -1;
+	}
+
+	const char **words = msg_get_words(request);
+
+	ret = msg_ci_run_queue(server, words[1], words[2]);
 	if (ret < 0)
 		return ret;
 
-	ret = server_msg_handler(server, client_fd, &request);
-	msg_free(&request);
-	return ret;
+	return msg_success(response);
 }
+
+static struct command_def commands[] = {
+    {CMD_NEW_WORKER, msg_new_worker_handler},
+    {CMD_CI_RUN, msg_ci_run_handler},
+};
 
 static int server_set_stopping(struct server *server)
 {
@@ -383,24 +324,32 @@ unlock:
 
 int server_main(struct server *server)
 {
+	struct command_dispatcher *dispatcher = NULL;
 	int ret = 0;
 
 	ret = signal_install_global_handler();
 	if (ret < 0)
 		return ret;
 
+	ret = command_dispatcher_create(&dispatcher, commands,
+	                                sizeof(commands) / sizeof(commands[0]), server);
+	if (ret < 0)
+		return ret;
+
 	while (!global_stop_flag) {
 		log("Waiting for new connections\n");
 
-		ret = tcp_server_accept(server->tcp_server, server_conn_handler, server);
+		ret = tcp_server_accept(server->tcp_server, command_dispatcher_conn_handler,
+		                        dispatcher);
 		if (ret < 0) {
-			if (errno == EINVAL && global_stop_flag) {
+			if (errno == EINVAL && global_stop_flag)
 				ret = 0;
-				break;
-			}
-			return ret;
+			goto dispatcher_destroy;
 		}
 	}
+
+dispatcher_destroy:
+	command_dispatcher_destroy(dispatcher);
 
 	return server_set_stopping(server);
 }

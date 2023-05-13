@@ -36,6 +36,7 @@ generate_sql_header(sqlite)
 add_my_executable(server server_main.c server.c
     ci_queue.c
     cmd_line.c
+    command.c
     file.c
     msg.c
     net.c
@@ -57,6 +58,7 @@ add_my_executable(client client_main.c client.c
 add_my_executable(worker worker_main.c worker.c
     ci.c
     cmd_line.c
+    command.c
     file.c
     git.c
     msg.c
