@@ -66,7 +66,7 @@ void ci_queue_entry_destroy(struct ci_queue_entry *entry)
 
 const char *ci_queue_entry_get_url(const struct ci_queue_entry *entry)
 {
-	return entry->rev;
+	return entry->url;
 }
 
 const char *ci_queue_entry_get_rev(const struct ci_queue_entry *entry)
