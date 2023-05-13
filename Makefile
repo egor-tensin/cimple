@@ -61,4 +61,4 @@ install: build
 
 .PHONY: test
 test:
-	cd -- '$(call escape,$(cmake_dir))' && ctest -C '$(call escape,$(BUILD_TYPE))' --verbose
+	cd -- '$(call escape,$(cmake_dir))' && ctest --verbose
