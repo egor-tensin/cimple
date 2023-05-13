@@ -10,6 +10,7 @@
 #include "msg.h"
 #include "net.h"
 
+#include <stdlib.h>
 #include <unistd.h>
 
 struct client {

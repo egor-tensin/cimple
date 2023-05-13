@@ -8,8 +8,8 @@
 #ifndef __NET_H__
 #define __NET_H__
 
+#include <stddef.h>
 #include <stdint.h>
-#include <stdlib.h>
 
 int net_bind(const char *port);
 int net_accept(int fd);

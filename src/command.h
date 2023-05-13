@@ -10,7 +10,7 @@
 
 #include "msg.h"
 
-#include <stdlib.h>
+#include <stddef.h>
 
 typedef int (*cmd_handler)(int conn_fd, const struct msg *request, void *ctx,
                            struct msg **response);
