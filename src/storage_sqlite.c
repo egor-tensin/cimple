@@ -23,9 +23,7 @@ struct storage_settings_sqlite {
 
 int storage_settings_create_sqlite(struct storage_settings *settings, const char *path)
 {
-	struct storage_settings_sqlite *sqlite;
-
-	sqlite = malloc(sizeof(struct storage_settings_sqlite));
+	struct storage_settings_sqlite *sqlite = malloc(sizeof(struct storage_settings_sqlite));
 	if (!sqlite) {
 		log_errno("malloc");
 		return -1;
@@ -61,18 +59,14 @@ static int storage_upgrade_sqlite_to(struct storage_sqlite *storage, size_t vers
 {
 	static const char *const FMT = "%s PRAGMA user_version = %zu;";
 
-	const char *script;
-	char *full_script;
-	size_t nb;
+	const char *script = sql_sqlite_files[version];
 	int ret = 0;
 
-	script = sql_sqlite_files[version];
-
 	ret = snprintf(NULL, 0, FMT, script, version + 1);
-	nb = (size_t)ret + 1;
+	size_t nb = (size_t)ret + 1;
 	ret = 0;
 
-	full_script = malloc(nb);
+	char *full_script = malloc(nb);
 	if (!full_script) {
 		log_errno("malloc");
 		return -1;
@@ -106,8 +100,7 @@ static int storage_upgrade_sqlite_from_to(struct storage_sqlite *storage, size_t
 
 static int storage_upgrade_sqlite(struct storage_sqlite *storage)
 {
-	size_t newest_version;
-	unsigned int current_version;
+	unsigned int current_version = 0;
 	int ret = 0;
 
 	ret = sqlite_get_user_version(storage->db, &current_version);
@@ -115,7 +108,7 @@ static int storage_upgrade_sqlite(struct storage_sqlite *storage)
 		return ret;
 	log("SQLite database version: %u\n", current_version);
 
-	newest_version = sizeof(sql_sqlite_files) / sizeof(sql_sqlite_files[0]);
+	size_t newest_version = sizeof(sql_sqlite_files) / sizeof(sql_sqlite_files[0]);
 	log("Newest database version: %zu\n", newest_version);
 
 	if (current_version > newest_version) {
@@ -152,8 +145,8 @@ int storage_create_sqlite(struct storage *storage, const struct storage_settings
 
 	log("Using SQLite database at %s\n", settings->sqlite->path);
 
-	storage->sqlite = malloc(sizeof(storage->sqlite));
-	if (!storage->sqlite) {
+	struct storage_sqlite *sqlite = malloc(sizeof(struct storage_sqlite));
+	if (!sqlite) {
 		log_errno("malloc");
 		return -1;
 	}
@@ -161,13 +154,14 @@ int storage_create_sqlite(struct storage *storage, const struct storage_settings
 	ret = sqlite_init();
 	if (ret < 0)
 		goto free;
-	ret = sqlite_open_rw(settings->sqlite->path, &storage->sqlite->db);
+	ret = sqlite_open_rw(settings->sqlite->path, &sqlite->db);
 	if (ret < 0)
 		goto destroy;
-	ret = storage_prepare_sqlite(storage->sqlite);
+	ret = storage_prepare_sqlite(sqlite);
 	if (ret < 0)
 		goto close;
 
+	storage->sqlite = sqlite;
 	return ret;
 
 close:
@@ -175,7 +169,7 @@ close:
 destroy:
 	sqlite_destroy();
 free:
-	free(storage->sqlite);
+	free(sqlite);
 
 	return ret;
 }

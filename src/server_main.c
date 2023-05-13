@@ -62,7 +62,7 @@ static int parse_settings(struct settings *settings, int argc, char *argv[])
 int main(int argc, char *argv[])
 {
 	struct settings settings;
-	struct server *server;
+	struct server *server = NULL;
 	int ret = 0;
 
 	ret = parse_settings(&settings, argc, argv);

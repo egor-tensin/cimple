@@ -20,15 +20,13 @@ static char *get_current_binary_path()
 
 static char *get_current_binary_name()
 {
-	char *path, *name, *result;
-
-	path = get_current_binary_path();
+	char *path = get_current_binary_path();
 	if (!path)
 		return NULL;
 
-	name = basename(path);
+	char *name = basename(path);
 
-	result = strdup(name);
+	char *result = strdup(name);
 	if (!result) {
 		log_errno("strdup");
 		goto free_path;
@@ -42,14 +40,11 @@ free_path:
 
 void exit_with_usage(int ec)
 {
-	char *binary;
-	FILE *dest;
-
-	dest = stdout;
+	FILE *dest = stdout;
 	if (ec)
 		dest = stderr;
 
-	binary = get_current_binary_name();
+	char *binary = get_current_binary_name();
 
 	fprintf(dest, "usage: %s %s\n", binary ?: "prog", get_usage_string());
 	free(binary);

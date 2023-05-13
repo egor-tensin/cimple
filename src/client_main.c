@@ -10,6 +10,7 @@
 #include "const.h"
 
 #include <getopt.h>
+#include <stdlib.h>
 
 static struct settings default_settings()
 {
@@ -62,7 +63,7 @@ static int parse_settings(struct settings *settings, int argc, char *argv[])
 int main(int argc, char *argv[])
 {
 	struct settings settings;
-	struct client *client;
+	struct client *client = NULL;
 	int ret = 0;
 
 	ret = parse_settings(&settings, argc, argv);

@@ -30,13 +30,13 @@ const char **msg_get_words(const struct msg *msg)
 
 int msg_success(struct msg **msg)
 {
-	const char *argv[] = {"success", NULL};
+	static const char *argv[] = {"success", NULL};
 	return msg_from_argv(msg, argv);
 }
 
 int msg_error(struct msg **msg)
 {
-	const char *argv[] = {"error", NULL};
+	static const char *argv[] = {"error", NULL};
 	return msg_from_argv(msg, argv);
 }
 
@@ -82,15 +82,13 @@ free_copied:
 
 int msg_copy(struct msg **_dest, const struct msg *src)
 {
-	struct msg *dest = NULL;
 	int ret = 0;
 
-	*_dest = malloc(sizeof(struct msg));
-	if (!_dest) {
+	struct msg *dest = malloc(sizeof(struct msg));
+	if (!dest) {
 		log_errno("malloc");
 		return -1;
 	}
-	dest = *_dest;
 
 	dest->argc = src->argc;
 
@@ -98,6 +96,7 @@ int msg_copy(struct msg **_dest, const struct msg *src)
 	if (ret < 0)
 		goto free;
 
+	*_dest = dest;
 	return 0;
 
 free:
@@ -116,15 +115,13 @@ void msg_free(struct msg *msg)
 
 int msg_from_argv(struct msg **_msg, const char **argv)
 {
-	struct msg *msg = NULL;
 	int ret = 0;
 
-	*_msg = malloc(sizeof(struct msg));
-	if (!*_msg) {
+	struct msg *msg = malloc(sizeof(struct msg));
+	if (!msg) {
 		log_errno("malloc");
 		return -1;
 	}
-	msg = *_msg;
 
 	msg->argc = 0;
 	for (const char **s = argv; *s; ++s)
@@ -134,6 +131,7 @@ int msg_from_argv(struct msg **_msg, const char **argv)
 	if (ret < 0)
 		goto free;
 
+	*_msg = msg;
 	return 0;
 
 free:
@@ -200,7 +198,7 @@ free:
 
 int msg_send(int fd, const struct msg *msg)
 {
-	struct buf *buf;
+	struct buf *buf = NULL;
 	int ret = 0;
 
 	uint32_t size = calc_buf_size(msg);
@@ -245,7 +243,6 @@ int msg_send_and_wait(int fd, const struct msg *request, struct msg **response)
 
 int msg_recv(int fd, struct msg **_msg)
 {
-	struct msg *msg = NULL;
 	struct buf *buf = NULL;
 	int ret = 0;
 
@@ -253,13 +250,12 @@ int msg_recv(int fd, struct msg **_msg)
 	if (ret < 0)
 		return ret;
 
-	*_msg = malloc(sizeof(struct msg));
-	if (!*_msg) {
+	struct msg *msg = malloc(sizeof(struct msg));
+	if (!msg) {
 		log_errno("malloc");
 		ret = -1;
 		goto destroy_buf;
 	}
-	msg = *_msg;
 
 	msg->argc = calc_argv_len(buf_get_data(buf), buf_get_size(buf));
 
@@ -267,6 +263,7 @@ int msg_recv(int fd, struct msg **_msg)
 	if (ret < 0)
 		goto free_msg;
 
+	*_msg = msg;
 	goto destroy_buf;
 
 free_msg:

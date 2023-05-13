@@ -35,16 +35,14 @@ struct server {
 
 int server_create(struct server **_server, const struct settings *settings)
 {
-	struct server *server;
 	struct storage_settings storage_settings;
 	int ret = 0;
 
-	*_server = malloc(sizeof(struct server));
-	if (!*_server) {
+	struct server *server = malloc(sizeof(struct server));
+	if (!server) {
 		log_errno("malloc");
 		return -1;
 	}
-	server = *_server;
 
 	ret = pthread_mutex_init(&server->server_mtx, NULL);
 	if (ret) {
@@ -75,6 +73,7 @@ int server_create(struct server **_server, const struct settings *settings)
 
 	ci_queue_create(&server->ci_queue);
 
+	*_server = server;
 	return ret;
 
 destroy_storage:
@@ -111,7 +110,7 @@ static int server_has_runs(const struct server *server)
 
 static int worker_ci_run(int fd, const struct ci_queue_entry *ci_run)
 {
-	struct msg *request, *response;
+	struct msg *request = NULL, *response = NULL;
 	int ret = 0;
 
 	const char *argv[] = {CMD_CI_RUN, ci_queue_entry_get_url(ci_run),
@@ -242,7 +241,7 @@ static int msg_new_worker_handler(int client_fd, UNUSED const struct msg *reques
 
 static int msg_ci_run_queue(struct server *server, const char *url, const char *rev)
 {
-	struct ci_queue_entry *entry;
+	struct ci_queue_entry *entry = NULL;
 	int ret = 0;
 
 	ret = pthread_mutex_lock(&server->server_mtx);

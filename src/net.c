@@ -20,9 +20,9 @@
 
 int net_bind(const char *port)
 {
-	struct addrinfo *result, *it = NULL;
+	struct addrinfo *result = NULL, *it = NULL;
 	struct addrinfo hints;
-	int socket_fd, ret = 0;
+	int socket_fd = -1, ret = 0;
 
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = AF_INET6;
@@ -104,9 +104,9 @@ int net_accept(int fd)
 
 int net_connect(const char *host, const char *port)
 {
-	struct addrinfo *result, *it = NULL;
+	struct addrinfo *result = NULL, *it = NULL;
 	struct addrinfo hints;
-	int socket_fd, ret = 0;
+	int socket_fd = -1, ret = 0;
 
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = AF_UNSPEC;
@@ -205,15 +205,13 @@ struct buf {
 
 int buf_create(struct buf **_buf, const void *data, uint32_t size)
 {
-	struct buf *buf;
 	int ret = 0;
 
-	*_buf = malloc(sizeof(struct buf));
-	if (!*_buf) {
+	struct buf *buf = malloc(sizeof(struct buf));
+	if (!buf) {
 		log_errno("malloc");
 		return -1;
 	}
-	buf = *_buf;
 
 	buf->data = malloc(size);
 	if (!buf->data) {
@@ -224,6 +222,7 @@ int buf_create(struct buf **_buf, const void *data, uint32_t size)
 	buf->size = size;
 	memcpy(buf->data, data, size);
 
+	*_buf = buf;
 	return ret;
 
 free:
@@ -250,10 +249,9 @@ void *buf_get_data(const struct buf *buf)
 
 int net_send_buf(int fd, const struct buf *buf)
 {
-	uint32_t size;
 	int ret = 0;
 
-	size = htonl(buf->size);
+	uint32_t size = htonl(buf->size);
 	ret = net_send_all(fd, &size, sizeof(size));
 	if (ret < 0)
 		return ret;
@@ -267,8 +265,7 @@ int net_send_buf(int fd, const struct buf *buf)
 
 int net_recv_buf(int fd, struct buf **buf)
 {
-	void *data;
-	uint32_t size;
+	uint32_t size = 0;
 	int ret = 0;
 
 	ret = net_recv_all(fd, &size, sizeof(size));
@@ -278,7 +275,7 @@ int net_recv_buf(int fd, struct buf **buf)
 	}
 	size = ntohl(size);
 
-	data = malloc(size);
+	void *data = malloc(size);
 	if (!data) {
 		log_errno("malloc");
 		goto fail;

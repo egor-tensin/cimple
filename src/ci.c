@@ -77,8 +77,8 @@ cleanup_repo:
 
 int ci_run_git_repo(const char *url, const char *rev, struct proc_output *output)
 {
-	char *oldpwd;
-	git_repository *repo;
+	char *oldpwd = NULL;
+	git_repository *repo = NULL;
 	int ret = 0;
 
 	ret = ci_prepare_git_repo(&repo, url, rev);

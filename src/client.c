@@ -18,21 +18,20 @@ struct client {
 
 int client_create(struct client **_client, const struct settings *settings)
 {
-	struct client *client;
 	int ret = 0;
 
-	*_client = malloc(sizeof(struct client));
-	if (!*_client) {
+	struct client *client = malloc(sizeof(struct client));
+	if (!client) {
 		log_errno("malloc");
 		return -1;
 	}
-	client = *_client;
 
 	ret = net_connect(settings->host, settings->port);
 	if (ret < 0)
 		goto free;
 	client->fd = ret;
 
+	*_client = client;
 	return ret;
 
 free:
@@ -49,8 +48,7 @@ void client_destroy(struct client *client)
 
 int client_main(const struct client *client, const char **argv)
 {
-	struct msg *request;
-	struct msg *response;
+	struct msg *request = NULL, *response = NULL;
 	int ret = 0;
 
 	ret = msg_from_argv(&request, argv);
@@ -61,8 +59,9 @@ int client_main(const struct client *client, const char **argv)
 	if (ret < 0)
 		goto free_request;
 
-	if (msg_is_error(response)) {
+	if (!msg_is_success(response)) {
 		log_err("Server failed to process the request\n");
+		msg_dump(response);
 		ret = -1;
 		goto free_response;
 	}

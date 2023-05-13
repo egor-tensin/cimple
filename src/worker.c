@@ -32,15 +32,13 @@ struct worker {
 
 int worker_create(struct worker **_worker, const struct settings *settings)
 {
-	struct worker *worker;
 	int ret = 0;
 
-	*_worker = malloc(sizeof(struct worker));
-	if (!*_worker) {
+	struct worker *worker = malloc(sizeof(struct worker));
+	if (!worker) {
 		log_errno("malloc");
 		return -1;
 	}
-	worker = *_worker;
 
 	ret = libgit_init();
 	if (ret < 0)
@@ -51,6 +49,7 @@ int worker_create(struct worker **_worker, const struct settings *settings)
 		goto git_shutdown;
 	worker->fd = ret;
 
+	*_worker = worker;
 	return ret;
 
 git_shutdown:
@@ -74,7 +73,7 @@ void worker_destroy(struct worker *worker)
 static int msg_send_new_worker(const struct worker *worker)
 {
 	static const char *argv[] = {CMD_NEW_WORKER, NULL};
-	struct msg *msg;
+	struct msg *msg = NULL;
 	int ret = 0;
 
 	ret = msg_from_argv(&msg, argv);
@@ -152,7 +151,7 @@ int worker_main(struct worker *worker, UNUSED int argc, UNUSED char *argv[])
 		return ret;
 
 	while (!global_stop_flag) {
-		struct msg *request;
+		struct msg *request = NULL;
 
 		log("Waiting for a new command\n");
 

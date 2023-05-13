@@ -21,21 +21,20 @@ struct tcp_server {
 
 int tcp_server_create(struct tcp_server **_server, const char *port)
 {
-	struct tcp_server *server;
 	int ret = 0;
 
-	*_server = malloc(sizeof(struct tcp_server));
-	if (!*_server) {
+	struct tcp_server *server = malloc(sizeof(struct tcp_server));
+	if (!server) {
 		log_errno("malloc");
 		return -1;
 	}
-	server = *_server;
 
 	ret = net_bind(port);
 	if (ret < 0)
 		goto free;
 	server->fd = ret;
 
+	*_server = server;
 	return ret;
 
 free:
@@ -75,29 +74,29 @@ close:
 
 int tcp_server_accept(const struct tcp_server *server, tcp_server_conn_handler handler, void *arg)
 {
-	struct child_context *ctx;
 	pthread_attr_t child_attr;
 	sigset_t old_mask;
 	pthread_t child;
-	int conn_fd, ret = 0;
+	int ret = 0;
+
+	struct child_context *ctx = calloc(1, sizeof(*ctx));
+	if (!ctx) {
+		log_errno("malloc");
+		return -1;
+	}
+
+	ctx->handler = handler;
+	ctx->arg = arg;
 
 	ret = net_accept(server->fd);
 	if (ret < 0)
-		return ret;
-	conn_fd = ret;
-
-	ctx = malloc(sizeof(*ctx));
-	if (!ctx) {
-		log_errno("malloc");
-		ret = -1;
-		goto close_conn;
-	}
-	*ctx = (struct child_context){conn_fd, handler, arg};
+		goto free_ctx;
+	ctx->fd = ret;
 
 	ret = pthread_attr_init(&child_attr);
 	if (ret) {
 		pthread_errno(ret, "pthread_attr_init");
-		goto free_ctx;
+		goto close_conn;
 	}
 
 	ret = pthread_attr_setdetachstate(&child_attr, PTHREAD_CREATE_DETACHED);
@@ -128,11 +127,11 @@ restore_mask:
 destroy_attr:
 	pthread_errno_if(pthread_attr_destroy(&child_attr), "pthread_attr_destroy");
 
+close_conn:
+	log_errno_if(close(ctx->fd), "close");
+
 free_ctx:
 	free(ctx);
-
-close_conn:
-	log_errno_if(close(conn_fd), "close");
 
 	return ret;
 }

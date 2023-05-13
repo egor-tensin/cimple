@@ -20,23 +20,19 @@ struct ci_queue_entry {
 
 int ci_queue_entry_create(struct ci_queue_entry **_entry, const char *_url, const char *_rev)
 {
-	struct ci_queue_entry *entry;
-	char *url, *rev;
-
-	*_entry = malloc(sizeof(struct ci_queue_entry));
-	if (!*_entry) {
+	struct ci_queue_entry *entry = malloc(sizeof(struct ci_queue_entry));
+	if (!entry) {
 		log_errno("malloc");
 		goto fail;
 	}
-	entry = *_entry;
 
-	url = strdup(_url);
+	char *url = strdup(_url);
 	if (!url) {
 		log_errno("strdup");
 		goto free_entry;
 	}
 
-	rev = strdup(_rev);
+	char *rev = strdup(_rev);
 	if (!rev) {
 		log_errno("strdup");
 		goto free_url;
@@ -45,6 +41,7 @@ int ci_queue_entry_create(struct ci_queue_entry **_entry, const char *_url, cons
 	entry->url = url;
 	entry->rev = rev;
 
+	*_entry = entry;
 	return 0;
 
 free_url:
@@ -81,11 +78,9 @@ void ci_queue_create(struct ci_queue *queue)
 
 void ci_queue_destroy(struct ci_queue *queue)
 {
-	struct ci_queue_entry *entry1, *entry2;
-
-	entry1 = STAILQ_FIRST(queue);
+	struct ci_queue_entry *entry1 = STAILQ_FIRST(queue);
 	while (entry1) {
-		entry2 = STAILQ_NEXT(entry1, entries);
+		struct ci_queue_entry *entry2 = STAILQ_NEXT(entry1, entries);
 		ci_queue_entry_destroy(entry1);
 		entry1 = entry2;
 	}
@@ -109,10 +104,7 @@ void ci_queue_add_first(struct ci_queue *queue, struct ci_queue_entry *entry)
 
 struct ci_queue_entry *ci_queue_remove_first(struct ci_queue *queue)
 {
-	struct ci_queue_entry *entry;
-
-	entry = STAILQ_FIRST(queue);
+	struct ci_queue_entry *entry = STAILQ_FIRST(queue);
 	STAILQ_REMOVE_HEAD(queue, entries);
-
 	return entry;
 }

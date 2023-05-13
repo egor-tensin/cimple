@@ -36,7 +36,7 @@ static void free_def(struct command_def *def)
 
 static int copy_defs(struct command_def *dest, const struct command_def *src, size_t numof_defs)
 {
-	size_t numof_copied, i;
+	size_t numof_copied = 0;
 	int ret = 0;
 
 	for (numof_copied = 0; numof_copied < numof_defs; ++numof_copied) {
@@ -48,7 +48,7 @@ static int copy_defs(struct command_def *dest, const struct command_def *src, si
 	return 0;
 
 free:
-	for (i = 0; i < numof_copied; ++i)
+	for (size_t i = 0; i < numof_copied; ++i)
 		free_def(&dest[numof_copied]);
 
 	return -1;
@@ -56,24 +56,22 @@ free:
 
 static void free_defs(struct command_def *defs, size_t numof_defs)
 {
-	size_t i;
-
-	for (i = 0; i < numof_defs; ++i)
+	for (size_t i = 0; i < numof_defs; ++i)
 		free_def(&defs[i]);
 }
 
 int command_dispatcher_create(struct command_dispatcher **_dispatcher, struct command_def *defs,
                               size_t numof_defs, void *ctx)
 {
-	struct command_dispatcher *dispatcher;
 	int ret = 0;
 
-	*_dispatcher = malloc(sizeof(struct command_dispatcher));
-	if (!*_dispatcher) {
+	struct command_dispatcher *dispatcher = malloc(sizeof(struct command_dispatcher));
+	if (!dispatcher) {
 		log_errno("malloc");
 		return -1;
 	}
-	dispatcher = *_dispatcher;
+
+	dispatcher->ctx = ctx;
 
 	dispatcher->defs = malloc(sizeof(struct command_def) * numof_defs);
 	if (!dispatcher->defs) {
@@ -86,7 +84,7 @@ int command_dispatcher_create(struct command_dispatcher **_dispatcher, struct co
 	if (ret < 0)
 		goto free_defs;
 
-	dispatcher->ctx = ctx;
+	*_dispatcher = dispatcher;
 	return 0;
 
 free_defs:
@@ -144,7 +142,7 @@ exit:
 int command_dispatcher_conn_handler(int conn_fd, void *_dispatcher)
 {
 	struct command_dispatcher *dispatcher = (struct command_dispatcher *)_dispatcher;
-	struct msg *request;
+	struct msg *request = NULL;
 	int ret = 0;
 
 	ret = msg_recv(conn_fd, &request);

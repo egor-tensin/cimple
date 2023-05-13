@@ -138,13 +138,11 @@ int sqlite_column_int(sqlite3_stmt *stmt, int index)
 	return sqlite3_column_int(stmt, index);
 }
 
-int sqlite_column_text(sqlite3_stmt *stmt, int index, char **result)
+int sqlite_column_text(sqlite3_stmt *stmt, int index, char **_result)
 {
-	const unsigned char *value;
-	size_t nb;
 	int ret = 0;
 
-	value = sqlite3_column_text(stmt, index);
+	const unsigned char *value = sqlite3_column_text(stmt, index);
 	if (!value) {
 		ret = sqlite3_errcode(sqlite3_db_handle(stmt));
 		if (ret) {
@@ -152,30 +150,29 @@ int sqlite_column_text(sqlite3_stmt *stmt, int index, char **result)
 			return ret;
 		}
 
-		*result = NULL;
+		*_result = NULL;
 		return 0;
 	}
 
 	ret = sqlite3_column_bytes(stmt, index);
-	nb = (size_t)ret;
+	size_t nb = (size_t)ret;
 
-	*result = calloc(nb + 1, 1);
-	if (!*result) {
+	char *result = calloc(nb + 1, 1);
+	if (!result) {
 		log_errno("calloc");
 		return -1;
 	}
+	memcpy(result, value, nb);
 
-	memcpy(*result, value, nb);
+	*_result = result;
 	return 0;
 }
 
-int sqlite_column_blob(sqlite3_stmt *stmt, int index, unsigned char **result)
+int sqlite_column_blob(sqlite3_stmt *stmt, int index, unsigned char **_result)
 {
-	const unsigned char *value;
-	size_t nb;
 	int ret = 0;
 
-	value = sqlite3_column_blob(stmt, index);
+	const unsigned char *value = sqlite3_column_blob(stmt, index);
 	if (!value) {
 		ret = sqlite3_errcode(sqlite3_db_handle(stmt));
 		if (ret) {
@@ -183,36 +180,34 @@ int sqlite_column_blob(sqlite3_stmt *stmt, int index, unsigned char **result)
 			return ret;
 		}
 
-		*result = NULL;
+		*_result = NULL;
 		return 0;
 	}
 
 	ret = sqlite3_column_bytes(stmt, index);
-	nb = (size_t)ret;
+	size_t nb = (size_t)ret;
 
-	*result = malloc(nb);
-	if (!*result) {
+	unsigned char *result = malloc(nb);
+	if (!result) {
 		log_errno("malloc");
 		return -1;
 	}
+	memcpy(result, value, nb);
 
-	memcpy(*result, value, nb);
+	*_result = result;
 	return 0;
 }
 
 int sqlite_exec_as_transaction(sqlite3 *db, const char *stmt)
 {
 	static const char *const FMT = "BEGIN; %s COMMIT;";
-
-	char *full_stmt;
-	size_t nb;
 	int ret = 0;
 
 	ret = snprintf(NULL, 0, FMT, stmt);
-	nb = (size_t)ret + 1;
+	size_t nb = (size_t)ret + 1;
 	ret = 0;
 
-	full_stmt = malloc(nb);
+	char *full_stmt = malloc(nb);
 	if (!full_stmt) {
 		log_errno("malloc");
 		return -1;
@@ -230,8 +225,8 @@ free:
 
 int sqlite_get_user_version(sqlite3 *db, unsigned int *output)
 {
-	sqlite3_stmt *stmt;
-	int result, ret = 0;
+	sqlite3_stmt *stmt = NULL;
+	int result = -1, ret = 0;
 
 	ret = sqlite_prepare(db, "PRAGMA user_version;", &stmt);
 	if (ret < 0)
