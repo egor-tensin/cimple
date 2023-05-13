@@ -37,12 +37,12 @@ endfunction()
 generate_sql_header(sqlite)
 
 add_my_executable(server server_main.c server.c
-    ci_queue.c
     cmd_line.c
     command.c
     file.c
     msg.c
     net.c
+    run_queue.c
     signal.c
     sql/sqlite_sql.h
     sqlite.c

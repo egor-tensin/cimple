@@ -10,6 +10,7 @@
 #include "server.h"
 
 #include <getopt.h>
+#include <stddef.h>
 
 static struct settings default_settings(void)
 {

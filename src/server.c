@@ -6,12 +6,12 @@
  */
 
 #include "server.h"
-#include "ci_queue.h"
 #include "command.h"
 #include "compiler.h"
 #include "const.h"
 #include "log.h"
 #include "msg.h"
+#include "run_queue.h"
 #include "signal.h"
 #include "storage.h"
 #include "storage_sqlite.h"
@@ -30,7 +30,7 @@ struct server {
 
 	struct tcp_server *tcp_server;
 
-	struct ci_queue ci_queue;
+	struct run_queue run_queue;
 };
 
 int server_create(struct server **_server, const struct settings *settings)
@@ -71,7 +71,7 @@ int server_create(struct server **_server, const struct settings *settings)
 	if (ret < 0)
 		goto destroy_storage;
 
-	ci_queue_create(&server->ci_queue);
+	run_queue_create(&server->run_queue);
 
 	*_server = server;
 	return ret;
@@ -95,7 +95,7 @@ void server_destroy(struct server *server)
 {
 	log("Shutting down\n");
 
-	ci_queue_destroy(&server->ci_queue);
+	run_queue_destroy(&server->run_queue);
 	tcp_server_destroy(server->tcp_server);
 	storage_destroy(&server->storage);
 	pthread_errno_if(pthread_cond_destroy(&server->server_cv), "pthread_cond_destroy");
@@ -105,16 +105,16 @@ void server_destroy(struct server *server)
 
 static int server_has_runs(const struct server *server)
 {
-	return !ci_queue_is_empty(&server->ci_queue);
+	return !run_queue_is_empty(&server->run_queue);
 }
 
-static int worker_ci_run(int fd, const struct ci_queue_entry *ci_run)
+static int worker_ci_run(int fd, const struct run_queue_entry *ci_run)
 {
 	struct msg *request = NULL, *response = NULL;
 	int ret = 0;
 
-	const char *argv[] = {CMD_CI_RUN, ci_queue_entry_get_url(ci_run),
-	                      ci_queue_entry_get_rev(ci_run), NULL};
+	const char *argv[] = {CMD_RUN, run_queue_entry_get_url(ci_run),
+	                      run_queue_entry_get_rev(ci_run), NULL};
 
 	ret = msg_from_argv(&request, argv);
 	if (ret < 0)
@@ -139,7 +139,7 @@ free_response:
 	return ret;
 }
 
-static int worker_dequeue_run(struct server *server, struct ci_queue_entry **ci_run)
+static int worker_dequeue_run(struct server *server, struct run_queue_entry **ci_run)
 {
 	int ret = 0;
 
@@ -162,8 +162,9 @@ static int worker_dequeue_run(struct server *server, struct ci_queue_entry **ci_
 		goto unlock;
 	}
 
-	*ci_run = ci_queue_remove_first(&server->ci_queue);
-	log("Removed a CI run for repository %s from the queue\n", ci_queue_entry_get_url(*ci_run));
+	*ci_run = run_queue_remove_first(&server->run_queue);
+	log("Removed a CI run for repository %s from the queue\n",
+	    run_queue_entry_get_url(*ci_run));
 	goto unlock;
 
 unlock:
@@ -172,7 +173,7 @@ unlock:
 	return ret;
 }
 
-static int worker_requeue_run(struct server *server, struct ci_queue_entry *ci_run)
+static int worker_requeue_run(struct server *server, struct run_queue_entry *ci_run)
 {
 	int ret = 0;
 
@@ -182,8 +183,8 @@ static int worker_requeue_run(struct server *server, struct ci_queue_entry *ci_r
 		return ret;
 	}
 
-	ci_queue_add_first(&server->ci_queue, ci_run);
-	log("Requeued a CI run for repository %s\n", ci_queue_entry_get_url(ci_run));
+	run_queue_add_first(&server->run_queue, ci_run);
+	log("Requeued a CI run for repository %s\n", run_queue_entry_get_url(ci_run));
 
 	ret = pthread_cond_signal(&server->server_cv);
 	if (ret) {
@@ -200,7 +201,7 @@ unlock:
 
 static int worker_iteration(struct server *server, int fd)
 {
-	struct ci_queue_entry *ci_run = NULL;
+	struct run_queue_entry *ci_run = NULL;
 	int ret = 0;
 
 	ret = worker_dequeue_run(server, &ci_run);
@@ -211,7 +212,7 @@ static int worker_iteration(struct server *server, int fd)
 	if (ret < 0)
 		goto requeue_run;
 
-	ci_queue_entry_destroy(ci_run);
+	run_queue_entry_destroy(ci_run);
 	return ret;
 
 requeue_run:
@@ -241,7 +242,7 @@ static int msg_new_worker_handler(int client_fd, UNUSED const struct msg *reques
 
 static int msg_ci_run_queue(struct server *server, const char *url, const char *rev)
 {
-	struct ci_queue_entry *entry = NULL;
+	struct run_queue_entry *entry = NULL;
 	int ret = 0;
 
 	ret = pthread_mutex_lock(&server->server_mtx);
@@ -250,11 +251,11 @@ static int msg_ci_run_queue(struct server *server, const char *url, const char *
 		return ret;
 	}
 
-	ret = ci_queue_entry_create(&entry, url, rev);
+	ret = run_queue_entry_create(&entry, url, rev);
 	if (ret < 0)
 		goto unlock;
 
-	ci_queue_add_last(&server->ci_queue, entry);
+	run_queue_add_last(&server->run_queue, entry);
 	log("Added a new CI run for repository %s to the queue\n", url);
 
 	ret = pthread_cond_signal(&server->server_cv);
@@ -294,7 +295,7 @@ static int msg_ci_run_handler(UNUSED int client_fd, const struct msg *request, v
 
 static struct cmd_desc commands[] = {
     {CMD_NEW_WORKER, msg_new_worker_handler},
-    {CMD_CI_RUN, msg_ci_run_handler},
+    {CMD_RUN, msg_ci_run_handler},
 };
 
 static int server_set_stopping(struct server *server)

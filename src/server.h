@@ -8,12 +8,6 @@
 #ifndef __SERVER_H__
 #define __SERVER_H__
 
-#include "ci_queue.h"
-#include "storage.h"
-#include "tcp_server.h"
-
-#include <pthread.h>
-
 struct settings {
 	const char *port;
 

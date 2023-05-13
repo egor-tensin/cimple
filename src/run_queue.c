@@ -5,22 +5,22 @@
  * Distributed under the MIT License.
  */
 
-#include "ci_queue.h"
+#include "run_queue.h"
 #include "log.h"
 
 #include <stdlib.h>
 #include <string.h>
 #include <sys/queue.h>
 
-struct ci_queue_entry {
+struct run_queue_entry {
 	char *url;
 	char *rev;
-	STAILQ_ENTRY(ci_queue_entry) entries;
+	STAILQ_ENTRY(run_queue_entry) entries;
 };
 
-int ci_queue_entry_create(struct ci_queue_entry **_entry, const char *_url, const char *_rev)
+int run_queue_entry_create(struct run_queue_entry **_entry, const char *_url, const char *_rev)
 {
-	struct ci_queue_entry *entry = malloc(sizeof(struct ci_queue_entry));
+	struct run_queue_entry *entry = malloc(sizeof(struct run_queue_entry));
 	if (!entry) {
 		log_errno("malloc");
 		goto fail;
@@ -54,57 +54,57 @@ fail:
 	return -1;
 }
 
-void ci_queue_entry_destroy(struct ci_queue_entry *entry)
+void run_queue_entry_destroy(struct run_queue_entry *entry)
 {
 	free(entry->rev);
 	free(entry->url);
 	free(entry);
 }
 
-const char *ci_queue_entry_get_url(const struct ci_queue_entry *entry)
+const char *run_queue_entry_get_url(const struct run_queue_entry *entry)
 {
 	return entry->url;
 }
 
-const char *ci_queue_entry_get_rev(const struct ci_queue_entry *entry)
+const char *run_queue_entry_get_rev(const struct run_queue_entry *entry)
 {
 	return entry->rev;
 }
 
-void ci_queue_create(struct ci_queue *queue)
+void run_queue_create(struct run_queue *queue)
 {
 	STAILQ_INIT(queue);
 }
 
-void ci_queue_destroy(struct ci_queue *queue)
+void run_queue_destroy(struct run_queue *queue)
 {
-	struct ci_queue_entry *entry1 = STAILQ_FIRST(queue);
+	struct run_queue_entry *entry1 = STAILQ_FIRST(queue);
 	while (entry1) {
-		struct ci_queue_entry *entry2 = STAILQ_NEXT(entry1, entries);
-		ci_queue_entry_destroy(entry1);
+		struct run_queue_entry *entry2 = STAILQ_NEXT(entry1, entries);
+		run_queue_entry_destroy(entry1);
 		entry1 = entry2;
 	}
 	STAILQ_INIT(queue);
 }
 
-int ci_queue_is_empty(const struct ci_queue *queue)
+int run_queue_is_empty(const struct run_queue *queue)
 {
 	return STAILQ_EMPTY(queue);
 }
 
-void ci_queue_add_last(struct ci_queue *queue, struct ci_queue_entry *entry)
+void run_queue_add_last(struct run_queue *queue, struct run_queue_entry *entry)
 {
 	STAILQ_INSERT_TAIL(queue, entry, entries);
 }
 
-void ci_queue_add_first(struct ci_queue *queue, struct ci_queue_entry *entry)
+void run_queue_add_first(struct run_queue *queue, struct run_queue_entry *entry)
 {
 	STAILQ_INSERT_HEAD(queue, entry, entries);
 }
 
-struct ci_queue_entry *ci_queue_remove_first(struct ci_queue *queue)
+struct run_queue_entry *run_queue_remove_first(struct run_queue *queue)
 {
-	struct ci_queue_entry *entry = STAILQ_FIRST(queue);
+	struct run_queue_entry *entry = STAILQ_FIRST(queue);
 	STAILQ_REMOVE_HEAD(queue, entries);
 	return entry;
 }

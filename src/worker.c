@@ -129,7 +129,7 @@ static int msg_ci_run_handler(UNUSED int conn_fd, const struct msg *request, UNU
 }
 
 static struct cmd_desc cmds[] = {
-    {CMD_CI_RUN, msg_ci_run_handler},
+    {CMD_RUN, msg_ci_run_handler},
 };
 
 int worker_main(struct worker *worker, UNUSED int argc, UNUSED char *argv[])

@@ -14,7 +14,7 @@
 #define DEFAULT_PORT "5556"
 #define DEFAULT_SQLITE_PATH "/var/lib/cimple/cimple.sqlite"
 
-#define CMD_CI_RUN "run"
+#define CMD_RUN "run"
 #define CMD_NEW_WORKER "new-worker"
 
 #endif
