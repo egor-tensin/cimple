@@ -16,6 +16,14 @@ directory:
 
     make build
 
+This command makes a CMake build directory in build/cmake/ and executes `make`
+there.
+
+The default is to build using clang in `Release` configuration.
+You can choose a different compiler and configuration like so:
+
+    make build COMPILER=gcc CONFIGURATION=Debug
+
 ### Testing
 
 After building, you can run the "test suite" (depends on Pytest).

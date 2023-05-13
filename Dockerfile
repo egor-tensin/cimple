@@ -7,8 +7,8 @@ FROM base AS builder
 RUN build_deps='bash bsd-compat-headers build-base clang cmake coreutils libgit2-dev py3-pytest sqlite-dev valgrind' && \
     apk add -q --no-cache $build_deps
 
-ARG C_COMPILER=clang
-ARG BUILD_TYPE=Release
+ARG COMPILER=clang
+ARG CONFIGURATION=Release
 ARG DEFAULT_HOST=127.0.0.1
 
 ARG src_dir="/app/src"
@@ -18,11 +18,11 @@ COPY [".", "$src_dir"]
 
 RUN cd -- "$src_dir" && \
     make install \
-        "C_COMPILER=$C_COMPILER" \
-        "BUILD_TYPE=$BUILD_TYPE" \
+        "COMPILER=$COMPILER" \
+        "CONFIGURATION=$CONFIGURATION" \
         "DEFAULT_HOST=$DEFAULT_HOST" \
         "INSTALL_PREFIX=$install_dir" && \
-    make test BUILD_TYPE="$BUILD_TYPE"
+    make test CONFIGURATION="$CONFIGURATION"
 
 FROM base
 

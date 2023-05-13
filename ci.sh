@@ -12,7 +12,7 @@ test_build_clang() {
     echo Building w/ clang
     echo ----------------------------------------------------------------------
     echo
-    test_build --build-arg C_COMPILER=clang
+    test_build --build-arg COMPILER=clang
 }
 
 test_build_gcc() {
@@ -20,7 +20,7 @@ test_build_gcc() {
     echo Building w/ gcc
     echo ----------------------------------------------------------------------
     echo
-    test_build --build-arg C_COMPILER=gcc
+    test_build --build-arg COMPILER=gcc
 }
 
 main() {

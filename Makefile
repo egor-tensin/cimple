@@ -25,13 +25,13 @@ build_dir := $(src_dir)/build
 cmake_dir := $(build_dir)/cmake
 install_dir := $(build_dir)/install
 
-C_COMPILER ?= clang
-BUILD_TYPE ?= Debug
+COMPILER ?= clang
+CONFIGURATION ?= Debug
 DEFAULT_HOST ?= 127.0.0.1
 INSTALL_PREFIX ?= $(install_dir)
 
-$(eval $(call noexpand,C_COMPILER))
-$(eval $(call noexpand,BUILD_TYPE))
+$(eval $(call noexpand,COMPILER))
+$(eval $(call noexpand,CONFIGURATION))
 $(eval $(call noexpand,DEFAULT_HOST))
 $(eval $(call noexpand,INSTALL_PREFIX))
 
@@ -47,8 +47,8 @@ build:
 	mkdir -p -- '$(call escape,$(cmake_dir))'
 	cmake \
 		-G 'Unix Makefiles' \
-		-D 'CMAKE_C_COMPILER=$(call escape,$(C_COMPILER))' \
-		-D 'CMAKE_BUILD_TYPE=$(call escape,$(BUILD_TYPE))' \
+		-D 'CMAKE_C_COMPILER=$(call escape,$(COMPILER))' \
+		-D 'CMAKE_BUILD_TYPE=$(call escape,$(CONFIGURATION))' \
 		-D 'CMAKE_INSTALL_PREFIX=$(call escape,$(INSTALL_PREFIX))' \
 		-D 'DEFAULT_HOST=$(call escape,$(DEFAULT_HOST))' \
 		-S '$(call escape,$(src_dir))' \
