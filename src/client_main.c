@@ -70,11 +70,11 @@ int main(int argc, char *argv[])
 	if (ret < 0)
 		return ret;
 
-	ret = client_create(&client, &settings);
+	ret = client_create(&client);
 	if (ret < 0)
 		return ret;
 
-	ret = client_main(client, (const char **)argv + optind);
+	ret = client_main(client, &settings, (const char **)argv + optind);
 	if (ret < 0)
 		goto destroy_client;
 

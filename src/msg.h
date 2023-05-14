@@ -30,7 +30,9 @@ int msg_is_error(const struct msg *);
 int msg_recv(int fd, struct msg **);
 int msg_send(int fd, const struct msg *);
 
-int msg_send_and_wait(int fd, const struct msg *, struct msg **response);
+int msg_communicate(int fd, const struct msg *, struct msg **response);
+int msg_connect_and_communicate(const char *host, const char *port, const struct msg *,
+                                struct msg **);
 
 void msg_dump(const struct msg *);
 

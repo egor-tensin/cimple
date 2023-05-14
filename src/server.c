@@ -120,7 +120,7 @@ static int worker_ci_run(int fd, const struct run_queue_entry *ci_run)
 	if (ret < 0)
 		return ret;
 
-	ret = msg_send_and_wait(fd, request, &response);
+	ret = msg_communicate(fd, request, &response);
 	msg_free(request);
 	if (ret < 0)
 		return ret;

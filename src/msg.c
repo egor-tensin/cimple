@@ -12,6 +12,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 struct msg {
 	size_t argc;
@@ -169,21 +170,6 @@ destroy_buf:
 	return ret;
 }
 
-int msg_send_and_wait(int fd, const struct msg *request, struct msg **response)
-{
-	int ret = 0;
-
-	ret = msg_send(fd, request);
-	if (ret < 0)
-		return ret;
-
-	ret = msg_recv(fd, response);
-	if (ret < 0)
-		return ret;
-
-	return ret;
-}
-
 int msg_recv(int fd, struct msg **_msg)
 {
 	struct buf *buf = NULL;
@@ -217,6 +203,49 @@ free_msg:
 
 destroy_buf:
 	buf_destroy(buf);
+
+	return ret;
+}
+
+int msg_communicate(int fd, const struct msg *request, struct msg **response)
+{
+	int ret = 0;
+
+	if (!request && !response) {
+		log_err("For communication, there must be at least a request and/or response\n");
+		return -1;
+	}
+
+	if (request) {
+		ret = msg_send(fd, request);
+		if (ret < 0)
+			return ret;
+	}
+
+	if (response) {
+		ret = msg_recv(fd, response);
+		if (ret < 0)
+			return ret;
+	}
+
+	return ret;
+}
+
+int msg_connect_and_communicate(const char *host, const char *port, const struct msg *request,
+                                struct msg **response)
+{
+	int fd = -1, ret = 0;
+
+	fd = net_connect(host, port);
+	if (fd < 0)
+		return fd;
+
+	ret = msg_communicate(fd, request, response);
+	if (ret < 0)
+		goto close;
+
+close:
+	log_errno_if(close(fd), "close");
 
 	return ret;
 }
