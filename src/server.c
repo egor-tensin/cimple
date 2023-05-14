@@ -234,8 +234,8 @@ static int worker_thread(struct server *server, int fd)
 	return ret;
 }
 
-static int msg_new_worker_handler(int client_fd, UNUSED const struct msg *request, void *_server,
-                                  UNUSED struct msg **response)
+static int msg_new_worker_handler(int client_fd, UNUSED const struct msg *request,
+                                  UNUSED struct msg **response, void *_server)
 {
 	return worker_thread((struct server *)_server, client_fd);
 }
@@ -271,8 +271,8 @@ unlock:
 	return ret;
 }
 
-static int msg_ci_run_handler(UNUSED int client_fd, const struct msg *request, void *_server,
-                              struct msg **response)
+static int msg_ci_run_handler(UNUSED int client_fd, const struct msg *request,
+                              struct msg **response, void *_server)
 {
 	struct server *server = (struct server *)_server;
 	int ret = 0;

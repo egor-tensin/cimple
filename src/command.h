@@ -12,8 +12,8 @@
 
 #include <stddef.h>
 
-typedef int (*cmd_handler)(int conn_fd, const struct msg *request, void *ctx,
-                           struct msg **response);
+typedef int (*cmd_handler)(int conn_fd, const struct msg *request, struct msg **response,
+                           void *ctx);
 
 struct cmd_desc {
 	char *name;

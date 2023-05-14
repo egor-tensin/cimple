@@ -99,8 +99,8 @@ static int msg_ci_run_do(const char *url, const char *rev, struct proc_output *r
 	return 0;
 }
 
-static int msg_ci_run_handler(UNUSED int conn_fd, const struct msg *request, UNUSED void *_worker,
-                              struct msg **response)
+static int msg_ci_run_handler(UNUSED int conn_fd, const struct msg *request, struct msg **response,
+                              UNUSED void *_worker)
 {
 	struct proc_output result;
 	int ret = 0;

@@ -121,7 +121,7 @@ int cmd_dispatcher_handle_msg(const struct cmd_dispatcher *dispatcher, int conn_
 		if (strcmp(cmd->name, actual_cmd))
 			continue;
 
-		ret = cmd->handler(conn_fd, request, dispatcher->ctx, &response);
+		ret = cmd->handler(conn_fd, request, &response, dispatcher->ctx);
 		goto exit;
 	}
 
