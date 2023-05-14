@@ -28,6 +28,11 @@ const char **msg_get_words(const struct msg *msg)
 	return msg->argv;
 }
 
+const char *msg_get_first_word(const struct msg *msg)
+{
+	return msg->argv[0];
+}
+
 int msg_success(struct msg **msg)
 {
 	static const char *argv[] = {"success", NULL};
@@ -127,6 +132,11 @@ int msg_from_argv(struct msg **_msg, const char **argv)
 	for (const char **s = argv; *s; ++s)
 		++msg->argc;
 
+	if (!msg->argc) {
+		log_err("A message must contain at least one string\n");
+		goto free;
+	}
+
 	ret = msg_copy_argv(msg, argv);
 	if (ret < 0)
 		goto free;
@@ -140,78 +150,14 @@ free:
 	return -1;
 }
 
-static uint32_t calc_buf_size(const struct msg *msg)
-{
-	uint32_t len = 0;
-	for (size_t i = 0; i < msg->argc; ++i)
-		len += strlen(msg->argv[i]) + 1;
-	return len;
-}
-
-static size_t calc_argv_len(const void *buf, size_t len)
-{
-	size_t argc = 0;
-	for (const char *it = buf; it < (const char *)buf + len; it += strlen(it) + 1)
-		++argc;
-	return argc;
-}
-
-static void argv_pack(char *dest, const struct msg *msg)
-{
-	for (size_t i = 0; i < msg->argc; ++i) {
-		strcpy(dest, msg->argv[i]);
-		dest += strlen(msg->argv[i]) + 1;
-	}
-}
-
-static int argv_unpack(struct msg *msg, const char *src)
-{
-	size_t copied = 0;
-
-	msg->argv = calloc(msg->argc + 1, sizeof(const char *));
-	if (!msg->argv) {
-		log_errno("calloc");
-		return -1;
-	}
-
-	for (copied = 0; copied < msg->argc; ++copied) {
-		msg->argv[copied] = strdup(src);
-		if (!msg->argv[copied]) {
-			log_errno("strdup");
-			goto free;
-		}
-
-		src += strlen(msg->argv[copied]) + 1;
-	}
-
-	return 0;
-
-free:
-	for (size_t i = 0; i < copied; ++i) {
-		free((char *)msg->argv[i]);
-	}
-
-	msg_free(msg);
-
-	return -1;
-}
-
 int msg_send(int fd, const struct msg *msg)
 {
 	struct buf *buf = NULL;
 	int ret = 0;
 
-	uint32_t size = calc_buf_size(msg);
-	char *data = malloc(size);
-	if (!data) {
-		log_errno("malloc");
-		return -1;
-	}
-	argv_pack(data, msg);
-
-	ret = buf_create(&buf, data, size);
+	ret = buf_pack_strings(&buf, msg->argc, msg->argv);
 	if (ret < 0)
-		goto free_data;
+		return ret;
 
 	ret = net_send_buf(fd, buf);
 	if (ret < 0)
@@ -219,9 +165,6 @@ int msg_send(int fd, const struct msg *msg)
 
 destroy_buf:
 	buf_destroy(buf);
-
-free_data:
-	free(data);
 
 	return ret;
 }
@@ -257,11 +200,14 @@ int msg_recv(int fd, struct msg **_msg)
 		goto destroy_buf;
 	}
 
-	msg->argc = calc_argv_len(buf_get_data(buf), buf_get_size(buf));
-
-	ret = argv_unpack(msg, buf_get_data(buf));
+	ret = buf_unpack_strings(buf, &msg->argc, &msg->argv);
 	if (ret < 0)
 		goto free_msg;
+
+	if (!msg->argc) {
+		log_err("A message must contain at least one string\n");
+		goto free_msg;
+	}
 
 	*_msg = msg;
 	goto destroy_buf;

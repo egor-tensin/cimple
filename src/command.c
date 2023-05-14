@@ -113,12 +113,12 @@ int cmd_dispatcher_handle_msg(const struct cmd_dispatcher *dispatcher, int conn_
 	if (numof_words == 0)
 		goto unknown;
 
-	const char **words = msg_get_words(request);
+	const char *actual_cmd = msg_get_first_word(request);
 
 	for (size_t i = 0; i < dispatcher->numof_cmds; ++i) {
 		struct cmd_desc *cmd = &dispatcher->cmds[i];
 
-		if (strcmp(cmd->name, words[0]))
+		if (strcmp(cmd->name, actual_cmd))
 			continue;
 
 		ret = cmd->handler(conn_fd, request, dispatcher->ctx, &response);

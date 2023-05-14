@@ -12,19 +12,20 @@
 
 struct msg;
 
+int msg_from_argv(struct msg **, const char **argv);
+void msg_free(struct msg *);
+
+int msg_copy(struct msg **, const struct msg *);
+
 size_t msg_get_length(const struct msg *);
 const char **msg_get_words(const struct msg *);
+const char *msg_get_first_word(const struct msg *);
 
 int msg_success(struct msg **);
 int msg_error(struct msg **);
 
 int msg_is_success(const struct msg *);
 int msg_is_error(const struct msg *);
-
-int msg_copy(struct msg **, const struct msg *);
-void msg_free(struct msg *);
-
-int msg_from_argv(struct msg **, const char **argv);
 
 int msg_recv(int fd, struct msg **);
 int msg_send(int fd, const struct msg *);

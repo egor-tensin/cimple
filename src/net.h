@@ -26,6 +26,9 @@ void buf_destroy(struct buf *);
 uint32_t buf_get_size(const struct buf *);
 void *buf_get_data(const struct buf *);
 
+int buf_pack_strings(struct buf **, size_t argc, const char **argv);
+int buf_unpack_strings(const struct buf *, size_t *argc, const char ***argv);
+
 int net_send_buf(int fd, const struct buf *);
 int net_recv_buf(int fd, struct buf **);
 
