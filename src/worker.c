@@ -95,12 +95,7 @@ static int msg_ci_run_do(const char *url, const char *rev, struct proc_output *r
 		return ret;
 	}
 
-	log("Process exit code: %d\n", result->ec);
-	log("Process output:\n%s", result->output);
-	if (!result->output || !result->output_len ||
-	    result->output[result->output_len - 1] != '\n')
-		log("\n");
-
+	proc_output_dump(result);
 	return 0;
 }
 

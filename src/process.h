@@ -28,4 +28,6 @@ int proc_capture(const char *args[], const char *envp[], struct proc_output *res
 void proc_output_init(struct proc_output *);
 void proc_output_free(const struct proc_output *);
 
+void proc_output_dump(const struct proc_output *);
+
 #endif

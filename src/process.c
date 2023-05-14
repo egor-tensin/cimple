@@ -137,3 +137,12 @@ void proc_output_free(const struct proc_output *output)
 {
 	free(output->output);
 }
+
+void proc_output_dump(const struct proc_output *output)
+{
+	log("Process exit code: %d\n", output->ec);
+	log("Process output:\n%s", output->output);
+	if (!output->output || !output->output_len ||
+	    output->output[output->output_len - 1] != '\n')
+		log("\n");
+}
