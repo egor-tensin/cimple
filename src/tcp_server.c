@@ -62,19 +62,18 @@ static void *connection_thread(void *_ctx)
 
 	ret = signal_block_child();
 	if (ret < 0)
-		goto close;
+		goto free_ctx;
 
 	ctx->handler(ctx->fd, ctx->arg);
 
-close:
-	log_errno_if(close(ctx->fd), "close");
+free_ctx:
 	free(ctx);
+
 	return NULL;
 }
 
 int tcp_server_accept(const struct tcp_server *server, tcp_server_conn_handler handler, void *arg)
 {
-	pthread_attr_t child_attr;
 	sigset_t old_mask;
 	pthread_t child;
 	int ret = 0;
@@ -93,23 +92,11 @@ int tcp_server_accept(const struct tcp_server *server, tcp_server_conn_handler h
 		goto free_ctx;
 	ctx->fd = ret;
 
-	ret = pthread_attr_init(&child_attr);
-	if (ret) {
-		pthread_errno(ret, "pthread_attr_init");
-		goto close_conn;
-	}
-
-	ret = pthread_attr_setdetachstate(&child_attr, PTHREAD_CREATE_DETACHED);
-	if (ret) {
-		pthread_errno(ret, "pthread_attr_setdetachstate");
-		goto destroy_attr;
-	}
-
 	ret = signal_block_parent(&old_mask);
 	if (ret < 0)
-		goto destroy_attr;
+		goto close_conn;
 
-	ret = pthread_create(&child, &child_attr, connection_thread, ctx);
+	ret = pthread_create(&child, NULL, connection_thread, ctx);
 	if (ret) {
 		pthread_errno(ret, "pthread_create");
 		goto restore_mask;
@@ -117,15 +104,10 @@ int tcp_server_accept(const struct tcp_server *server, tcp_server_conn_handler h
 
 	signal_set(&old_mask, NULL);
 
-	pthread_errno_if(pthread_attr_destroy(&child_attr), "pthread_attr_destroy");
-
 	return ret;
 
 restore_mask:
 	signal_set(&old_mask, NULL);
-
-destroy_attr:
-	pthread_errno_if(pthread_attr_destroy(&child_attr), "pthread_attr_destroy");
 
 close_conn:
 	log_errno_if(close(ctx->fd), "close");

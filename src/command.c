@@ -103,17 +103,10 @@ void cmd_dispatcher_destroy(struct cmd_dispatcher *dispatcher)
 	free(dispatcher);
 }
 
-int cmd_dispatcher_handle_msg(const struct cmd_dispatcher *dispatcher, int conn_fd,
-                              const struct msg *request)
+int cmd_dispatcher_handle(const struct cmd_dispatcher *dispatcher, const struct msg *command,
+                          struct msg **result)
 {
-	struct msg *response = NULL;
-	int ret = 0;
-
-	size_t numof_words = msg_get_length(request);
-	if (numof_words == 0)
-		goto unknown;
-
-	const char *actual_cmd = msg_get_first_word(request);
+	const char *actual_cmd = msg_get_first_word(command);
 
 	for (size_t i = 0; i < dispatcher->numof_cmds; ++i) {
 		struct cmd_desc *cmd = &dispatcher->cmds[i];
@@ -121,35 +114,55 @@ int cmd_dispatcher_handle_msg(const struct cmd_dispatcher *dispatcher, int conn_
 		if (strcmp(cmd->name, actual_cmd))
 			continue;
 
-		ret = cmd->handler(conn_fd, request, &response, dispatcher->ctx);
-		goto exit;
+		return cmd->handler(command, result, dispatcher->ctx);
 	}
 
-unknown:
 	log_err("Received an unknown command\n");
-	ret = -1;
-	msg_dump(request);
-	goto exit;
-
-exit:
-	if (ret < 0 && !response)
-		msg_error(&response);
-	if (response)
-		return msg_send(conn_fd, response);
-	return ret;
+	msg_dump(command);
+	return -1;
 }
 
 int cmd_dispatcher_handle_conn(int conn_fd, void *_dispatcher)
 {
 	struct cmd_dispatcher *dispatcher = (struct cmd_dispatcher *)_dispatcher;
-	struct msg *request = NULL;
+	struct msg *request = NULL, *response = NULL;
 	int ret = 0;
+
+	struct cmd_conn_ctx *new_ctx = malloc(sizeof(struct cmd_conn_ctx));
+	if (!new_ctx) {
+		log_errno("malloc");
+		return -1;
+	}
+
+	new_ctx->fd = conn_fd;
+	new_ctx->arg = dispatcher->ctx;
 
 	ret = msg_recv(conn_fd, &request);
 	if (ret < 0)
-		return ret;
+		goto free_ctx;
 
-	ret = cmd_dispatcher_handle_msg(dispatcher, conn_fd, request);
+	void *old_ctx = dispatcher->ctx;
+	dispatcher->ctx = new_ctx;
+	ret = cmd_dispatcher_handle(dispatcher, request, &response);
+	dispatcher->ctx = old_ctx;
+
+	if (ret < 0)
+		goto free_response;
+
+	if (response) {
+		ret = msg_send(conn_fd, response);
+		if (ret < 0)
+			goto free_response;
+	}
+
+free_response:
+	if (response)
+		msg_free(response);
+
 	msg_free(request);
+
+free_ctx:
+	free(new_ctx);
+
 	return ret;
 }

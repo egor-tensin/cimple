@@ -16,5 +16,6 @@
 
 #define CMD_RUN "run"
 #define CMD_NEW_WORKER "new-worker"
+#define CMD_COMPLETE "complete"
 
 #endif

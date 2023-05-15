@@ -48,7 +48,8 @@ add_my_executable(server server_main.c server.c
     sqlite.c
     storage.c
     storage_sqlite.c
-    tcp_server.c)
+    tcp_server.c
+    worker_queue.c)
 target_link_libraries(server PRIVATE pthread sqlite3)
 target_include_directories(server PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
 
@@ -67,5 +68,6 @@ add_my_executable(worker worker_main.c worker.c
     msg.c
     net.c
     process.c
+    run_queue.c
     signal.c)
 target_link_libraries(worker PRIVATE git2 pthread)

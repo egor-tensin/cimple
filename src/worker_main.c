@@ -70,11 +70,11 @@ int main(int argc, char *argv[])
 	if (ret < 0)
 		return ret;
 
-	ret = worker_create(&worker, &settings);
+	ret = worker_create(&worker);
 	if (ret < 0)
 		return ret;
 
-	ret = worker_main(worker, argc - optind, argv + optind);
+	ret = worker_main(worker, &settings);
 	if (ret < 0)
 		goto destroy_worker;
 

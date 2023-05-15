@@ -15,9 +15,9 @@ struct settings {
 
 struct worker;
 
-int worker_create(struct worker **, const struct settings *);
+int worker_create(struct worker **);
 void worker_destroy(struct worker *);
 
-int worker_main(struct worker *, int argc, char *argv[]);
+int worker_main(struct worker *, const struct settings *);
 
 #endif
