@@ -24,12 +24,12 @@ size_t msg_get_length(const struct msg *msg)
 	return msg->argc;
 }
 
-const char **msg_get_words(const struct msg *msg)
+const char **msg_get_strings(const struct msg *msg)
 {
 	return msg->argv;
 }
 
-const char *msg_get_first_word(const struct msg *msg)
+const char *msg_get_first_string(const struct msg *msg)
 {
 	return msg->argv[0];
 }

@@ -18,8 +18,8 @@ void msg_free(struct msg *);
 int msg_copy(struct msg **, const struct msg *);
 
 size_t msg_get_length(const struct msg *);
-const char **msg_get_words(const struct msg *);
-const char *msg_get_first_word(const struct msg *);
+const char **msg_get_strings(const struct msg *);
+const char *msg_get_first_string(const struct msg *);
 
 int msg_success(struct msg **);
 int msg_error(struct msg **);

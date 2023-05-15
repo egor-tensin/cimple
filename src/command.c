@@ -106,7 +106,7 @@ void cmd_dispatcher_destroy(struct cmd_dispatcher *dispatcher)
 int cmd_dispatcher_handle(const struct cmd_dispatcher *dispatcher, const struct msg *command,
                           struct msg **result)
 {
-	const char *actual_cmd = msg_get_first_word(command);
+	const char *actual_cmd = msg_get_first_string(command);
 
 	for (size_t i = 0; i < dispatcher->numof_cmds; ++i) {
 		struct cmd_desc *cmd = &dispatcher->cmds[i];

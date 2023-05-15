@@ -65,8 +65,8 @@ int run_from_msg(struct run **run, const struct msg *msg)
 		return -1;
 	}
 
-	const char **words = msg_get_words(msg);
-	return run_create(run, words[1], words[2]);
+	const char **argv = msg_get_strings(msg);
+	return run_create(run, argv[1], argv[2]);
 }
 
 void run_destroy(struct run *entry)
