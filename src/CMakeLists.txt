@@ -1,7 +1,7 @@
 if(MSVC)
     add_compile_options(/W4 /WX)
 else()
-    add_compile_options(-std=c17 -Wpedantic -Wall -Wextra -Werror)
+    add_compile_options(-std=c17 -Wpedantic -Wall -Wextra $<$<NOT:$<CONFIG:Debug>>:-Werror>)
 endif()
 
 # Even w/ _POSIX_C_SOURCE=200809L, we still need accept4, pipe2, execvpe, etc.,
