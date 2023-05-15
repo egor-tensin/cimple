@@ -11,6 +11,7 @@
 #include <pthread.h>
 #include <stdlib.h>
 #include <sys/queue.h>
+#include <unistd.h>
 
 struct worker {
 	pthread_t thread;
@@ -37,6 +38,7 @@ void worker_destroy(struct worker *entry)
 {
 	log("Waiting for worker %d thread to exit\n", entry->fd);
 	pthread_errno_if(pthread_join(entry->thread, NULL), "pthread_join");
+	log_errno_if(close(entry->fd), "close");
 	free(entry);
 }
 
