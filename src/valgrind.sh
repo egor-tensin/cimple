@@ -12,5 +12,6 @@ exec valgrind -q \
     --leak-check=full \
     --show-leak-kinds=all \
     --track-origins=yes \
+    --track-fds=yes \
     --trace-children=yes \
     -- "$@"
