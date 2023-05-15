@@ -35,7 +35,7 @@ static int my_sigaction(int signo, const struct sigaction *act)
 	return ret;
 }
 
-int signal_handle_stop_signals(void)
+int signal_handle_stops(void)
 {
 	int ret = 0;
 
@@ -75,12 +75,7 @@ int signal_block_all(sigset_t *old)
 	return signal_set(&new, old);
 }
 
-int signal_restore(const sigset_t *new)
-{
-	return signal_set(new, NULL);
-}
-
-int signal_unblock_all_except_stop_signals(void)
+int signal_block_stops(void)
 {
 	sigset_t set;
 	sigemptyset(&set);
@@ -89,4 +84,9 @@ int signal_unblock_all_except_stop_signals(void)
 		sigaddset(&set, stop_signals[i]);
 
 	return signal_set(&set, NULL);
+}
+
+int signal_restore(const sigset_t *new)
+{
+	return signal_set(new, NULL);
 }

@@ -11,11 +11,11 @@
 #include <signal.h>
 
 extern volatile sig_atomic_t global_stop_flag;
-int signal_handle_stop_signals(void);
+int signal_handle_stops(void);
 
 int signal_block_all(sigset_t *old);
-int signal_restore(const sigset_t *new);
+int signal_block_stops(void);
 
-int signal_unblock_all_except_stop_signals(void);
+int signal_restore(const sigset_t *new);
 
 #endif

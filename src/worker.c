@@ -27,7 +27,7 @@ int worker_create(struct worker **_worker)
 {
 	int ret = 0;
 
-	ret = signal_handle_stop_signals();
+	ret = signal_handle_stops();
 	if (ret < 0)
 		return ret;
 

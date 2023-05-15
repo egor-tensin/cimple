@@ -62,7 +62,7 @@ static void *connection_thread(void *_ctx)
 
 	/* Let the child thread handle its signals except those that should be
 	 * handled in the main thread. */
-	ret = signal_unblock_all_except_stop_signals();
+	ret = signal_block_stops();
 	if (ret < 0)
 		goto free_ctx;
 

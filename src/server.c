@@ -213,7 +213,7 @@ int server_create(struct server **_server, const struct settings *settings)
 	struct storage_settings storage_settings;
 	int ret = 0;
 
-	ret = signal_handle_stop_signals();
+	ret = signal_handle_stops();
 	if (ret < 0)
 		return ret;
 
