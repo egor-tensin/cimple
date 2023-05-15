@@ -106,13 +106,15 @@ class Process(subprocess.Popen):
             return
         logging.info('Terminating process %s', self.log_id)
         self.terminate()
+        timeout = 3
         try:
-            self.wait(timeout=3)
+            self.wait(timeout=timeout)
             return
         except subprocess.TimeoutExpired:
             pass
+        logging.info('Process %s failed to terminate in time, killing it', self.log_id)
         self.kill()
-        self.wait(timeout=3)
+        self.wait(timeout=timeout)
 
 
 class Runner:
