@@ -22,6 +22,7 @@ RUN cd -- "$src_dir" && \
         "CONFIGURATION=$CONFIGURATION" \
         "DEFAULT_HOST=$DEFAULT_HOST" \
         "INSTALL_PREFIX=$install_dir" && \
+    ulimit -n 1024 && \
     make test CONFIGURATION="$CONFIGURATION"
 
 FROM base
