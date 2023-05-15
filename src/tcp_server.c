@@ -60,7 +60,9 @@ static void *connection_thread(void *_ctx)
 	struct child_context *ctx = (struct child_context *)_ctx;
 	int ret = 0;
 
-	ret = signal_block_child();
+	/* Let the child thread handle its signals except those that should be
+	 * handled in the main thread. */
+	ret = signal_unblock_all_except_stop_signals();
 	if (ret < 0)
 		goto free_ctx;
 
@@ -92,7 +94,10 @@ int tcp_server_accept(const struct tcp_server *server, tcp_server_conn_handler h
 		goto free_ctx;
 	ctx->fd = ret;
 
-	ret = signal_block_parent(&old_mask);
+	/* Block all signals (we'll unblock them later); the child thread will
+	 * have all signals blocked initially. This allows the main thread to
+	 * handle SIGINT/SIGTERM/etc. */
+	ret = signal_block_all(&old_mask);
 	if (ret < 0)
 		goto close_conn;
 
@@ -102,12 +107,13 @@ int tcp_server_accept(const struct tcp_server *server, tcp_server_conn_handler h
 		goto restore_mask;
 	}
 
-	signal_set(&old_mask, NULL);
+	/* Restore the previously-enabled signals for handling in the main thread. */
+	signal_restore(&old_mask);
 
 	return ret;
 
 restore_mask:
-	signal_set(&old_mask, NULL);
+	signal_restore(&old_mask);
 
 close_conn:
 	log_errno_if(close(ctx->fd), "close");

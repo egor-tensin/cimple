@@ -10,7 +10,10 @@
 #include "log.h"
 
 #include <signal.h>
+#include <stddef.h>
 #include <string.h>
+
+static int stop_signals[] = {SIGINT, SIGTERM, SIGQUIT};
 
 volatile sig_atomic_t global_stop_flag = 0;
 
@@ -32,7 +35,7 @@ static int my_sigaction(int signo, const struct sigaction *act)
 	return ret;
 }
 
-int signal_install_global_handler(void)
+int signal_handle_stop_signals(void)
 {
 	int ret = 0;
 
@@ -42,20 +45,17 @@ int signal_install_global_handler(void)
 
 	/* Don't care about proper cleanup here; we exit the program if this
 	 * fails anyway. */
-	ret = my_sigaction(SIGINT, &sa);
-	if (ret < 0)
-		return ret;
-	ret = my_sigaction(SIGQUIT, &sa);
-	if (ret < 0)
-		return ret;
-	ret = my_sigaction(SIGTERM, &sa);
-	if (ret < 0)
-		return ret;
+
+	for (size_t i = 0; i < sizeof(stop_signals) / sizeof(stop_signals[0]); ++i) {
+		ret = my_sigaction(stop_signals[i], &sa);
+		if (ret < 0)
+			return ret;
+	}
 
 	return ret;
 }
 
-int signal_set(const sigset_t *new, sigset_t *old)
+static int signal_set(const sigset_t *new, sigset_t *old)
 {
 	int ret = 0;
 
@@ -68,19 +68,25 @@ int signal_set(const sigset_t *new, sigset_t *old)
 	return ret;
 }
 
-int signal_block_parent(sigset_t *old)
+int signal_block_all(sigset_t *old)
 {
 	sigset_t new;
 	sigfillset(&new);
 	return signal_set(&new, old);
 }
 
-int signal_block_child(void)
+int signal_restore(const sigset_t *new)
+{
+	return signal_set(new, NULL);
+}
+
+int signal_unblock_all_except_stop_signals(void)
 {
 	sigset_t set;
 	sigemptyset(&set);
-	sigaddset(&set, SIGINT);
-	sigaddset(&set, SIGQUIT);
-	sigaddset(&set, SIGTERM);
+
+	for (size_t i = 0; i < sizeof(stop_signals) / sizeof(stop_signals[0]); ++i)
+		sigaddset(&set, stop_signals[i]);
+
 	return signal_set(&set, NULL);
 }
