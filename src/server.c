@@ -404,7 +404,7 @@ static int server_listen_thread(struct server *server)
 
 		ret = tcp_server_accept(server->tcp_server, cmd_dispatcher_handle_conn, dispatcher);
 		if (ret < 0) {
-			if (errno == EINVAL && global_stop_flag)
+			if ((errno == EINTR || errno == EINVAL) && global_stop_flag)
 				ret = 0;
 			goto dispatcher_destroy;
 		}

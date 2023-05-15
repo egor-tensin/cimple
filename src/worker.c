@@ -135,8 +135,11 @@ int worker_main(UNUSED struct worker *worker, const struct settings *settings)
 	log("Waiting for a new command\n");
 
 	ret = worker_send_new_worker(settings, &task);
-	if (ret < 0)
+	if (ret < 0) {
+		if ((errno == EINTR || errno == EINVAL) && global_stop_flag)
+			ret = 0;
 		goto dispatcher_destroy;
+	}
 
 	while (!global_stop_flag) {
 		struct msg *result = NULL;
@@ -148,8 +151,11 @@ int worker_main(UNUSED struct worker *worker, const struct settings *settings)
 
 		ret = worker_send_to_server(settings, result, &task);
 		msg_free(result);
-		if (ret < 0)
+		if (ret < 0) {
+			if ((errno == EINTR || errno == EINVAL) && global_stop_flag)
+				ret = 0;
 			goto dispatcher_destroy;
+		}
 	}
 
 dispatcher_destroy:
