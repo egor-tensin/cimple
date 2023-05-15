@@ -15,8 +15,8 @@ int net_bind(const char *port);
 int net_accept(int fd);
 int net_connect(const char *host, const char *port);
 
-int net_send_all(int fd, const void *, size_t);
-int net_recv_all(int fd, void *, size_t);
+int net_send(int fd, const void *, size_t);
+int net_recv(int fd, void *, size_t);
 
 struct buf;
 

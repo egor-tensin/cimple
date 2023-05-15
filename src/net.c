@@ -146,7 +146,7 @@ int net_connect(const char *host, const char *port)
 	return socket_fd;
 }
 
-static ssize_t net_send(int fd, const void *buf, size_t size)
+static ssize_t net_send_part(int fd, const void *buf, size_t size)
 {
 	static const int flags = MSG_NOSIGNAL;
 
@@ -159,12 +159,13 @@ static ssize_t net_send(int fd, const void *buf, size_t size)
 	return ret;
 }
 
-int net_send_all(int fd, const void *buf, size_t size)
+int net_send(int fd, const void *buf, size_t size)
 {
 	size_t sent_total = 0;
 
 	while (sent_total < size) {
-		ssize_t sent_now = net_send(fd, (const char *)buf + sent_total, size - sent_total);
+		ssize_t sent_now =
+		    net_send_part(fd, (const char *)buf + sent_total, size - sent_total);
 		if (sent_now < 0)
 			return -1;
 		sent_total += sent_now;
@@ -173,7 +174,7 @@ int net_send_all(int fd, const void *buf, size_t size)
 	return 0;
 }
 
-int net_recv_all(int fd, void *buf, size_t size)
+int net_recv(int fd, void *buf, size_t size)
 {
 	ssize_t read_total = 0;
 
@@ -334,11 +335,11 @@ int net_send_buf(int fd, const struct buf *buf)
 	int ret = 0;
 
 	uint32_t size = htonl(buf->size);
-	ret = net_send_all(fd, &size, sizeof(size));
+	ret = net_send(fd, &size, sizeof(size));
 	if (ret < 0)
 		return ret;
 
-	ret = net_send_all(fd, buf->data, buf->size);
+	ret = net_send(fd, buf->data, buf->size);
 	if (ret < 0)
 		return ret;
 
@@ -350,7 +351,7 @@ int net_recv_buf(int fd, struct buf **buf)
 	uint32_t size = 0;
 	int ret = 0;
 
-	ret = net_recv_all(fd, &size, sizeof(size));
+	ret = net_recv(fd, &size, sizeof(size));
 	if (ret < 0) {
 		log_err("Couldn't read buffer size\n");
 		goto fail;
@@ -363,7 +364,7 @@ int net_recv_buf(int fd, struct buf **buf)
 		goto fail;
 	}
 
-	ret = net_recv_all(fd, data, size);
+	ret = net_recv(fd, data, size);
 	if (ret < 0) {
 		log_err("Couldn't read buffer\n");
 		goto free_data;
