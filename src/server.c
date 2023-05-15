@@ -389,13 +389,14 @@ static struct cmd_desc commands[] = {
     {CMD_COMPLETE, handle_cmd_complete},
 };
 
+static const size_t numof_commands = sizeof(commands) / sizeof(commands[0]);
+
 static int server_listen_thread(struct server *server)
 {
 	struct cmd_dispatcher *dispatcher = NULL;
 	int ret = 0;
 
-	ret = cmd_dispatcher_create(&dispatcher, commands, sizeof(commands) / sizeof(commands[0]),
-	                            server);
+	ret = cmd_dispatcher_create(&dispatcher, commands, numof_commands, server);
 	if (ret < 0)
 		return ret;
 

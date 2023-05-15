@@ -118,9 +118,11 @@ free_output:
 	return ret;
 }
 
-static struct cmd_desc cmds[] = {
+static struct cmd_desc commands[] = {
     {CMD_RUN, msg_run_handler},
 };
+
+static const size_t numof_commands = sizeof(commands) / sizeof(commands[0]);
 
 int worker_main(UNUSED struct worker *worker, const struct settings *settings)
 {
@@ -128,7 +130,7 @@ int worker_main(UNUSED struct worker *worker, const struct settings *settings)
 	struct cmd_dispatcher *dispatcher = NULL;
 	int ret = 0;
 
-	ret = cmd_dispatcher_create(&dispatcher, cmds, sizeof(cmds) / sizeof(cmds[0]), NULL);
+	ret = cmd_dispatcher_create(&dispatcher, commands, numof_commands, NULL);
 	if (ret < 0)
 		return ret;
 
