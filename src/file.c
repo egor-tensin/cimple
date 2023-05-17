@@ -104,43 +104,36 @@ int file_exists(const char *path)
 	return !ret && S_ISREG(stat.st_mode);
 }
 
-int file_read(int fd, char **_contents, size_t *_len)
+int file_read(int fd, char **_contents, size_t *_size)
 {
-	char buf[128];
-	size_t buf_len = sizeof(buf) / sizeof(buf[0]);
-	int ret = 0;
-
+	size_t alloc_size = 256;
 	char *contents = NULL;
-	size_t len = 0;
+	size_t size = 0;
 
 	while (1) {
-		ssize_t read_now = read(fd, buf, buf_len);
-
-		if (read_now < 0) {
-			log_errno("read");
-			ret = read_now;
-			goto free_output;
-		}
-
-		if (!read_now) {
-			*_contents = contents;
-			*_len = len;
-			goto exit;
-		}
-
-		contents = realloc(contents, len + read_now + 1);
-		if (!contents) {
-			log_errno("realloc");
+		contents = realloc(contents, alloc_size);
+		if (!contents)
 			return -1;
+
+		ssize_t read_size = read(fd, contents + size, alloc_size - size - 1);
+
+		if (read_size < 0) {
+			log_errno("read");
+			free(contents);
+			return read_size;
 		}
-		memcpy(contents + len, buf, read_now);
-		len += read_now;
-		contents[len] = '\0';
+
+		if (!read_size) {
+			*_contents = contents;
+			*_size = size;
+			return 0;
+		}
+
+		size += read_size;
+		contents[size] = '\0';
+
+		if (size == alloc_size - 1) {
+			alloc_size *= 2;
+		}
 	}
-
-free_output:
-	free(contents);
-
-exit:
-	return ret;
 }

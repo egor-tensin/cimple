@@ -16,6 +16,6 @@ int my_chdir(const char *dir, char **old);
 char *my_readlink(const char *path);
 
 int file_exists(const char *path);
-int file_read(int fd, char **output, size_t *len);
+int file_read(int fd, char **output, size_t *size);
 
 #endif
