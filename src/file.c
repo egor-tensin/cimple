@@ -69,11 +69,12 @@ char *my_readlink(const char *path)
 	char *buf = NULL;
 
 	while (1) {
-		buf = realloc(buf, current_size);
-		if (!buf) {
+		char *tmp_buf = realloc(buf, current_size);
+		if (!tmp_buf) {
 			log_errno("realloc");
 			goto free;
 		}
+		buf = tmp_buf;
 
 		ssize_t res = readlink(path, buf, current_size);
 		if (res < 0) {
@@ -111,9 +112,13 @@ int file_read(int fd, char **_contents, size_t *_size)
 	size_t size = 0;
 
 	while (1) {
-		contents = realloc(contents, alloc_size);
-		if (!contents)
+		char *tmp_contents = realloc(contents, alloc_size);
+		if (!tmp_contents) {
+			log_errno("realloc");
+			free(contents);
 			return -1;
+		}
+		contents = tmp_contents;
 
 		ssize_t read_size = read(fd, contents + size, alloc_size - size - 1);
 
