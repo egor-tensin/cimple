@@ -30,6 +30,8 @@ int msg_is_error(const struct msg *);
 int msg_recv(int fd, struct msg **);
 int msg_send(int fd, const struct msg *);
 
+int msg_send_from_argv(int fd, const char **argv);
+
 int msg_communicate(int fd, const struct msg *, struct msg **response);
 int msg_connect_and_communicate(const char *host, const char *port, const struct msg *,
                                 struct msg **);

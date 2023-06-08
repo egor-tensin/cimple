@@ -170,6 +170,23 @@ destroy_buf:
 	return ret;
 }
 
+int msg_send_from_argv(int fd, const char **argv)
+{
+	struct msg *msg = NULL;
+	int ret = 0;
+
+	ret = msg_from_argv(&msg, argv);
+	if (ret < 0)
+		return ret;
+
+	ret = msg_send(fd, msg);
+	msg_free(msg);
+	if (ret < 0)
+		return ret;
+
+	return ret;
+}
+
 int msg_recv(int fd, struct msg **_msg)
 {
 	struct buf *buf = NULL;
