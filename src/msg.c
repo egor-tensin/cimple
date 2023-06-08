@@ -245,7 +245,7 @@ int msg_connect_and_communicate(const char *host, const char *port, const struct
 		goto close;
 
 close:
-	log_errno_if(close(fd), "close");
+	net_close(fd);
 
 	return ret;
 }

@@ -13,7 +13,6 @@
 #include <pthread.h>
 #include <signal.h>
 #include <stdlib.h>
-#include <unistd.h>
 
 struct tcp_server {
 	int fd;
@@ -45,7 +44,7 @@ free:
 
 void tcp_server_destroy(struct tcp_server *server)
 {
-	log_errno_if(close(server->fd), "close");
+	net_close(server->fd);
 	free(server);
 }
 
@@ -116,7 +115,7 @@ restore_mask:
 	signal_restore(&old_mask);
 
 close_conn:
-	log_errno_if(close(ctx->fd), "close");
+	net_close(ctx->fd);
 
 free_ctx:
 	free(ctx);

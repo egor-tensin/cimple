@@ -98,6 +98,11 @@ free:
 	return NULL;
 }
 
+void file_close(int fd)
+{
+	log_errno_if(close(fd), "close");
+}
+
 int file_exists(const char *path)
 {
 	struct stat stat;

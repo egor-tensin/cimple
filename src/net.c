@@ -6,6 +6,7 @@
  */
 
 #include "net.h"
+#include "file.h"
 #include "log.h"
 
 #include <netdb.h>
@@ -65,7 +66,7 @@ int net_bind(const char *port)
 		break;
 
 	close_socket:
-		log_errno_if(close(socket_fd), "close");
+		net_close(socket_fd);
 	}
 
 	freeaddrinfo(result);
@@ -84,7 +85,7 @@ int net_bind(const char *port)
 	return socket_fd;
 
 fail:
-	log_errno_if(close(socket_fd), "close");
+	net_close(socket_fd);
 
 	return ret;
 }
@@ -133,7 +134,7 @@ int net_connect(const char *host, const char *port)
 		break;
 
 	close_socket:
-		log_errno_if(close(socket_fd), "close");
+		net_close(socket_fd);
 	}
 
 	freeaddrinfo(result);
@@ -144,6 +145,11 @@ int net_connect(const char *host, const char *port)
 	}
 
 	return socket_fd;
+}
+
+void net_close(int fd)
+{
+	file_close(fd);
 }
 
 static ssize_t net_send_part(int fd, const void *buf, size_t size)
