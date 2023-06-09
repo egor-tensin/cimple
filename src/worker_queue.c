@@ -75,7 +75,7 @@ void worker_queue_add_first(struct worker_queue *queue, struct worker *entry)
 
 void worker_queue_add_last(struct worker_queue *queue, struct worker *entry)
 {
-	SIMPLEQ_INSERT_HEAD(queue, entry, entries);
+	SIMPLEQ_INSERT_TAIL(queue, entry, entries);
 }
 
 struct worker *worker_queue_remove_first(struct worker_queue *queue)
