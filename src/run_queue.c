@@ -16,7 +16,7 @@
 struct run {
 	char *url;
 	char *rev;
-	STAILQ_ENTRY(run) entries;
+	SIMPLEQ_ENTRY(run) entries;
 };
 
 int run_create(struct run **_entry, const char *_url, const char *_rev)
@@ -88,38 +88,38 @@ const char *run_get_rev(const struct run *entry)
 
 void run_queue_create(struct run_queue *queue)
 {
-	STAILQ_INIT(queue);
+	SIMPLEQ_INIT(queue);
 }
 
 void run_queue_destroy(struct run_queue *queue)
 {
-	struct run *entry1 = STAILQ_FIRST(queue);
+	struct run *entry1 = SIMPLEQ_FIRST(queue);
 	while (entry1) {
-		struct run *entry2 = STAILQ_NEXT(entry1, entries);
+		struct run *entry2 = SIMPLEQ_NEXT(entry1, entries);
 		run_destroy(entry1);
 		entry1 = entry2;
 	}
-	STAILQ_INIT(queue);
+	SIMPLEQ_INIT(queue);
 }
 
 int run_queue_is_empty(const struct run_queue *queue)
 {
-	return STAILQ_EMPTY(queue);
+	return SIMPLEQ_EMPTY(queue);
 }
 
 void run_queue_add_first(struct run_queue *queue, struct run *entry)
 {
-	STAILQ_INSERT_HEAD(queue, entry, entries);
+	SIMPLEQ_INSERT_HEAD(queue, entry, entries);
 }
 
 void run_queue_add_last(struct run_queue *queue, struct run *entry)
 {
-	STAILQ_INSERT_TAIL(queue, entry, entries);
+	SIMPLEQ_INSERT_TAIL(queue, entry, entries);
 }
 
 struct run *run_queue_remove_first(struct run_queue *queue)
 {
-	struct run *entry = STAILQ_FIRST(queue);
-	STAILQ_REMOVE_HEAD(queue, entries);
+	struct run *entry = SIMPLEQ_FIRST(queue);
+	SIMPLEQ_REMOVE_HEAD(queue, entries);
 	return entry;
 }

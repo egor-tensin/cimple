@@ -21,7 +21,7 @@ void run_destroy(struct run *);
 const char *run_get_url(const struct run *);
 const char *run_get_rev(const struct run *);
 
-STAILQ_HEAD(run_queue, run);
+SIMPLEQ_HEAD(run_queue, run);
 
 void run_queue_create(struct run_queue *);
 void run_queue_destroy(struct run_queue *);

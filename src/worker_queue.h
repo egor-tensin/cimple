@@ -17,7 +17,7 @@ void worker_destroy(struct worker *);
 
 int worker_get_fd(const struct worker *);
 
-STAILQ_HEAD(worker_queue, worker);
+SIMPLEQ_HEAD(worker_queue, worker);
 
 void worker_queue_create(struct worker_queue *);
 void worker_queue_destroy(struct worker_queue *);
