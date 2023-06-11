@@ -14,6 +14,7 @@
 #include <stdio.h>
 #include <sys/time.h>
 #include <time.h>
+#include <unistd.h>
 
 static inline void log_print_timestamp(FILE *dest)
 {
@@ -28,9 +29,14 @@ static inline void log_print_timestamp(FILE *dest)
 		return;
 
 	buf[0] = '\0';
-	used += strftime(buf + used, sizeof(buf) - used, "[%F %T", &tm);
-	used += snprintf(buf + used, sizeof(buf) - used, ".%03ld] ", tv.tv_usec / 1000);
+	used += strftime(buf + used, sizeof(buf) - used, "%F %T", &tm);
+	used += snprintf(buf + used, sizeof(buf) - used, ".%03ld | ", tv.tv_usec / 1000);
 	fprintf(dest, "%s", buf);
+}
+
+static inline void log_print_thread_id(FILE *dest)
+{
+	fprintf(dest, "%d | ", gettid());
 }
 
 #define CONCAT_INNER(a, b) a##b
@@ -39,6 +45,7 @@ static inline void log_print_timestamp(FILE *dest)
 static inline void log_prefix(FILE *dest)
 {
 	log_print_timestamp(dest);
+	log_print_thread_id(dest);
 }
 
 #define log_err_prefix()                                                                           \
