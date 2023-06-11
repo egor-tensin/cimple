@@ -70,33 +70,33 @@ static inline void log_prefix(FILE *dest)
 		funlockfile(stderr);                                                               \
 	} while (0)
 
-#define log_errno(s)                                                                               \
+#define log_errno(fn)                                                                              \
 	do {                                                                                       \
 		flockfile(stderr);                                                                 \
 		log_err_prefix();                                                                  \
-		perror(s);                                                                         \
+		perror(fn);                                                                        \
 		funlockfile(stderr);                                                               \
 	} while (0)
 
-#define log_errno_if(expr, s)                                                                      \
+#define log_errno_if(expr, fn)                                                                     \
 	do {                                                                                       \
 		int CONCAT(ret, __LINE__) = expr;                                                  \
 		if (CONCAT(ret, __LINE__) < 0)                                                     \
-			log_errno(s);                                                              \
+			log_errno(fn);                                                             \
 	} while (0)
 
-#define pthread_errno(var, s)                                                                      \
+#define pthread_errno(var, fn)                                                                     \
 	do {                                                                                       \
 		errno = var;                                                                       \
-		log_errno(s);                                                                      \
+		log_errno(fn);                                                                     \
 		var = -var;                                                                        \
 	} while (0)
 
-#define pthread_errno_if(expr, s)                                                                  \
+#define pthread_errno_if(expr, fn)                                                                 \
 	do {                                                                                       \
 		int CONCAT(ret, __LINE__) = expr;                                                  \
 		if (CONCAT(ret, __LINE__))                                                         \
-			pthread_errno(CONCAT(ret, __LINE__), s);                                   \
+			pthread_errno(CONCAT(ret, __LINE__), fn);                                  \
 	} while (0)
 
 #endif
