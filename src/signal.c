@@ -7,13 +7,24 @@
 
 #include "signal.h"
 #include "compiler.h"
+#include "event_loop.h"
+#include "file.h"
 #include "log.h"
 
 #include <signal.h>
 #include <stddef.h>
 #include <string.h>
+#include <sys/signalfd.h>
+#include <unistd.h>
 
 static int stop_signals[] = {SIGINT, SIGTERM, SIGQUIT};
+
+static void stops_set(sigset_t *set)
+{
+	sigemptyset(set);
+	for (size_t i = 0; i < sizeof(stop_signals) / sizeof(stop_signals[0]); ++i)
+		sigaddset(set, stop_signals[i]);
+}
 
 volatile sig_atomic_t global_stop_flag = 0;
 
@@ -78,15 +89,51 @@ int signal_block_all(sigset_t *old)
 int signal_block_stops(void)
 {
 	sigset_t set;
-	sigemptyset(&set);
-
-	for (size_t i = 0; i < sizeof(stop_signals) / sizeof(stop_signals[0]); ++i)
-		sigaddset(&set, stop_signals[i]);
-
+	stops_set(&set);
 	return signal_set(&set, NULL);
 }
 
 int signal_restore(const sigset_t *new)
 {
 	return signal_set(new, NULL);
+}
+
+int signalfd_create(const sigset_t *set)
+{
+	sigset_t old;
+	int ret = 0;
+
+	ret = signal_set(set, &old);
+	if (ret < 0)
+		return ret;
+
+	ret = signalfd(-1, set, SFD_CLOEXEC);
+	if (ret < 0)
+		goto restore;
+
+	return ret;
+
+restore:
+	signal_set(&old, NULL);
+
+	return ret;
+}
+
+int signalfd_listen_for_stops(void)
+{
+	sigset_t set;
+	stops_set(&set);
+	return signalfd_create(&set);
+}
+
+void signalfd_destroy(int fd)
+{
+	file_close(fd);
+}
+
+int signalfd_add_to_event_loop(int fd, struct event_loop *loop, event_loop_handler handler,
+                               void *arg)
+{
+	struct event_fd entry = {.fd = fd, .events = POLLIN, .handler = handler, .arg = arg};
+	return event_loop_add(loop, &entry);
 }

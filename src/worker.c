@@ -10,74 +10,78 @@
 #include "command.h"
 #include "compiler.h"
 #include "const.h"
+#include "event_loop.h"
 #include "git.h"
 #include "log.h"
 #include "msg.h"
+#include "net.h"
 #include "process.h"
 #include "run_queue.h"
 #include "signal.h"
 
 #include <stdlib.h>
+#include <string.h>
 
 struct worker {
-	int dummy;
+	struct settings *settings;
+
+	int stopping;
+
+	struct cmd_dispatcher *cmd_dispatcher;
+
+	struct event_loop *event_loop;
+	int signalfd;
 };
 
-int worker_create(struct worker **_worker)
+static struct settings *worker_settings_copy(const struct settings *src)
 {
-	int ret = 0;
-
-	ret = signal_handle_stops();
-	if (ret < 0)
-		return ret;
-
-	struct worker *worker = malloc(sizeof(struct worker));
-	if (!worker) {
+	struct settings *result = malloc(sizeof(*src));
+	if (!result) {
 		log_errno("malloc");
-		return -1;
+		return NULL;
 	}
 
-	ret = libgit_init();
-	if (ret < 0)
-		goto free;
+	result->host = strdup(src->host);
+	if (!result->host) {
+		log_errno("strdup");
+		goto free_result;
+	}
 
-	*_worker = worker;
-	return ret;
+	result->port = strdup(src->port);
+	if (!result->port) {
+		log_errno("strdup");
+		goto free_host;
+	}
 
-free:
-	free(worker);
+	return result;
 
-	return ret;
+free_host:
+	free(result->host);
+
+free_result:
+	free(result);
+
+	return NULL;
 }
 
-void worker_destroy(struct worker *worker)
+static void worker_settings_destroy(struct settings *settings)
 {
-	log("Shutting down\n");
-
-	libgit_shutdown();
-	free(worker);
+	free(settings->port);
+	free(settings->host);
+	free(settings);
 }
 
-static int worker_send_to_server(const struct settings *settings, const struct msg *request,
-                                 struct msg **response)
+static int worker_set_stopping(UNUSED struct event_loop *loop, UNUSED int fd, UNUSED short revents,
+                               void *_worker)
 {
-	return msg_connect_and_talk(settings->host, settings->port, request, response);
+	struct worker *worker = (struct worker *)_worker;
+	worker->stopping = 1;
+	return 0;
 }
 
-static int worker_send_to_server_argv(const struct settings *settings, const char **argv,
-                                      struct msg **response)
+static int worker_handle_run(const struct msg *request, UNUSED struct msg **response, void *_ctx)
 {
-	return msg_connect_and_talk_argv(settings->host, settings->port, argv, response);
-}
-
-static int worker_send_new_worker(const struct settings *settings, struct msg **task)
-{
-	static const char *argv[] = {CMD_NEW_WORKER, NULL};
-	return worker_send_to_server_argv(settings, argv, task);
-}
-
-static int msg_run_handler(const struct msg *request, struct msg **response, UNUSED void *ctx)
-{
+	struct cmd_conn_ctx *ctx = (struct cmd_conn_ctx *)_ctx;
 	struct run *run = NULL;
 	struct proc_output result;
 	int ret = 0;
@@ -96,10 +100,16 @@ static int msg_run_handler(const struct msg *request, struct msg **response, UNU
 
 	proc_output_dump(&result);
 
+	struct worker *worker = (struct worker *)ctx->arg;
 	static const char *argv[] = {CMD_COMPLETE, NULL};
-	ret = msg_from_argv(response, argv);
+
+	ret = msg_connect_and_talk_argv(worker->settings->host, worker->settings->port, argv, NULL);
 	if (ret < 0)
 		goto free_output;
+
+	/* Close the descriptor and remove it from the event loop.
+	 * poll(2) is too confusing, honestly. */
+	ret = EVENT_LOOP_REMOVE;
 
 free_output:
 	proc_output_free(&result);
@@ -110,49 +120,111 @@ free_output:
 }
 
 static struct cmd_desc commands[] = {
-    {CMD_RUN, msg_run_handler},
+    {CMD_RUN, worker_handle_run},
 };
 
 static const size_t numof_commands = sizeof(commands) / sizeof(commands[0]);
 
-int worker_main(UNUSED struct worker *worker, const struct settings *settings)
+int worker_create(struct worker **_worker, const struct settings *settings)
 {
-	struct msg *task = NULL;
-	struct cmd_dispatcher *dispatcher = NULL;
 	int ret = 0;
 
-	ret = cmd_dispatcher_create(&dispatcher, commands, numof_commands, NULL);
+	struct worker *worker = malloc(sizeof(struct worker));
+	if (!worker) {
+		log_errno("malloc");
+		return -1;
+	}
+
+	worker->settings = worker_settings_copy(settings);
+	if (!worker->settings) {
+		ret = -1;
+		goto free;
+	}
+
+	worker->stopping = 0;
+
+	ret = cmd_dispatcher_create(&worker->cmd_dispatcher, commands, numof_commands, worker);
 	if (ret < 0)
-		return ret;
+		goto free_settings;
 
-	log("Waiting for a new command\n");
+	ret = event_loop_create(&worker->event_loop);
+	if (ret < 0)
+		goto destroy_cmd_dispatcher;
 
-	ret = worker_send_new_worker(settings, &task);
-	if (ret < 0) {
-		if ((errno == EINTR || errno == EINVAL) && global_stop_flag)
-			ret = 0;
-		goto dispatcher_destroy;
-	}
+	ret = signalfd_listen_for_stops();
+	if (ret < 0)
+		goto destroy_event_loop;
+	worker->signalfd = ret;
 
-	while (!global_stop_flag) {
-		struct msg *result = NULL;
+	ret = signalfd_add_to_event_loop(worker->signalfd, worker->event_loop, worker_set_stopping,
+	                                 worker);
+	if (ret < 0)
+		goto close_signalfd;
 
-		ret = cmd_dispatcher_handle(dispatcher, task, &result);
-		msg_free(task);
+	ret = libgit_init();
+	if (ret < 0)
+		goto close_signalfd;
+
+	*_worker = worker;
+	return ret;
+
+close_signalfd:
+	signalfd_destroy(worker->signalfd);
+
+destroy_event_loop:
+	event_loop_destroy(worker->event_loop);
+
+destroy_cmd_dispatcher:
+	cmd_dispatcher_destroy(worker->cmd_dispatcher);
+
+free_settings:
+	worker_settings_destroy(worker->settings);
+
+free:
+	free(worker);
+
+	return ret;
+}
+
+void worker_destroy(struct worker *worker)
+{
+	log("Shutting down\n");
+
+	libgit_shutdown();
+	signalfd_destroy(worker->signalfd);
+	event_loop_destroy(worker->event_loop);
+	cmd_dispatcher_destroy(worker->cmd_dispatcher);
+	worker_settings_destroy(worker->settings);
+	free(worker);
+}
+
+int worker_main(struct worker *worker)
+{
+	int ret = 0;
+
+	while (!worker->stopping) {
+		ret = net_connect(worker->settings->host, worker->settings->port);
 		if (ret < 0)
-			goto dispatcher_destroy;
+			return ret;
 
-		ret = worker_send_to_server(settings, result, &task);
-		msg_free(result);
-		if (ret < 0) {
-			if ((errno == EINTR || errno == EINVAL) && global_stop_flag)
-				ret = 0;
-			goto dispatcher_destroy;
-		}
+		const int fd = ret;
+		static const char *argv[] = {CMD_NEW_WORKER, NULL};
+
+		ret = msg_send_argv(fd, argv);
+		if (ret < 0)
+			return ret;
+
+		ret = cmd_dispatcher_add_to_event_loop(worker->cmd_dispatcher, worker->event_loop,
+		                                       fd);
+		if (ret < 0)
+			return ret;
+
+		log("Waiting for a new command\n");
+
+		ret = event_loop_run(worker->event_loop);
+		if (ret < 0)
+			return ret;
 	}
-
-dispatcher_destroy:
-	cmd_dispatcher_destroy(dispatcher);
 
 	return ret;
 }

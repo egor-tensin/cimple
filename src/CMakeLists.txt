@@ -39,6 +39,7 @@ generate_sql_header(sqlite)
 add_my_executable(server server_main.c server.c
     cmd_line.c
     command.c
+    event_loop.c
     file.c
     msg.c
     net.c
@@ -48,6 +49,7 @@ add_my_executable(server server_main.c server.c
     sqlite.c
     storage.c
     storage_sqlite.c
+    string.c
     tcp_server.c
     worker_queue.c)
 target_link_libraries(server PRIVATE pthread sqlite3)
@@ -63,11 +65,13 @@ add_my_executable(worker worker_main.c worker.c
     ci.c
     cmd_line.c
     command.c
+    event_loop.c
     file.c
     git.c
     msg.c
     net.c
     process.c
     run_queue.c
-    signal.c)
+    signal.c
+    string.c)
 target_link_libraries(worker PRIVATE git2 pthread)

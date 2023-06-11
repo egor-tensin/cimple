@@ -6,6 +6,8 @@
  */
 
 #include "command.h"
+#include "compiler.h"
+#include "event_loop.h"
 #include "log.h"
 #include "msg.h"
 
@@ -128,20 +130,29 @@ int cmd_dispatcher_handle(const struct cmd_dispatcher *dispatcher, const struct 
 	return cmd_dispatcher_handle_internal(dispatcher, command, result, dispatcher->ctx);
 }
 
+static struct cmd_conn_ctx *make_conn_ctx(int fd, void *arg)
+{
+	struct cmd_conn_ctx *ctx = malloc(sizeof(struct cmd_conn_ctx));
+	if (!ctx) {
+		log_errno("malloc");
+		return NULL;
+	}
+
+	ctx->fd = fd;
+	ctx->arg = arg;
+
+	return ctx;
+}
+
 int cmd_dispatcher_handle_conn(int conn_fd, void *_dispatcher)
 {
 	struct cmd_dispatcher *dispatcher = (struct cmd_dispatcher *)_dispatcher;
 	struct msg *request = NULL, *response = NULL;
 	int ret = 0;
 
-	struct cmd_conn_ctx *new_ctx = malloc(sizeof(struct cmd_conn_ctx));
-	if (!new_ctx) {
-		log_errno("malloc");
+	struct cmd_conn_ctx *new_ctx = make_conn_ctx(conn_fd, dispatcher->ctx);
+	if (!new_ctx)
 		return -1;
-	}
-
-	new_ctx->fd = conn_fd;
-	new_ctx->arg = dispatcher->ctx;
 
 	ret = msg_recv(conn_fd, &request);
 	if (ret < 0)
@@ -167,4 +178,58 @@ free_ctx:
 	free(new_ctx);
 
 	return ret;
+}
+
+static int cmd_dispatcher_handle_event(UNUSED struct event_loop *loop, int fd, short revents,
+                                       void *_dispatcher)
+{
+	struct cmd_dispatcher *dispatcher = (struct cmd_dispatcher *)_dispatcher;
+	struct msg *request = NULL, *response = NULL;
+	int ret = 0;
+
+	if (!(revents & POLLIN)) {
+		log_err("Descriptor %d is not readable\n", fd);
+		return -1;
+	}
+
+	struct cmd_conn_ctx *new_ctx = make_conn_ctx(fd, dispatcher->ctx);
+	if (!new_ctx)
+		return -1;
+
+	ret = msg_recv(fd, &request);
+	if (ret < 0)
+		goto free_ctx;
+
+	ret = cmd_dispatcher_handle_internal(dispatcher, request, &response, new_ctx);
+	if (ret < 0)
+		goto free_response;
+
+	if (response) {
+		ret = msg_send(fd, response);
+		if (ret < 0)
+			goto free_response;
+	}
+
+free_response:
+	if (response)
+		msg_free(response);
+
+	msg_free(request);
+
+free_ctx:
+	free(new_ctx);
+
+	return ret;
+}
+
+int cmd_dispatcher_add_to_event_loop(const struct cmd_dispatcher *dispatcher,
+                                     struct event_loop *loop, int fd)
+{
+	struct event_fd entry = {
+	    .fd = fd,
+	    .events = POLLIN,
+	    .handler = cmd_dispatcher_handle_event,
+	    .arg = (void *)dispatcher,
+	};
+	return event_loop_add(loop, &entry);
 }
