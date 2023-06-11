@@ -103,8 +103,8 @@ void cmd_dispatcher_destroy(struct cmd_dispatcher *dispatcher)
 	free(dispatcher);
 }
 
-int cmd_dispatcher_handle(const struct cmd_dispatcher *dispatcher, const struct msg *command,
-                          struct msg **result)
+static int cmd_dispatcher_handle_internal(const struct cmd_dispatcher *dispatcher,
+                                          const struct msg *command, struct msg **result, void *arg)
 {
 	const char *actual_cmd = msg_get_first_string(command);
 
@@ -114,12 +114,18 @@ int cmd_dispatcher_handle(const struct cmd_dispatcher *dispatcher, const struct 
 		if (strcmp(cmd->name, actual_cmd))
 			continue;
 
-		return cmd->handler(command, result, dispatcher->ctx);
+		return cmd->handler(command, result, arg);
 	}
 
 	log_err("Received an unknown command\n");
 	msg_dump(command);
 	return -1;
+}
+
+int cmd_dispatcher_handle(const struct cmd_dispatcher *dispatcher, const struct msg *command,
+                          struct msg **result)
+{
+	return cmd_dispatcher_handle_internal(dispatcher, command, result, dispatcher->ctx);
 }
 
 int cmd_dispatcher_handle_conn(int conn_fd, void *_dispatcher)
@@ -141,11 +147,7 @@ int cmd_dispatcher_handle_conn(int conn_fd, void *_dispatcher)
 	if (ret < 0)
 		goto free_ctx;
 
-	void *old_ctx = dispatcher->ctx;
-	dispatcher->ctx = new_ctx;
-	ret = cmd_dispatcher_handle(dispatcher, request, &response);
-	dispatcher->ctx = old_ctx;
-
+	ret = cmd_dispatcher_handle_internal(dispatcher, request, &response, new_ctx);
 	if (ret < 0)
 		goto free_response;
 
