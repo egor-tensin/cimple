@@ -56,20 +56,26 @@ static inline void log_prefix(FILE *dest)
 
 #define log(...)                                                                                   \
 	do {                                                                                       \
+		flockfile(stdout);                                                                 \
 		log_prefix(stdout);                                                                \
 		printf(__VA_ARGS__);                                                               \
+		funlockfile(stdout);                                                               \
 	} while (0)
 
 #define log_err(...)                                                                               \
 	do {                                                                                       \
+		flockfile(stderr);                                                                 \
 		log_err_prefix();                                                                  \
 		fprintf(stderr, __VA_ARGS__);                                                      \
+		funlockfile(stderr);                                                               \
 	} while (0)
 
 #define log_errno(s)                                                                               \
 	do {                                                                                       \
+		flockfile(stderr);                                                                 \
 		log_err_prefix();                                                                  \
 		perror(s);                                                                         \
+		funlockfile(stderr);                                                               \
 	} while (0)
 
 #define log_errno_if(expr, s)                                                                      \
