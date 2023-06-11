@@ -61,22 +61,13 @@ void worker_destroy(struct worker *worker)
 static int worker_send_to_server(const struct settings *settings, const struct msg *request,
                                  struct msg **response)
 {
-	return msg_connect_and_communicate(settings->host, settings->port, request, response);
+	return msg_connect_and_talk(settings->host, settings->port, request, response);
 }
 
 static int worker_send_to_server_argv(const struct settings *settings, const char **argv,
                                       struct msg **response)
 {
-	struct msg *msg = NULL;
-	int ret = 0;
-
-	ret = msg_from_argv(&msg, argv);
-	if (ret < 0)
-		return ret;
-
-	ret = worker_send_to_server(settings, msg, response);
-	msg_free(msg);
-	return ret;
+	return msg_connect_and_talk_argv(settings->host, settings->port, argv, response);
 }
 
 static int worker_send_new_worker(const struct settings *settings, struct msg **task)

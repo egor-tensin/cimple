@@ -154,17 +154,7 @@ static int server_assign_run(struct server *server)
 
 	const char *argv[] = {CMD_RUN, run_get_url(run), run_get_rev(run), NULL};
 
-	struct msg *request = NULL;
-
-	ret = msg_from_argv(&request, argv);
-	if (ret < 0) {
-		worker_queue_add_first(&server->worker_queue, worker);
-		run_queue_add_first(&server->run_queue, run);
-		return ret;
-	}
-
-	ret = msg_communicate(worker_get_fd(worker), request, NULL);
-	msg_free(request);
+	ret = msg_talk_argv(worker_get_fd(worker), argv, NULL);
 	if (ret < 0) {
 		/* Failed to communicate with the worker, requeue the run
 		 * and forget about the worker. */

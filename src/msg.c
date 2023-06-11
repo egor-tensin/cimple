@@ -170,7 +170,7 @@ destroy_buf:
 	return ret;
 }
 
-int msg_send_from_argv(int fd, const char **argv)
+int msg_send_argv(int fd, const char **argv)
 {
 	struct msg *msg = NULL;
 	int ret = 0;
@@ -224,7 +224,7 @@ destroy_buf:
 	return ret;
 }
 
-int msg_communicate(int fd, const struct msg *request, struct msg **response)
+int msg_talk(int fd, const struct msg *request, struct msg **response)
 {
 	int ret = 0;
 
@@ -248,8 +248,25 @@ int msg_communicate(int fd, const struct msg *request, struct msg **response)
 	return ret;
 }
 
-int msg_connect_and_communicate(const char *host, const char *port, const struct msg *request,
-                                struct msg **response)
+int msg_talk_argv(int fd, const char **argv, struct msg **response)
+{
+	struct msg *request = NULL;
+	int ret = 0;
+
+	ret = msg_from_argv(&request, argv);
+	if (ret < 0)
+		return ret;
+
+	ret = msg_talk(fd, request, response);
+	msg_free(request);
+	if (ret < 0)
+		return ret;
+
+	return ret;
+}
+
+int msg_connect_and_talk(const char *host, const char *port, const struct msg *request,
+                         struct msg **response)
 {
 	int fd = -1, ret = 0;
 
@@ -257,12 +274,30 @@ int msg_connect_and_communicate(const char *host, const char *port, const struct
 	if (fd < 0)
 		return fd;
 
-	ret = msg_communicate(fd, request, response);
+	ret = msg_talk(fd, request, response);
 	if (ret < 0)
 		goto close;
 
 close:
 	net_close(fd);
+
+	return ret;
+}
+
+int msg_connect_and_talk_argv(const char *host, const char *port, const char **argv,
+                              struct msg **response)
+{
+	struct msg *request = NULL;
+	int ret = 0;
+
+	ret = msg_from_argv(&request, argv);
+	if (ret < 0)
+		return ret;
+
+	ret = msg_connect_and_talk(host, port, request, response);
+	msg_free(request);
+	if (ret < 0)
+		return ret;
 
 	return ret;
 }

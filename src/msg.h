@@ -28,13 +28,16 @@ int msg_is_success(const struct msg *);
 int msg_is_error(const struct msg *);
 
 int msg_recv(int fd, struct msg **);
+
 int msg_send(int fd, const struct msg *);
+int msg_send_argv(int fd, const char **argv);
 
-int msg_send_from_argv(int fd, const char **argv);
+int msg_talk(int fd, const struct msg *, struct msg **response);
+int msg_talk_argv(int fd, const char **argv, struct msg **response);
 
-int msg_communicate(int fd, const struct msg *, struct msg **response);
-int msg_connect_and_communicate(const char *host, const char *port, const struct msg *,
-                                struct msg **);
+int msg_connect_and_talk(const char *host, const char *port, const struct msg *, struct msg **);
+int msg_connect_and_talk_argv(const char *host, const char *port, const char **argv,
+                              struct msg **response);
 
 void msg_dump(const struct msg *);
 

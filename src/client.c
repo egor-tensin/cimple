@@ -39,16 +39,12 @@ void client_destroy(struct client *client)
 int client_main(UNUSED const struct client *client, const struct settings *settings,
                 const char **argv)
 {
-	struct msg *request = NULL, *response = NULL;
+	struct msg *response = NULL;
 	int ret = 0;
 
-	ret = msg_from_argv(&request, argv);
+	ret = msg_connect_and_talk_argv(settings->host, settings->port, argv, &response);
 	if (ret < 0)
 		return ret;
-
-	ret = msg_connect_and_communicate(settings->host, settings->port, request, &response);
-	if (ret < 0)
-		goto free_request;
 
 	if (!msg_is_success(response)) {
 		log_err("Server failed to process the request\n");
@@ -59,9 +55,6 @@ int client_main(UNUSED const struct client *client, const struct settings *setti
 
 free_response:
 	msg_free(response);
-
-free_request:
-	msg_free(request);
 
 	return ret;
 }
