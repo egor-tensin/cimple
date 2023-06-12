@@ -17,14 +17,28 @@
 
 SIMPLEQ_HEAD(event_fd_queue, event_fd);
 
-static struct event_fd *event_fd_copy(const struct event_fd *src)
+struct event_fd {
+	int fd;
+	short events;
+	event_handler handler;
+	void *arg;
+
+	SIMPLEQ_ENTRY(event_fd) entries;
+};
+
+static struct event_fd *event_fd_create(int fd, short events, event_handler handler, void *arg)
 {
-	struct event_fd *res = malloc(sizeof(*src));
+	struct event_fd *res = calloc(1, sizeof(struct event_fd));
 	if (!res) {
 		log_errno("malloc");
 		return NULL;
 	}
-	*res = *src;
+
+	res->fd = fd;
+	res->events = events;
+	res->handler = handler;
+	res->arg = arg;
+
 	return res;
 }
 
@@ -76,16 +90,16 @@ void event_loop_destroy(struct event_loop *loop)
 	free(loop);
 }
 
-int event_loop_add(struct event_loop *loop, const struct event_fd *entry)
+int event_loop_add(struct event_loop *loop, int fd, short events, event_handler handler, void *arg)
 {
-	log("Adding descriptor %d to event loop\n", entry->fd);
+	log("Adding descriptor %d to event loop\n", fd);
 
-	struct event_fd *copied = event_fd_copy(entry);
-	if (!copied)
+	struct event_fd *entry = event_fd_create(fd, events, handler, arg);
+	if (!entry)
 		return -1;
 
 	nfds_t nfds = loop->nfds + 1;
-	SIMPLEQ_INSERT_TAIL(&loop->entries, copied, entries);
+	SIMPLEQ_INSERT_TAIL(&loop->entries, entry, entries);
 	loop->nfds = nfds;
 
 	return 0;

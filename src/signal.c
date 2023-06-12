@@ -131,9 +131,7 @@ void signalfd_destroy(int fd)
 	file_close(fd);
 }
 
-int signalfd_add_to_event_loop(int fd, struct event_loop *loop, event_loop_handler handler,
-                               void *arg)
+int signalfd_add_to_event_loop(int fd, struct event_loop *loop, event_handler handler, void *arg)
 {
-	struct event_fd entry = {.fd = fd, .events = POLLIN, .handler = handler, .arg = arg};
-	return event_loop_add(loop, &entry);
+	return event_loop_add(loop, fd, POLLIN, handler, arg);
 }

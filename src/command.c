@@ -222,14 +222,8 @@ free_ctx:
 	return ret;
 }
 
-int cmd_dispatcher_add_to_event_loop(const struct cmd_dispatcher *dispatcher,
-                                     struct event_loop *loop, int fd)
+int cmd_dispatcher_add_to_event_loop(struct cmd_dispatcher *dispatcher, struct event_loop *loop,
+                                     int fd)
 {
-	struct event_fd entry = {
-	    .fd = fd,
-	    .events = POLLIN,
-	    .handler = cmd_dispatcher_handle_event,
-	    .arg = (void *)dispatcher,
-	};
-	return event_loop_add(loop, &entry);
+	return event_loop_add(loop, fd, POLLIN, cmd_dispatcher_handle_event, dispatcher);
 }

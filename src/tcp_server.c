@@ -143,8 +143,8 @@ close_conn:
 	return ret;
 }
 
-static int tcp_server_event_loop_handler(UNUSED struct event_loop *loop, UNUSED int fd,
-                                         UNUSED short revents, void *_server)
+static int tcp_server_event_handler(UNUSED struct event_loop *loop, UNUSED int fd,
+                                    UNUSED short revents, void *_server)
 {
 	struct tcp_server *server = (struct tcp_server *)_server;
 	return tcp_server_accept(server);
@@ -152,11 +152,5 @@ static int tcp_server_event_loop_handler(UNUSED struct event_loop *loop, UNUSED 
 
 int tcp_server_add_to_event_loop(struct tcp_server *server, struct event_loop *loop)
 {
-	struct event_fd entry = {
-	    .fd = server->fd,
-	    .events = POLLIN,
-	    .handler = tcp_server_event_loop_handler,
-	    .arg = server,
-	};
-	return event_loop_add(loop, &entry);
+	return event_loop_add(loop, server->fd, POLLIN, tcp_server_event_handler, server);
 }

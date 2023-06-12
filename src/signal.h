@@ -23,7 +23,7 @@ int signal_restore(const sigset_t *new);
 int signalfd_create(const sigset_t *);
 void signalfd_destroy(int fd);
 
-int signalfd_add_to_event_loop(int fd, struct event_loop *, event_loop_handler handler, void *arg);
+int signalfd_add_to_event_loop(int fd, struct event_loop *, event_handler handler, void *arg);
 
 int signalfd_listen_for_stops(void);
 

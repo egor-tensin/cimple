@@ -29,7 +29,7 @@ void cmd_dispatcher_destroy(struct cmd_dispatcher *);
 int cmd_dispatcher_handle(const struct cmd_dispatcher *, const struct msg *command,
                           struct msg **response);
 
-int cmd_dispatcher_add_to_event_loop(const struct cmd_dispatcher *, struct event_loop *, int fd);
+int cmd_dispatcher_add_to_event_loop(struct cmd_dispatcher *, struct event_loop *, int fd);
 
 struct cmd_conn_ctx {
 	int fd;
