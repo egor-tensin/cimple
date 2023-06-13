@@ -19,10 +19,10 @@ directory:
 This command makes a CMake build directory in build/cmake/ and executes `make`
 there.
 
-The default is to build using clang in `Release` configuration.
+The default is to build using clang in `Debug` configuration.
 You can choose a different compiler and configuration like so:
 
-    make build COMPILER=gcc CONFIGURATION=Debug
+    make build COMPILER=gcc CONFIGURATION=Release
 
 ### Testing
 
