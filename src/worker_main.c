@@ -10,7 +10,7 @@
 #include "worker.h"
 
 #include <getopt.h>
-#include <stddef.h>
+#include <unistd.h>
 
 static struct settings default_settings(void)
 {

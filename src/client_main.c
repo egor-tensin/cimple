@@ -10,7 +10,7 @@
 #include "const.h"
 
 #include <getopt.h>
-#include <stdlib.h>
+#include <unistd.h>
 
 static struct settings default_settings(void)
 {

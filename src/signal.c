@@ -11,10 +11,10 @@
 #include "file.h"
 #include "log.h"
 
+#include <poll.h>
 #include <signal.h>
 #include <stddef.h>
 #include <sys/signalfd.h>
-#include <unistd.h>
 
 static int stop_signals[] = {SIGINT, SIGTERM, SIGQUIT};
 

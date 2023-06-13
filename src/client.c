@@ -9,7 +9,6 @@
 #include "compiler.h"
 #include "log.h"
 #include "msg.h"
-#include "net.h"
 
 #include <stdlib.h>
 

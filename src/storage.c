@@ -9,6 +9,8 @@
 #include "log.h"
 #include "storage_sqlite.h"
 
+#include <stddef.h>
+
 typedef void (*storage_settings_destroy_t)(const struct storage_settings *);
 typedef int (*storage_create_t)(struct storage *, const struct storage_settings *);
 typedef void (*storage_destroy_t)(struct storage *);

@@ -11,6 +11,7 @@
 #include "log.h"
 #include "msg.h"
 
+#include <poll.h>
 #include <stdlib.h>
 #include <string.h>
 

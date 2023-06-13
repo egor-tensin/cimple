@@ -8,8 +8,6 @@
 #ifndef __EVENT_LOOP_H__
 #define __EVENT_LOOP_H__
 
-#include <poll.h>
-
 struct event_loop;
 
 int event_loop_create(struct event_loop **);

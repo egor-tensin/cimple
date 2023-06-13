@@ -12,6 +12,7 @@
 #include "net.h"
 #include "signal.h"
 
+#include <poll.h>
 #include <pthread.h>
 #include <signal.h>
 #include <stdlib.h>

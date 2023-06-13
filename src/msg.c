@@ -9,10 +9,8 @@
 #include "log.h"
 #include "net.h"
 
-#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 
 struct msg {
 	size_t argc;
