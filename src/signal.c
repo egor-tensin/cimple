@@ -16,16 +16,16 @@
 #include <stddef.h>
 #include <sys/signalfd.h>
 
-static int stop_signals[] = {SIGINT, SIGTERM, SIGQUIT};
+static int sigterm_signals[] = {SIGINT, SIGTERM, SIGQUIT};
 
-static void stops_set(sigset_t *set)
+static void sigterms_mask(sigset_t *set)
 {
 	sigemptyset(set);
-	for (size_t i = 0; i < sizeof(stop_signals) / sizeof(stop_signals[0]); ++i)
-		sigaddset(set, stop_signals[i]);
+	for (size_t i = 0; i < sizeof(sigterm_signals) / sizeof(sigterm_signals[0]); ++i)
+		sigaddset(set, sigterm_signals[i]);
 }
 
-static int signal_set(const sigset_t *new, sigset_t *old)
+static int signal_set_mask_internal(const sigset_t *new, sigset_t *old)
 {
 	int ret = 0;
 
@@ -38,23 +38,23 @@ static int signal_set(const sigset_t *new, sigset_t *old)
 	return ret;
 }
 
+int signal_set_mask(const sigset_t *new)
+{
+	return signal_set_mask_internal(new, NULL);
+}
+
 int signal_block_all(sigset_t *old)
 {
 	sigset_t new;
 	sigfillset(&new);
-	return signal_set(&new, old);
+	return signal_set_mask_internal(&new, old);
 }
 
-int signal_block_stops(void)
+int signal_block_sigterms(void)
 {
 	sigset_t set;
-	stops_set(&set);
-	return signal_set(&set, NULL);
-}
-
-int signal_restore(const sigset_t *new)
-{
-	return signal_set(new, NULL);
+	sigterms_mask(&set);
+	return signal_set_mask_internal(&set, NULL);
 }
 
 int signalfd_create(const sigset_t *set)
@@ -62,7 +62,7 @@ int signalfd_create(const sigset_t *set)
 	sigset_t old;
 	int ret = 0;
 
-	ret = signal_set(set, &old);
+	ret = signal_set_mask_internal(set, &old);
 	if (ret < 0)
 		return ret;
 
@@ -73,15 +73,15 @@ int signalfd_create(const sigset_t *set)
 	return ret;
 
 restore:
-	signal_set(&old, NULL);
+	signal_set_mask_internal(&old, NULL);
 
 	return ret;
 }
 
-int signalfd_listen_for_stops(void)
+int signalfd_create_sigterms(void)
 {
 	sigset_t set;
-	stops_set(&set);
+	sigterms_mask(&set);
 	return signalfd_create(&set);
 }
 

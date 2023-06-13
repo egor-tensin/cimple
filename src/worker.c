@@ -151,7 +151,7 @@ int worker_create(struct worker **_worker, const struct settings *settings)
 	if (ret < 0)
 		goto destroy_cmd_dispatcher;
 
-	ret = signalfd_listen_for_stops();
+	ret = signalfd_create_sigterms();
 	if (ret < 0)
 		goto destroy_event_loop;
 	worker->signalfd = ret;

@@ -70,7 +70,7 @@ static void *connection_thread(void *_ctx)
 
 	/* Let the child thread handle its signals except those that should be
 	 * handled in the main thread. */
-	ret = signal_block_stops();
+	ret = signal_block_sigterms();
 	if (ret < 0)
 		goto free_ctx;
 
@@ -113,7 +113,7 @@ static int create_connection_thread(int fd, tcp_server_conn_handler conn_handler
 
 restore_mask:
 	/* Restore the previously-enabled signals for handling in the main thread. */
-	signal_restore(&old_mask);
+	signal_set_mask(&old_mask);
 
 	return ret;
 

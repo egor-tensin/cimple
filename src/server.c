@@ -318,7 +318,7 @@ int server_create(struct server **_server, const struct settings *settings)
 	if (ret < 0)
 		goto destroy_cmd_dispatcher;
 
-	ret = signalfd_listen_for_stops();
+	ret = signalfd_create_sigterms();
 	if (ret < 0)
 		goto destroy_event_loop;
 	server->signalfd = ret;

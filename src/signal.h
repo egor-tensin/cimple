@@ -12,16 +12,16 @@
 
 #include <signal.h>
 
-int signal_block_all(sigset_t *old);
-int signal_block_stops(void);
+int signal_set_mask(const sigset_t *new);
 
-int signal_restore(const sigset_t *new);
+int signal_block_all(sigset_t *old);
+int signal_block_sigterms(void);
 
 int signalfd_create(const sigset_t *);
 void signalfd_destroy(int fd);
 
 int signalfd_add_to_event_loop(int fd, struct event_loop *, event_handler handler, void *arg);
 
-int signalfd_listen_for_stops(void);
+int signalfd_create_sigterms(void);
 
 #endif
