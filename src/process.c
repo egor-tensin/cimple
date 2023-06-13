@@ -85,10 +85,11 @@ static int redirect_and_exec_child(int pipe_fds[2], const char *args[], const ch
 
 int proc_capture(const char *args[], const char *envp[], struct proc_output *result)
 {
+	static const int flags = O_CLOEXEC;
 	int pipe_fds[2];
 	int ret = 0;
 
-	ret = pipe2(pipe_fds, O_CLOEXEC);
+	ret = pipe2(pipe_fds, flags);
 	if (ret < 0) {
 		log_errno("pipe2");
 		return -1;

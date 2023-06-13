@@ -21,6 +21,7 @@
 
 int net_bind(const char *port)
 {
+	static const int flags = SOCK_CLOEXEC;
 	struct addrinfo *result = NULL, *it = NULL;
 	struct addrinfo hints;
 	int socket_fd = -1, ret = 0;
@@ -37,7 +38,7 @@ int net_bind(const char *port)
 	}
 
 	for (it = result; it; it = it->ai_next) {
-		socket_fd = socket(it->ai_family, it->ai_socktype | SOCK_CLOEXEC, it->ai_protocol);
+		socket_fd = socket(it->ai_family, it->ai_socktype | flags, it->ai_protocol);
 		if (socket_fd < 0) {
 			log_errno("socket");
 			continue;
@@ -92,9 +93,10 @@ fail:
 
 int net_accept(int fd)
 {
+	static const int flags = SOCK_CLOEXEC;
 	int ret = 0;
 
-	ret = accept4(fd, NULL, NULL, SOCK_CLOEXEC);
+	ret = accept4(fd, NULL, NULL, flags);
 	if (ret < 0) {
 		log_errno("accept");
 		return ret;
@@ -105,6 +107,7 @@ int net_accept(int fd)
 
 int net_connect(const char *host, const char *port)
 {
+	static const int flags = SOCK_CLOEXEC;
 	struct addrinfo *result = NULL, *it = NULL;
 	struct addrinfo hints;
 	int socket_fd = -1, ret = 0;
@@ -120,7 +123,7 @@ int net_connect(const char *host, const char *port)
 	}
 
 	for (it = result; it; it = it->ai_next) {
-		socket_fd = socket(it->ai_family, it->ai_socktype | SOCK_CLOEXEC, it->ai_protocol);
+		socket_fd = socket(it->ai_family, it->ai_socktype | flags, it->ai_protocol);
 		if (socket_fd < 0) {
 			log_errno("socket");
 			continue;

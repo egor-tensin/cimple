@@ -200,10 +200,10 @@ int sqlite_column_blob(sqlite3_stmt *stmt, int index, unsigned char **_result)
 
 int sqlite_exec_as_transaction(sqlite3 *db, const char *stmt)
 {
-	static const char *const FMT = "BEGIN; %s COMMIT;";
+	static const char *const fmt = "BEGIN; %s COMMIT;";
 	int ret = 0;
 
-	ret = snprintf(NULL, 0, FMT, stmt);
+	ret = snprintf(NULL, 0, fmt, stmt);
 	size_t nb = (size_t)ret + 1;
 	ret = 0;
 
@@ -212,7 +212,7 @@ int sqlite_exec_as_transaction(sqlite3 *db, const char *stmt)
 		log_errno("malloc");
 		return -1;
 	}
-	snprintf(full_stmt, nb, FMT, stmt);
+	snprintf(full_stmt, nb, fmt, stmt);
 
 	ret = sqlite_exec(db, stmt, NULL);
 	goto free;
@@ -225,10 +225,12 @@ free:
 
 int sqlite_get_user_version(sqlite3 *db, unsigned int *output)
 {
+	static const char *const sql = "PRAGMA user_version;";
+
 	sqlite3_stmt *stmt = NULL;
 	int result = -1, ret = 0;
 
-	ret = sqlite_prepare(db, "PRAGMA user_version;", &stmt);
+	ret = sqlite_prepare(db, sql, &stmt);
 	if (ret < 0)
 		return ret;
 	ret = sqlite_step(stmt);
@@ -253,5 +255,6 @@ finalize:
 
 int sqlite_set_foreign_keys(sqlite3 *db)
 {
-	return sqlite_exec(db, "PRAGMA foreign_keys = ON;", NULL);
+	static const char *const sql = "PRAGMA foreign_keys = ON;";
+	return sqlite_exec(db, sql, NULL);
 }

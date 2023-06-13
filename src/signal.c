@@ -57,6 +57,7 @@ int signal_block_sigterms(void)
 
 int signalfd_create(const sigset_t *set)
 {
+	static const int flags = SFD_CLOEXEC;
 	sigset_t old;
 	int ret = 0;
 
@@ -64,7 +65,7 @@ int signalfd_create(const sigset_t *set)
 	if (ret < 0)
 		return ret;
 
-	ret = signalfd(-1, set, SFD_CLOEXEC);
+	ret = signalfd(-1, set, flags);
 	if (ret < 0)
 		goto restore;
 

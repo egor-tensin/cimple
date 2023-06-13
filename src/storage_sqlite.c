@@ -57,12 +57,12 @@ struct storage_sqlite {
 
 static int storage_upgrade_sqlite_to(struct storage_sqlite *storage, size_t version)
 {
-	static const char *const FMT = "%s PRAGMA user_version = %zu;";
+	static const char *const fmt = "%s PRAGMA user_version = %zu;";
 
 	const char *script = sql_sqlite_files[version];
 	int ret = 0;
 
-	ret = snprintf(NULL, 0, FMT, script, version + 1);
+	ret = snprintf(NULL, 0, fmt, script, version + 1);
 	size_t nb = (size_t)ret + 1;
 	ret = 0;
 
@@ -71,7 +71,7 @@ static int storage_upgrade_sqlite_to(struct storage_sqlite *storage, size_t vers
 		log_errno("malloc");
 		return -1;
 	}
-	snprintf(full_script, nb, FMT, script, version + 1);
+	snprintf(full_script, nb, fmt, script, version + 1);
 
 	ret = sqlite_exec_as_transaction(storage->db, full_script);
 	goto free;
