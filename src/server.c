@@ -19,6 +19,7 @@
 #include "tcp_server.h"
 #include "worker_queue.h"
 
+#include <poll.h>
 #include <pthread.h>
 #include <stdlib.h>
 
@@ -317,8 +318,8 @@ int server_create(struct server **_server, const struct settings *settings)
 		goto destroy_event_loop;
 	server->signalfd = ret;
 
-	ret = signalfd_add_to_event_loop(server->signalfd, server->event_loop, server_set_stopping,
-	                                 server);
+	ret = event_loop_add(server->event_loop, server->signalfd, POLLIN, server_set_stopping,
+	                     server);
 	if (ret < 0)
 		goto close_signalfd;
 

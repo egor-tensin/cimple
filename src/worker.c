@@ -153,8 +153,8 @@ int worker_create(struct worker **_worker, const struct settings *settings)
 		goto destroy_event_loop;
 	worker->signalfd = ret;
 
-	ret = signalfd_add_to_event_loop(worker->signalfd, worker->event_loop, worker_set_stopping,
-	                                 worker);
+	ret = event_loop_add(worker->event_loop, worker->signalfd, POLLIN, worker_set_stopping,
+	                     worker);
 	if (ret < 0)
 		goto close_signalfd;
 

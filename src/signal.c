@@ -7,11 +7,9 @@
 
 #include "signal.h"
 #include "compiler.h"
-#include "event_loop.h"
 #include "file.h"
 #include "log.h"
 
-#include <poll.h>
 #include <signal.h>
 #include <stddef.h>
 #include <sys/signalfd.h>
@@ -88,9 +86,4 @@ int signalfd_create_sigterms(void)
 void signalfd_destroy(int fd)
 {
 	file_close(fd);
-}
-
-int signalfd_add_to_event_loop(int fd, struct event_loop *loop, event_handler handler, void *arg)
-{
-	return event_loop_add(loop, fd, POLLIN, handler, arg);
 }
