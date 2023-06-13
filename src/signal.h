@@ -12,9 +12,6 @@
 
 #include <signal.h>
 
-extern volatile sig_atomic_t global_stop_flag;
-int signal_handle_stops(void);
-
 int signal_block_all(sigset_t *old);
 int signal_block_stops(void);
 
