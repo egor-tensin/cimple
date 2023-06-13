@@ -29,9 +29,9 @@ static int signal_set_mask_internal(const sigset_t *new, sigset_t *old)
 {
 	int ret = 0;
 
-	ret = sigprocmask(SIG_SETMASK, new, old);
-	if (ret < 0) {
-		log_errno("sigprocmask");
+	ret = pthread_sigmask(SIG_SETMASK, new, old);
+	if (ret) {
+		pthread_errno(ret, "pthread_sigmask");
 		return ret;
 	}
 
