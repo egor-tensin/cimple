@@ -80,7 +80,8 @@ static int worker_set_stopping(UNUSED struct event_loop *loop, UNUSED int fd, UN
 	return 0;
 }
 
-static int worker_handle_run(const struct msg *request, UNUSED struct msg **response, void *_ctx)
+static int worker_handle_cmd_run(const struct msg *request, UNUSED struct msg **response,
+                                 void *_ctx)
 {
 	struct cmd_conn_ctx *ctx = (struct cmd_conn_ctx *)_ctx;
 	struct run *run = NULL;
@@ -117,7 +118,7 @@ free_output:
 }
 
 static struct cmd_desc commands[] = {
-    {CMD_RUN, worker_handle_run},
+    {CMD_RUN, worker_handle_cmd_run},
 };
 
 static const size_t numof_commands = sizeof(commands) / sizeof(commands[0]);

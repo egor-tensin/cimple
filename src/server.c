@@ -202,8 +202,8 @@ exit:
 	return NULL;
 }
 
-static int handle_cmd_new_worker(UNUSED const struct msg *request, UNUSED struct msg **response,
-                                 void *_ctx)
+static int server_handle_cmd_new_worker(UNUSED const struct msg *request,
+                                        UNUSED struct msg **response, void *_ctx)
 {
 	struct cmd_conn_ctx *ctx = (struct cmd_conn_ctx *)_ctx;
 	struct server *server = (struct server *)ctx->arg;
@@ -228,7 +228,7 @@ destroy_worker:
 	return ret;
 }
 
-static int handle_cmd_run(const struct msg *request, struct msg **response, void *_ctx)
+static int server_handle_cmd_run(const struct msg *request, struct msg **response, void *_ctx)
 {
 	struct cmd_conn_ctx *ctx = (struct cmd_conn_ctx *)_ctx;
 	struct server *server = (struct server *)ctx->arg;
@@ -260,8 +260,8 @@ destroy_run:
 	return ret;
 }
 
-static int handle_cmd_complete(UNUSED const struct msg *request, UNUSED struct msg **response,
-                               void *_ctx)
+static int server_handle_cmd_complete(UNUSED const struct msg *request,
+                                      UNUSED struct msg **response, void *_ctx)
 {
 	struct cmd_conn_ctx *ctx = (struct cmd_conn_ctx *)_ctx;
 	int client_fd = ctx->fd;
@@ -273,9 +273,9 @@ static int handle_cmd_complete(UNUSED const struct msg *request, UNUSED struct m
 }
 
 static struct cmd_desc commands[] = {
-    {CMD_NEW_WORKER, handle_cmd_new_worker},
-    {CMD_RUN, handle_cmd_run},
-    {CMD_COMPLETE, handle_cmd_complete},
+    {CMD_NEW_WORKER, server_handle_cmd_new_worker},
+    {CMD_RUN, server_handle_cmd_run},
+    {CMD_COMPLETE, server_handle_cmd_complete},
 };
 
 static const size_t numof_commands = sizeof(commands) / sizeof(commands[0]);
