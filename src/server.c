@@ -150,10 +150,8 @@ static int server_wait_for_action(struct server *server)
 	return ret;
 }
 
-static int server_assign_run(struct server *server)
+static void server_assign_run(struct server *server)
 {
-	int ret = 0;
-
 	struct run *run = run_queue_remove_first(&server->run_queue);
 	log("Removed run for repository %s from the queue\n", run_get_url(run));
 
@@ -161,7 +159,7 @@ static int server_assign_run(struct server *server)
 	log("Removed worker %d from the queue\n", worker_get_fd(worker));
 
 	const char *argv[] = {CMD_RUN, run_get_url(run), run_get_rev(run), NULL};
-	ret = msg_talk_argv(worker_get_fd(worker), argv, NULL);
+	int ret = msg_talk_argv(worker_get_fd(worker), argv, NULL);
 
 	if (ret < 0) {
 		log("Failed to assign run for repository %s to worker %d, requeueing\n",
@@ -174,8 +172,6 @@ static int server_assign_run(struct server *server)
 	}
 
 	worker_destroy(worker);
-
-	return ret;
 }
 
 static void *server_main_thread(void *_server)
@@ -195,9 +191,7 @@ static void *server_main_thread(void *_server)
 		if (server->stopping)
 			goto unlock;
 
-		ret = server_assign_run(server);
-		if (ret < 0)
-			goto unlock;
+		server_assign_run(server);
 	}
 
 unlock:
