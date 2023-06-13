@@ -153,6 +153,10 @@ static char *events_to_string(short events)
 		ptr = append_event(buf, sz, ptr, "POLLERR");
 	if (events & POLLHUP)
 		ptr = append_event(buf, sz, ptr, "POLLHUP");
+	if (events & POLLRDHUP)
+		ptr = append_event(buf, sz, ptr, "POLLRDHUP");
+	if (events & POLLPRI)
+		ptr = append_event(buf, sz, ptr, "POLLPRI");
 	if (events & POLLIN)
 		ptr = append_event(buf, sz, ptr, "POLLIN");
 	if (events & POLLOUT)
