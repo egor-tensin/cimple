@@ -181,8 +181,8 @@ free_ctx:
 	return ret;
 }
 
-static int cmd_dispatcher_handle_event(UNUSED struct event_loop *loop, int fd, short revents,
-                                       void *_dispatcher)
+int cmd_dispatcher_handle_event(UNUSED struct event_loop *loop, int fd, short revents,
+                                void *_dispatcher)
 {
 	struct cmd_dispatcher *dispatcher = (struct cmd_dispatcher *)_dispatcher;
 	struct msg *request = NULL, *response = NULL;
@@ -221,10 +221,4 @@ free_ctx:
 	free(new_ctx);
 
 	return ret;
-}
-
-int cmd_dispatcher_add_to_event_loop(struct cmd_dispatcher *dispatcher, struct event_loop *loop,
-                                     int fd)
-{
-	return event_loop_add(loop, fd, POLLIN, cmd_dispatcher_handle_event, dispatcher);
 }

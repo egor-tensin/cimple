@@ -15,10 +15,9 @@ void event_loop_destroy(struct event_loop *);
 
 int event_loop_run(struct event_loop *);
 
-#define EVENT_LOOP_REMOVE 1
-
 typedef int (*event_handler)(struct event_loop *, int fd, short revents, void *arg);
 
 int event_loop_add(struct event_loop *, int fd, short events, event_handler, void *arg);
+int event_loop_add_once(struct event_loop *, int fd, short events, event_handler, void *arg);
 
 #endif

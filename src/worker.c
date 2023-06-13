@@ -19,6 +19,7 @@
 #include "run_queue.h"
 #include "signal.h"
 
+#include <poll.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -106,10 +107,6 @@ static int worker_handle_run(const struct msg *request, UNUSED struct msg **resp
 	ret = msg_connect_and_talk_argv(worker->settings->host, worker->settings->port, argv, NULL);
 	if (ret < 0)
 		goto free_output;
-
-	/* Close the descriptor and remove it from the event loop.
-	 * poll(2) is too confusing, honestly. */
-	ret = EVENT_LOOP_REMOVE;
 
 free_output:
 	proc_output_free(&result);
@@ -214,8 +211,8 @@ int worker_main(struct worker *worker)
 		if (ret < 0)
 			return ret;
 
-		ret = cmd_dispatcher_add_to_event_loop(worker->cmd_dispatcher, worker->event_loop,
-		                                       fd);
+		ret = event_loop_add_once(worker->event_loop, fd, POLLIN,
+		                          cmd_dispatcher_handle_event, worker->cmd_dispatcher);
 		if (ret < 0)
 			return ret;
 

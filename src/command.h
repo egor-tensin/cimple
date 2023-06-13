@@ -29,8 +29,6 @@ void cmd_dispatcher_destroy(struct cmd_dispatcher *);
 int cmd_dispatcher_handle(const struct cmd_dispatcher *, const struct msg *command,
                           struct msg **response);
 
-int cmd_dispatcher_add_to_event_loop(struct cmd_dispatcher *, struct event_loop *, int fd);
-
 struct cmd_conn_ctx {
 	int fd;
 	void *arg;
@@ -38,5 +36,8 @@ struct cmd_conn_ctx {
 
 /* This is supposed to be used as an argument to tcp_server_accept. */
 int cmd_dispatcher_handle_conn(int conn_fd, void *dispatcher);
+
+/* This is supposed to be used as an argument to event_loop_add. */
+int cmd_dispatcher_handle_event(struct event_loop *, int fd, short revents, void *arg);
 
 #endif

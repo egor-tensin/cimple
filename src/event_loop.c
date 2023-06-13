@@ -22,6 +22,7 @@ struct event_fd {
 	short events;
 	event_handler handler;
 	void *arg;
+	int once;
 
 	SIMPLEQ_ENTRY(event_fd) entries;
 };
@@ -38,6 +39,7 @@ static struct event_fd *event_fd_create(int fd, short events, event_handler hand
 	res->events = events;
 	res->handler = handler;
 	res->arg = arg;
+	res->once = 0;
 
 	return res;
 }
@@ -90,18 +92,32 @@ void event_loop_destroy(struct event_loop *loop)
 	free(loop);
 }
 
-int event_loop_add(struct event_loop *loop, int fd, short events, event_handler handler, void *arg)
+static void event_loop_add_internal(struct event_loop *loop, struct event_fd *entry)
 {
-	log("Adding descriptor %d to event loop\n", fd);
-
-	struct event_fd *entry = event_fd_create(fd, events, handler, arg);
-	if (!entry)
-		return -1;
+	log("Adding descriptor %d to event loop\n", entry->fd);
 
 	nfds_t nfds = loop->nfds + 1;
 	SIMPLEQ_INSERT_TAIL(&loop->entries, entry, entries);
 	loop->nfds = nfds;
+}
 
+int event_loop_add(struct event_loop *loop, int fd, short events, event_handler handler, void *arg)
+{
+	struct event_fd *entry = event_fd_create(fd, events, handler, arg);
+	if (!entry)
+		return -1;
+	event_loop_add_internal(loop, entry);
+	return 0;
+}
+
+int event_loop_add_once(struct event_loop *loop, int fd, short events, event_handler handler,
+                        void *arg)
+{
+	struct event_fd *entry = event_fd_create(fd, events, handler, arg);
+	if (!entry)
+		return -1;
+	entry->once = 1;
+	event_loop_add_internal(loop, entry);
 	return 0;
 }
 
@@ -195,18 +211,11 @@ int event_loop_run(struct event_loop *loop)
 
 		/* Execute all handlers but notice if any of them fail. */
 		const int handler_ret = entry->handler(loop, fds[i].fd, fds[i].revents, entry->arg);
-		switch (handler_ret) {
-		case 0:
-			goto next;
-		case EVENT_LOOP_REMOVE:
-			goto remove;
-		default:
-			break;
-		}
+		if (handler_ret < 0)
+			ret = handler_ret;
 
-	remove:
-		event_loop_remove(loop, entry);
-		goto next;
+		if (entry->once)
+			event_loop_remove(loop, entry);
 
 	next:
 		entry = next;
