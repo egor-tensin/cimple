@@ -7,7 +7,7 @@ add_compile_definitions(_GNU_SOURCE)
 
 add_compile_definitions(VERSION="${PROJECT_VERSION}")
 
-set(DEFAULT_HOST "127.0.0.1" CACHE STRING "Set the default --host value")
+set(DEFAULT_HOST "127.0.0.1" CACHE STRING "Set default --host value")
 add_compile_definitions(DEFAULT_HOST="${DEFAULT_HOST}")
 
 function(add_my_executable name)
