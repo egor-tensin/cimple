@@ -9,7 +9,7 @@ import random
 
 from pytest import fixture
 
-from .lib.process import CmdLine, CmdLineBuilder, Runner
+from .lib.process import CmdLine, CmdLineRunner, Runner
 
 
 class Param:
@@ -158,5 +158,5 @@ def server_and_workers(server, workers):
 @fixture
 def client(process_runner, paths, server_port):
     args = ['--port', server_port]
-    cmd_line = CmdLineBuilder(process_runner, paths.client_binary, *args)
+    cmd_line = CmdLineRunner(process_runner, paths.client_binary, *args)
     return cmd_line

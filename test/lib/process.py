@@ -23,8 +23,12 @@ class LoggingThread(Thread):
     def __init__(self, process):
         self.process = process
         self.ready_event = Event()
+
         target = lambda pipe: self.consume(pipe)
         super().__init__(target=target, args=[process.stdout])
+
+        self.start()
+        self.ready_event.wait()
 
     def consume(self, pipe):
         for line in pipe:
@@ -33,15 +37,6 @@ class LoggingThread(Thread):
             if not self.ready_event.is_set() and self.process.cmd_line.log_line_means_ready(line):
                 logging.info('Process %s is ready', self.process.log_id)
                 self.ready_event.set()
-
-    def __enter__(self):
-        self.start()
-        self.ready_event.wait()
-        return self
-
-    def __exit__(self, *args):
-        self.process.shut_down()
-        self.join()
 
 
 class CmdLine:
@@ -83,22 +78,25 @@ class CmdLine:
 class Process(subprocess.Popen):
     def __init__(self, cmd_line):
         self.cmd_line = cmd_line
-
-        cmd_line.log_process_start()
-        self.name = cmd_line.process_name
-
         super().__init__(cmd_line.argv, **_COMMON_ARGS)
         logging.info('Process %s has started', self.log_id)
+        self.logger = LoggingThread(self)
 
     @property
     def log_id(self):
-        return f'{self.pid}/{self.name}'
+        return f'{self.pid}/{self.cmd_line.process_name}'
 
     def __exit__(self, *args):
         try:
             self.shut_down()
-        finally:
-            super().__exit__(*args)
+            self.logger.join()
+        except Exception as e:
+            logging.exception(e)
+        # Postpone closing the pipes until after the logging thread is finished
+        # so that it doesn't attempt to read from closed descriptors.
+        super().__exit__(*args)
+
+    SHUT_DOWN_TIMEOUT_SEC = 3
 
     def shut_down(self):
         ec = self.poll()
@@ -106,15 +104,14 @@ class Process(subprocess.Popen):
             return
         logging.info('Terminating process %s', self.log_id)
         self.terminate()
-        timeout = 3
         try:
-            self.wait(timeout=timeout)
+            self.wait(timeout=Process.SHUT_DOWN_TIMEOUT_SEC)
             return
         except subprocess.TimeoutExpired:
             pass
         logging.info('Process %s failed to terminate in time, killing it', self.log_id)
         self.kill()
-        self.wait(timeout=timeout)
+        self.wait(timeout=Process.SHUT_DOWN_TIMEOUT_SEC)
 
 
 class Runner:
@@ -137,17 +134,20 @@ class Runner:
     def run(self, cmd_line):
         cmd_line = self._wrap(cmd_line)
         cmd_line.log_process_start()
+
         result = subprocess.run(cmd_line.argv, **_COMMON_ARGS)
         return result.returncode, result.stdout
 
     @contextmanager
     def run_async(self, cmd_line):
         cmd_line = self._wrap(cmd_line)
-        with Process(cmd_line) as process, LoggingThread(process):
+        cmd_line.log_process_start()
+
+        with Process(cmd_line) as process:
             yield process
 
 
-class CmdLineBuilder:
+class CmdLineRunner:
     def __init__(self, runner, binary, *args):
         self.runner = runner
         self.binary = binary
