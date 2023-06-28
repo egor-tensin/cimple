@@ -61,4 +61,11 @@ install: build
 
 .PHONY: test
 test:
-	cd -- '$(call escape,$(cmake_dir))' && ctest --verbose
+	cd -- '$(call escape,$(cmake_dir))' && ctest --verbose --exclude-regex python_tests_valgrind
+
+.PHONY: test/valgrind
+test/valgrind:
+	cd -- '$(call escape,$(cmake_dir))' && ctest --verbose --tests-regex python_tests_valgrind
+
+.PHONY: test/all
+test/all: test test/valgrind
