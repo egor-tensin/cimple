@@ -8,7 +8,7 @@ import logging
 import os
 import shutil
 import subprocess
-from threading import Event, Thread
+from threading import Event, Lock, Thread
 
 
 _COMMON_ARGS = {
@@ -19,24 +19,55 @@ _COMMON_ARGS = {
 }
 
 
+def run(*args, **kwargs):
+    try:
+        return subprocess.run(list(args), check=True, **_COMMON_ARGS, **kwargs)
+    except subprocess.CalledProcessError as e:
+        logging.error('Command %s exited with code %s', e.cmd, e.returncode)
+        logging.error('Output:\n%s', e.output)
+        raise
+
+
+class LoggingEvent(Event):
+    def __init__(self, timeout=10):
+        self.timeout = timeout
+        super().__init__()
+
+    def log_line_matches(self, line):
+        return False
+
+    def wait(self):
+        if not super().wait(self.timeout):
+            raise RuntimeError('timed out while waiting for an event')
+
+
 class LoggingThread(Thread):
-    def __init__(self, process):
+    def __init__(self, process, events=None):
         self.process = process
-        self.ready_event = Event()
+        self.events_lock = Lock()
+        if events is None:
+            events = []
+        self.events = events
 
-        target = lambda pipe: self.consume(pipe)
-        super().__init__(target=target, args=[process.stdout])
-
+        super().__init__(target=lambda: self.process_output_lines())
         self.start()
-        self.ready_event.wait()
 
-    def consume(self, pipe):
-        for line in pipe:
+    def add_event(self, event):
+        with self.events_lock:
+            self.events.append(event)
+
+    def process_output_lines(self):
+        for line in self.process.stdout:
             line = line.removesuffix('\n')
             logging.info('%s: %s', self.process.log_id, line)
-            if not self.ready_event.is_set() and self.process.cmd_line.log_line_means_ready(line):
-                logging.info('Process %s is ready', self.process.log_id)
-                self.ready_event.set()
+            with self.events_lock:
+                for event in self.events:
+                    if event.is_set():
+                        continue
+                    if not event.log_line_matches(line):
+                        continue
+                    event.set()
+                self.events = [event for event in self.events if not event.is_set()]
 
 
 class CmdLine:
@@ -61,7 +92,7 @@ class CmdLine:
             name = os.path.basename(binary)
         self.process_name = name
 
-    def log_line_means_ready(self, line):
+    def log_line_means_process_ready(self, line):
         return True
 
     @classmethod
@@ -75,12 +106,29 @@ class CmdLine:
             logging.info('Executing binary %s', self.binary)
 
 
+class LoggingEventProcessReady(LoggingEvent):
+    def __init__(self, process):
+        self.process = process
+        super().__init__()
+
+    def set(self):
+        logging.info('Process %s is ready', self.process.log_id)
+        super().set()
+
+    def log_line_matches(self, line):
+        return self.process.cmd_line.log_line_means_process_ready(line)
+
+
 class Process(subprocess.Popen):
     def __init__(self, cmd_line):
         self.cmd_line = cmd_line
+
         super().__init__(cmd_line.argv, **_COMMON_ARGS)
         logging.info('Process %s has started', self.log_id)
-        self.logger = LoggingThread(self)
+
+        ready_event = LoggingEventProcessReady(self)
+        self.logger = LoggingThread(self, [ready_event])
+        ready_event.wait()
 
     @property
     def log_id(self):
@@ -135,7 +183,7 @@ class Runner:
         cmd_line = self._wrap(cmd_line)
         cmd_line.log_process_start()
 
-        result = subprocess.run(cmd_line.argv, **_COMMON_ARGS)
+        result = run(*cmd_line.argv)
         return result.returncode, result.stdout
 
     @contextmanager

@@ -10,6 +10,7 @@ import random
 from pytest import fixture
 
 from .lib.process import CmdLine, CmdLineRunner, Runner
+from .lib.test_repo import TestRepo
 
 
 class Param:
@@ -121,12 +122,12 @@ def sqlite_path(tmp_path):
 
 
 class CmdLineServer(CmdLine):
-    def log_line_means_ready(self, line):
+    def log_line_means_process_ready(self, line):
         return line.endswith('Waiting for new connections')
 
 
 class CmdLineWorker(CmdLine):
-    def log_line_means_ready(self, line):
+    def log_line_means_process_ready(self, line):
         return line.endswith('Waiting for a new command')
 
 
@@ -135,7 +136,7 @@ def server(process_runner, paths, server_port, sqlite_path):
     args = ['--port', server_port, '--sqlite', sqlite_path]
     cmd_line = CmdLineServer(paths.server_binary, *args)
     with process_runner.run_async(cmd_line) as server:
-        yield
+        yield server
     assert server.returncode == 0
 
 
@@ -145,18 +146,23 @@ def workers(process_runner, paths, server_port):
     cmd_line = CmdLineWorker(paths.worker_binary, *args)
     with process_runner.run_async(cmd_line) as worker1, \
          process_runner.run_async(cmd_line) as worker2:
-        yield
+        yield [worker1, worker2]
     assert worker1.returncode == 0
     assert worker2.returncode == 0
 
 
 @fixture
 def server_and_workers(server, workers):
-    yield
+    yield server, workers
 
 
 @fixture
 def client(process_runner, paths, server_port):
-    args = ['--port', server_port]
+    args = ['--host', '127.0.0.1', '--port', server_port]
     cmd_line = CmdLineRunner(process_runner, paths.client_binary, *args)
     return cmd_line
+
+
+@fixture
+def test_repo(tmp_path):
+    return TestRepo(tmp_path)
