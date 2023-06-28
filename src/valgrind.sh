@@ -15,4 +15,4 @@ exec valgrind -q \
     --track-origins=yes \
     --track-fds=yes \
     --trace-children=yes \
-    -- "$@"
+    "$@"
