@@ -7,7 +7,7 @@ import logging
 import os
 import shutil
 
-from .process import run
+from .process import Process
 
 
 class Repo:
@@ -21,7 +21,7 @@ class Repo:
         self.run('git', 'config', 'user.email', 'test@example.com')
 
     def run(self, *args, **kwargs):
-        run(*args, cwd=self.path, **kwargs)
+        Process.run(*args, cwd=self.path, **kwargs)
 
 
 class TestRepo(Repo):

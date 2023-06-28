@@ -11,23 +11,6 @@ import subprocess
 from threading import Event, Lock, Thread
 
 
-_COMMON_ARGS = {
-    'text': True,
-    'stdin': subprocess.DEVNULL,
-    'stdout': subprocess.PIPE,
-    'stderr': subprocess.STDOUT,
-}
-
-
-def run(*args, **kwargs):
-    try:
-        return subprocess.run(list(args), check=True, **_COMMON_ARGS, **kwargs)
-    except subprocess.CalledProcessError as e:
-        logging.error('Command %s exited with code %s', e.cmd, e.returncode)
-        logging.error('Output:\n%s', e.output)
-        raise
-
-
 class LoggingEvent(Event):
     def __init__(self, timeout=10):
         self.timeout = timeout
@@ -120,10 +103,26 @@ class LoggingEventProcessReady(LoggingEvent):
 
 
 class Process(subprocess.Popen):
+    _COMMON_ARGS = {
+        'text': True,
+        'stdin': subprocess.DEVNULL,
+        'stdout': subprocess.PIPE,
+        'stderr': subprocess.STDOUT,
+    }
+
+    @staticmethod
+    def run(*args, **kwargs):
+        try:
+            return subprocess.run(list(args), check=True, **Process._COMMON_ARGS, **kwargs)
+        except subprocess.CalledProcessError as e:
+            logging.error('Command %s exited with code %s', e.cmd, e.returncode)
+            logging.error('Output:\n%s', e.output)
+            raise
+
     def __init__(self, cmd_line):
         self.cmd_line = cmd_line
 
-        super().__init__(cmd_line.argv, **_COMMON_ARGS)
+        super().__init__(cmd_line.argv, **Process._COMMON_ARGS)
         logging.info('Process %s has started', self.log_id)
 
         ready_event = LoggingEventProcessReady(self)
@@ -183,7 +182,7 @@ class Runner:
         cmd_line = self._wrap(cmd_line)
         cmd_line.log_process_start()
 
-        result = run(*cmd_line.argv)
+        result = Process.run(*cmd_line.argv)
         return result.returncode, result.stdout
 
     @contextmanager
