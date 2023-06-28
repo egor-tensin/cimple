@@ -39,7 +39,7 @@ void log_entry_end(FILE *dest);
 		log_entry_end(stdout);                                                             \
 	} while (0)
 
-#define log_err_file_loc()                                                                         \
+#define _log_err_file_loc()                                                                        \
 	do {                                                                                       \
 		fprintf(stderr, "%s(%d): ", basename(__FILE__), __LINE__);                         \
 	} while (0)
@@ -48,7 +48,7 @@ void log_entry_end(FILE *dest);
 	do {                                                                                       \
 		if (!log_entry_start(LOG_LVL_ERR, stderr))                                         \
 			break;                                                                     \
-		log_err_file_loc();                                                                \
+		_log_err_file_loc();                                                               \
 		fprintf(stderr, __VA_ARGS__);                                                      \
 		log_entry_end(stderr);                                                             \
 	} while (0)
@@ -57,7 +57,7 @@ void log_entry_end(FILE *dest);
 	do {                                                                                       \
 		if (!log_entry_start(LOG_LVL_ERR, stderr))                                         \
 			break;                                                                     \
-		log_err_file_loc();                                                                \
+		_log_err_file_loc();                                                               \
 		perror(fn);                                                                        \
 		log_entry_end(stderr);                                                             \
 	} while (0)
