@@ -23,7 +23,7 @@ static int exec_child(const char *args[], const char *envp[])
 
 	int ret = execvpe(args[0], (char *const *)args, (char *const *)envp);
 	if (ret < 0) {
-		log_errno("execv");
+		log_errno("execvpe");
 		return ret;
 	}
 
