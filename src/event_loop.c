@@ -94,7 +94,7 @@ void event_loop_destroy(struct event_loop *loop)
 
 static void event_loop_add_internal(struct event_loop *loop, struct event_fd *entry)
 {
-	log("Adding descriptor %d to event loop\n", entry->fd);
+	log_debug("Adding descriptor %d to event loop\n", entry->fd);
 
 	nfds_t nfds = loop->nfds + 1;
 	SIMPLEQ_INSERT_TAIL(&loop->entries, entry, entries);
@@ -123,7 +123,7 @@ int event_loop_add_once(struct event_loop *loop, int fd, short events, event_han
 
 static void event_loop_remove(struct event_loop *loop, struct event_fd *entry)
 {
-	log("Removing descriptor %d from event loop\n", entry->fd);
+	log_debug("Removing descriptor %d from event loop\n", entry->fd);
 
 	SIMPLEQ_REMOVE(&loop->entries, entry, event_fd, entries);
 	net_close(entry->fd);
@@ -179,10 +179,10 @@ static struct pollfd *make_pollfds(const struct event_loop *loop)
 		fds[i].events = entry->events;
 	}
 
-	log("Descriptors:\n");
+	log_debug("Descriptors:\n");
 	for (nfds_t i = 0; i < loop->nfds; ++i) {
 		char *events = events_to_string(fds[i].events);
-		log("    %d (%s)\n", fds[i].fd, events ? events : "");
+		log_debug("    %d (%s)\n", fds[i].fd, events ? events : "");
 		free(events);
 	}
 
@@ -210,7 +210,7 @@ int event_loop_run(struct event_loop *loop)
 			goto next;
 
 		char *events = events_to_string(fds[i].revents);
-		log("Descriptor %d is ready: %s\n", fds[i].fd, events ? events : "");
+		log_debug("Descriptor %d is ready: %s\n", fds[i].fd, events ? events : "");
 		free(events);
 
 		/* Execute all handlers but notice if any of them fail. */

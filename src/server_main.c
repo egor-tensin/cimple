@@ -7,6 +7,7 @@
 
 #include "cmd_line.h"
 #include "const.h"
+#include "log.h"
 #include "server.h"
 
 #include <getopt.h>
@@ -20,7 +21,7 @@ static struct settings default_settings(void)
 
 const char *get_usage_string(void)
 {
-	return "[-h|--help] [-V|--version] [-p|--port PORT] [-s|--sqlite PATH]";
+	return "[-h|--help] [-V|--version] [-v|--verbose] [-p|--port PORT] [-s|--sqlite PATH]";
 }
 
 static int parse_settings(struct settings *settings, int argc, char *argv[])
@@ -32,18 +33,22 @@ static int parse_settings(struct settings *settings, int argc, char *argv[])
 	static struct option long_options[] = {
 	    {"help", no_argument, 0, 'h'},
 	    {"version", no_argument, 0, 'V'},
+	    {"verbose", no_argument, 0, 'v'},
 	    {"port", required_argument, 0, 'p'},
 	    {"sqlite", required_argument, 0, 's'},
 	    {0, 0, 0, 0},
 	};
 
-	while ((opt = getopt_long(argc, argv, "hVp:s:", long_options, &longind)) != -1) {
+	while ((opt = getopt_long(argc, argv, "hVvp:s:", long_options, &longind)) != -1) {
 		switch (opt) {
 		case 'h':
 			exit_with_usage(0);
 			break;
 		case 'V':
 			exit_with_version();
+			break;
+		case 'v':
+			g_log_lvl = LOG_LVL_DEBUG;
 			break;
 		case 'p':
 			settings->port = optarg;

@@ -8,74 +8,58 @@
 #ifndef __LOG_H__
 #define __LOG_H__
 
+#include "compiler.h"
+
 #include <errno.h>
 #include <libgen.h>
-#include <netdb.h>
 #include <stdio.h>
-#include <sys/time.h>
-#include <time.h>
-#include <unistd.h>
 
-static inline void log_print_timestamp(FILE *dest)
-{
-	struct timeval tv;
-	struct tm tm;
-	char buf[64];
-	size_t used = 0;
+#define LOG_LVL_DEBUG 0
+#define LOG_LVL_INFO  1
+#define LOG_LVL_ERR   2
 
-	if (gettimeofday(&tv, NULL) < 0)
-		return;
-	if (!gmtime_r(&tv.tv_sec, &tm))
-		return;
+extern int g_log_lvl;
 
-	buf[0] = '\0';
-	used += strftime(buf + used, sizeof(buf) - used, "%F %T", &tm);
-	used += snprintf(buf + used, sizeof(buf) - used, ".%03ld | ", tv.tv_usec / 1000);
-	fprintf(dest, "%s", buf);
-}
+int log_entry_start(int lvl, FILE *dest);
+void log_entry_end(FILE *dest);
 
-static inline void log_print_thread_id(FILE *dest)
-{
-	fprintf(dest, "%d | ", gettid());
-}
-
-#define CONCAT_INNER(a, b) a##b
-#define CONCAT(a, b) CONCAT_INNER(a, b)
-
-static inline void log_prefix(FILE *dest)
-{
-	log_print_timestamp(dest);
-	log_print_thread_id(dest);
-}
-
-#define log_err_prefix()                                                                           \
+#define log_debug(...)                                                                             \
 	do {                                                                                       \
-		log_prefix(stderr);                                                                \
-		fprintf(stderr, "%s(%d): ", basename(__FILE__), __LINE__);                         \
+		if (!log_entry_start(LOG_LVL_DEBUG, stdout))                                       \
+			break;                                                                     \
+		fprintf(stdout, __VA_ARGS__);                                                      \
+		log_entry_end(stdout);                                                             \
 	} while (0)
 
 #define log(...)                                                                                   \
 	do {                                                                                       \
-		flockfile(stdout);                                                                 \
-		log_prefix(stdout);                                                                \
-		printf(__VA_ARGS__);                                                               \
-		funlockfile(stdout);                                                               \
+		if (!log_entry_start(LOG_LVL_INFO, stdout))                                        \
+			break;                                                                     \
+		fprintf(stdout, __VA_ARGS__);                                                      \
+		log_entry_end(stdout);                                                             \
+	} while (0)
+
+#define log_err_file_loc()                                                                         \
+	do {                                                                                       \
+		fprintf(stderr, "%s(%d): ", basename(__FILE__), __LINE__);                         \
 	} while (0)
 
 #define log_err(...)                                                                               \
 	do {                                                                                       \
-		flockfile(stderr);                                                                 \
-		log_err_prefix();                                                                  \
+		if (!log_entry_start(LOG_LVL_ERR, stderr))                                         \
+			break;                                                                     \
+		log_err_file_loc();                                                                \
 		fprintf(stderr, __VA_ARGS__);                                                      \
-		funlockfile(stderr);                                                               \
+		log_entry_end(stderr);                                                             \
 	} while (0)
 
 #define log_errno(fn)                                                                              \
 	do {                                                                                       \
-		flockfile(stderr);                                                                 \
-		log_err_prefix();                                                                  \
+		if (!log_entry_start(LOG_LVL_ERR, stderr))                                         \
+			break;                                                                     \
+		log_err_file_loc();                                                                \
 		perror(fn);                                                                        \
-		funlockfile(stderr);                                                               \
+		log_entry_end(stderr);                                                             \
 	} while (0)
 
 #define log_errno_if(expr, fn)                                                                     \

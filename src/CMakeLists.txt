@@ -37,6 +37,7 @@ add_my_executable(server server_main.c server.c
     command.c
     event_loop.c
     file.c
+    log.c
     msg.c
     net.c
     run_queue.c
@@ -54,6 +55,7 @@ target_include_directories(server PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
 add_my_executable(client client_main.c client.c
     cmd_line.c
     file.c
+    log.c
     msg.c
     net.c)
 
@@ -64,6 +66,7 @@ add_my_executable(worker worker_main.c worker.c
     event_loop.c
     file.c
     git.c
+    log.c
     msg.c
     net.c
     process.c
