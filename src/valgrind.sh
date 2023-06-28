@@ -9,6 +9,7 @@ if ! command -v valgrind &> /dev/null; then
 fi
 
 exec valgrind -q \
+    --error-exitcode=10 \
     --leak-check=full \
     --show-leak-kinds=all \
     --track-origins=yes \
