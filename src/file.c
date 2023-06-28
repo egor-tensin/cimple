@@ -86,6 +86,7 @@ char *my_readlink(const char *path)
 			continue;
 		}
 
+		buf[res] = '\0';
 		break;
 	}
 
