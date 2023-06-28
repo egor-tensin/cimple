@@ -64,6 +64,10 @@ class CmdLine:
             raise RuntimeError("couldn't find a binary: " + binary)
         return path
 
+    @staticmethod
+    def unbuffered():
+        return CmdLine('stdbuf', '-o0')
+
     def __init__(self, binary, *args, name=None):
         binary = self.which(binary)
         argv = [binary] + list(args)
@@ -82,11 +86,14 @@ class CmdLine:
     def wrap(cls, outer, inner):
         return cls(outer.argv[0], *outer.argv[1:], *inner.argv, name=inner.process_name)
 
-    def log_process_start(self):
-        if len(self.argv) > 1:
-            logging.info('Executing binary %s with arguments: %s', self.binary, ' '.join(self.argv[1:]))
-        else:
-            logging.info('Executing binary %s', self.binary)
+    def run(self, *argv):
+        result = Process.run(*self.argv, *argv)
+        return result.returncode, result.stdout
+
+    @contextmanager
+    def run_async(self, *argv):
+        with Process(self, *argv) as process:
+            yield process
 
 
 class LoggingEventProcessReady(LoggingEvent):
@@ -111,18 +118,30 @@ class Process(subprocess.Popen):
     }
 
     @staticmethod
+    def _log_process_start(argv):
+        if len(argv) > 1:
+            logging.info('Executing binary %s with arguments: %s', argv[0], ' '.join(argv[1:]))
+        else:
+            logging.info('Executing binary %s', argv[0])
+
+    @staticmethod
     def run(*args, **kwargs):
+        argv = list(args)
+        Process._log_process_start(argv)
         try:
-            return subprocess.run(list(args), check=True, **Process._COMMON_ARGS, **kwargs)
+            return subprocess.run(argv, check=True, **Process._COMMON_ARGS, **kwargs)
         except subprocess.CalledProcessError as e:
             logging.error('Command %s exited with code %s', e.cmd, e.returncode)
             logging.error('Output:\n%s', e.output)
             raise
 
-    def __init__(self, cmd_line):
+    def __init__(self, cmd_line, *args):
         self.cmd_line = cmd_line
 
-        super().__init__(cmd_line.argv, **Process._COMMON_ARGS)
+        argv = cmd_line.argv + list(args)
+        self._log_process_start(argv)
+
+        super().__init__(argv, **Process._COMMON_ARGS)
         logging.info('Process %s has started', self.log_id)
 
         ready_event = LoggingEventProcessReady(self)
@@ -159,52 +178,3 @@ class Process(subprocess.Popen):
         logging.info('Process %s failed to terminate in time, killing it', self.log_id)
         self.kill()
         self.wait(timeout=Process.SHUT_DOWN_TIMEOUT_SEC)
-
-
-class Runner:
-    @staticmethod
-    def unbuffered():
-        return CmdLine('stdbuf', '-o0')
-
-    def __init__(self):
-        self.wrappers = []
-        self.add_wrapper(self.unbuffered())
-
-    def add_wrapper(self, cmd_line):
-        self.wrappers.append(cmd_line)
-
-    def _wrap(self, cmd_line):
-        for wrapper in self.wrappers:
-            cmd_line = cmd_line.wrap(wrapper, cmd_line)
-        return cmd_line
-
-    def run(self, cmd_line):
-        cmd_line = self._wrap(cmd_line)
-        cmd_line.log_process_start()
-
-        result = Process.run(*cmd_line.argv)
-        return result.returncode, result.stdout
-
-    @contextmanager
-    def run_async(self, cmd_line):
-        cmd_line = self._wrap(cmd_line)
-        cmd_line.log_process_start()
-
-        with Process(cmd_line) as process:
-            yield process
-
-
-class CmdLineRunner:
-    def __init__(self, runner, binary, *args):
-        self.runner = runner
-        self.binary = binary
-        self.args = list(args)
-
-    def _build(self, *args):
-        return CmdLine(self.binary, *self.args, *args)
-
-    def run(self, *args):
-        return self.runner.run(self._build(*args))
-
-    def run_async(self, *args):
-        return self.runner.run_async(self._build(*args))

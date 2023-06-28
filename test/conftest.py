@@ -9,7 +9,7 @@ import random
 
 from pytest import fixture
 
-from .lib.process import CmdLine, CmdLineRunner, Runner
+from .lib.process import CmdLine
 from .lib.test_repo import TestRepo
 
 
@@ -98,12 +98,12 @@ def paths(pytestconfig):
 
 
 @fixture(scope='session')
-def process_runner(pytestconfig):
-    runner = Runner()
+def base_cmd_line(pytestconfig):
+    cmd_line = CmdLine.unbuffered()
     valgrind = pytestconfig.getoption(PARAM_VALGRIND.codename)
     if valgrind is not None:
-        runner.add_wrapper(CmdLine(valgrind))
-    return runner
+        cmd_line = CmdLine.wrap(CmdLine(valgrind), cmd_line)
+    return cmd_line
 
 
 @fixture(scope='session')
@@ -132,20 +132,20 @@ class CmdLineWorker(CmdLine):
 
 
 @fixture
-def server(process_runner, paths, server_port, sqlite_path):
+def server(base_cmd_line, paths, server_port, sqlite_path):
     args = ['--port', server_port, '--sqlite', sqlite_path]
-    cmd_line = CmdLineServer(paths.server_binary, *args)
-    with process_runner.run_async(cmd_line) as server:
+    cmd_line = CmdLineServer.wrap(base_cmd_line, CmdLine(paths.server_binary, *args))
+    with cmd_line.run_async() as server:
         yield server
     assert server.returncode == 0
 
 
 @fixture
-def workers(process_runner, paths, server_port):
+def workers(base_cmd_line, paths, server_port):
     args = ['--host', '127.0.0.1', '--port', server_port]
-    cmd_line = CmdLineWorker(paths.worker_binary, *args)
-    with process_runner.run_async(cmd_line) as worker1, \
-         process_runner.run_async(cmd_line) as worker2:
+    cmd_line = CmdLineWorker.wrap(base_cmd_line, CmdLine(paths.worker_binary, *args))
+    with cmd_line.run_async() as worker1, \
+         cmd_line.run_async() as worker2:
         yield [worker1, worker2]
     assert worker1.returncode == 0
     assert worker2.returncode == 0
@@ -157,9 +157,9 @@ def server_and_workers(server, workers):
 
 
 @fixture
-def client(process_runner, paths, server_port):
+def client(base_cmd_line, paths, server_port):
     args = ['--host', '127.0.0.1', '--port', server_port]
-    cmd_line = CmdLineRunner(process_runner, paths.client_binary, *args)
+    cmd_line = CmdLine.wrap(base_cmd_line, CmdLine(paths.client_binary, *args))
     return cmd_line
 
 
