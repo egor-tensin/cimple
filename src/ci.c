@@ -27,6 +27,7 @@ static const char *ci_scripts[] = {
 static const char *ci_env[] = {
     "CI=y",
     "CIMPLE=y",
+    NULL,
 };
 /* clang-format on */
 
