@@ -87,8 +87,7 @@ class CmdLine:
         return cls(outer.argv[0], *outer.argv[1:], *inner.argv, name=inner.process_name)
 
     def run(self, *argv):
-        result = Process.run(*self.argv, *argv)
-        return result.returncode, result.stdout
+        return Process.run(*self.argv, *argv)
 
     @contextmanager
     def run_async(self, *argv):
@@ -119,20 +118,32 @@ class Process(subprocess.Popen):
 
     @staticmethod
     def _log_process_start(argv):
-        if len(argv) > 1:
-            logging.info('Executing binary %s with arguments: %s', argv[0], ' '.join(argv[1:]))
+        logging.info('Executing command: %s', argv)
+
+    @staticmethod
+    def _log_process_end(argv, ec, output):
+        log = logging.info
+        if ec:
+            log = logging.error
+        if ec:
+            log('Command %s exited with code %s', argv, ec)
         else:
-            logging.info('Executing binary %s', argv[0])
+            log('Command %s completed successfully', argv)
+        if output:
+            log('Output:\n%s', output)
 
     @staticmethod
     def run(*args, **kwargs):
         argv = list(args)
         Process._log_process_start(argv)
         try:
-            return subprocess.run(argv, check=True, **Process._COMMON_ARGS, **kwargs)
+            result = subprocess.run(argv, check=True, **Process._COMMON_ARGS, **kwargs)
+            ec, output = result.returncode, result.stdout
+            Process._log_process_end(argv, ec, output)
+            return output
         except subprocess.CalledProcessError as e:
-            logging.error('Command %s exited with code %s', e.cmd, e.returncode)
-            logging.error('Output:\n%s', e.output)
+            ec, output = e.returncode, e.stdout
+            Process._log_process_end(argv, ec, output)
             raise
 
     def __init__(self, cmd_line, *args):

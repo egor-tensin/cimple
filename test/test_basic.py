@@ -13,8 +13,7 @@ def test_server_and_workers_run(server_and_workers):
 
 
 def test_client_version(client, version):
-    ec, output = client.run('--version')
-    assert ec == 0
+    output = client.run('--version')
     assert output.endswith(version + '\n')
 
 

@@ -16,7 +16,7 @@ class Repo:
     def __init__(self, path):
         self.path = os.path.abspath(path)
         os.makedirs(path, exist_ok=True)
-        self.run('git', 'init', f'--initial-branch={Repo.BRANCH}')
+        self.run('git', 'init', '-q', f'--initial-branch={Repo.BRANCH}')
         self.run('git', 'config', 'user.name', 'Test User')
         self.run('git', 'config', 'user.email', 'test@example.com')
 
@@ -40,7 +40,7 @@ class TestRepo(Repo):
         super().__init__(path)
         shutil.copy(self.get_ci_script(), self.path)
         self.run('git', 'add', '.')
-        self.run('git', 'commit', '-m', 'add CI script')
+        self.run('git', 'commit', '-q', '-m', 'add CI script')
         self.output_dir = os.path.join(self.path, TestRepo.OUTPUT_DIR)
         os.makedirs(self.output_dir, exist_ok=True)
 
