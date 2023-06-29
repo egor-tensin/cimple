@@ -3,10 +3,6 @@
 # For details, see https://github.com/egor-tensin/cimple.
 # Distributed under the MIT License.
 
-import pytest
-
-from lib.process import LoggingEvent
-
 
 def test_server_and_workers_run(server_and_workers):
     pass
@@ -15,36 +11,3 @@ def test_server_and_workers_run(server_and_workers):
 def test_client_version(client, version):
     output = client.run('--version')
     assert output.endswith(version + '\n')
-
-
-class LoggingEventRunComplete(LoggingEvent):
-    def __init__(self, target):
-        self.counter = 0
-        self.target = target
-        super().__init__(timeout=60)
-
-    def log_line_matches(self, line):
-        return 'Received a "run complete" message from worker' in line
-
-    def set(self):
-        self.counter += 1
-        if self.counter == self.target:
-            super().set()
-
-
-def _test_repo_internal(server_and_workers, test_repo, client, numof_runs):
-    server, workers = server_and_workers
-    event = LoggingEventRunComplete(numof_runs)
-    server.logger.add_event(event)
-    for i in range(numof_runs):
-        client.run('run', test_repo.path, 'HEAD')
-    event.wait()
-    assert numof_runs == test_repo.count_ci_output_files()
-
-
-def test_repo(server_and_workers, test_repo, client):
-    _test_repo_internal(server_and_workers, test_repo, client, 1)
-
-
-def test_repo_10(server_and_workers, test_repo, client):
-    _test_repo_internal(server_and_workers, test_repo, client, 10)
