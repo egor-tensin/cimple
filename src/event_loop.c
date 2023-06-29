@@ -31,7 +31,7 @@ static struct event_fd *event_fd_create(int fd, short events, event_handler hand
 {
 	struct event_fd *res = calloc(1, sizeof(struct event_fd));
 	if (!res) {
-		log_errno("malloc");
+		log_errno("calloc");
 		return NULL;
 	}
 

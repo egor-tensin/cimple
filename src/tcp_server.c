@@ -30,7 +30,7 @@ int tcp_server_create(struct tcp_server **_server, const char *port,
 
 	struct tcp_server *server = calloc(1, sizeof(struct tcp_server));
 	if (!server) {
-		log_errno("malloc");
+		log_errno("calloc");
 		return -1;
 	}
 

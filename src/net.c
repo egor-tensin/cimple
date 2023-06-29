@@ -98,7 +98,7 @@ int net_accept(int fd)
 
 	ret = accept4(fd, NULL, NULL, flags);
 	if (ret < 0) {
-		log_errno("accept");
+		log_errno("accept4");
 		return ret;
 	}
 
