@@ -9,8 +9,8 @@ import random
 
 from pytest import fixture
 
-from .lib.process import CmdLine
-from .lib.test_repo import TestRepo
+from lib.process import CmdLine
+from lib.test_repo import TestRepo
 
 
 class Param:

@@ -5,7 +5,7 @@
 
 import pytest
 
-from .lib.process import LoggingEvent
+from lib.process import LoggingEvent
 
 
 def test_server_and_workers_run(server_and_workers):
