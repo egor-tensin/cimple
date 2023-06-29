@@ -34,7 +34,7 @@ static int wait_for_child(pid_t pid, int *ec)
 {
 	int status;
 
-	pid_t ret = waitpid(pid, &status, 0);
+	pid_t ret = waitpid(pid, &status, __WNOTHREAD);
 	if (ret < 0) {
 		log_errno("waitpid");
 		return ret;
