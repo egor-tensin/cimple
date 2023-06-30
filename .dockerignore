@@ -4,5 +4,6 @@
 !/CMakeLists.txt
 !/LICENSE.txt
 !/Makefile
+!/prelude.mk
 !/src/**
 !/test/**
