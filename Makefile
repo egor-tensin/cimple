@@ -46,7 +46,10 @@ clean:
 
 .PHONY: build
 build:
-	mkdir -p -- '$(call escape,$(cmake_dir))'
+	@echo -----------------------------------------------------------------
+	@echo Building
+	@echo -----------------------------------------------------------------
+	@mkdir -p -- '$(call escape,$(cmake_dir))'
 	cmake \
 		-G 'Unix Makefiles' \
 		-D 'CMAKE_C_COMPILER=$(call escape,$(COMPILER))' \
@@ -64,11 +67,19 @@ install: build
 
 .PHONY: test
 test:
-	cd -- '$(call escape,$(cmake_dir))' && ctest --verbose --exclude-regex python_tests_valgrind
+	@echo -----------------------------------------------------------------
+	@echo Running tests
+	@echo -----------------------------------------------------------------
+	ctest --test-dir '$(call escape,$(cmake_dir))' \
+		--verbose --exclude-regex python_tests_valgrind
 
 .PHONY: test/valgrind
 test/valgrind:
-	cd -- '$(call escape,$(cmake_dir))' && ctest --verbose --tests-regex python_tests_valgrind
+	@echo -----------------------------------------------------------------
+	@echo Running tests w/ Valgrind
+	@echo -----------------------------------------------------------------
+	ctest --test-dir '$(call escape,$(cmake_dir))' \
+		--verbose --tests-regex python_tests_valgrind
 
 .PHONY: test/all
 test/all: test test/valgrind
