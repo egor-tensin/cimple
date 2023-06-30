@@ -15,7 +15,10 @@
 
 static struct settings default_settings(void)
 {
-	struct settings settings = {default_port, default_sqlite_path};
+	struct settings settings = {
+	    .port = default_port,
+	    .sqlite_path = default_sqlite_path,
+	};
 	return settings;
 }
 
