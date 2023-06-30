@@ -8,11 +8,12 @@
 #ifndef __CONST_H__
 #define __CONST_H__
 
-#ifndef DEFAULT_HOST
-#define DEFAULT_HOST "127.0.0.1"
-#endif
-#define DEFAULT_PORT "5556"
-#define DEFAULT_SQLITE_PATH "/var/lib/cimple/cimple.sqlite"
+extern const char *project_version;
+extern const char *project_rev;
+
+extern const char *default_host;
+extern const char *default_port;
+extern const char *default_sqlite_path;
 
 #define CMD_RUN "run"
 #define CMD_NEW_WORKER "new-worker"

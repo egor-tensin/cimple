@@ -1,5 +1,6 @@
 *
 
+!/.git/**
 !/CMakeLists.txt
 !/LICENSE.txt
 !/Makefile

@@ -10,6 +10,7 @@ RUN build_deps='bash bsd-compat-headers build-base clang cmake coreutils git lib
 ARG COMPILER=clang
 ARG CONFIGURATION=Release
 ARG DEFAULT_HOST=127.0.0.1
+ARG DEFAULT_PORT=5556
 
 ARG src_dir="/app/src"
 ARG install_dir
@@ -21,6 +22,7 @@ RUN cd -- "$src_dir" && \
         "COMPILER=$COMPILER" \
         "CONFIGURATION=$CONFIGURATION" \
         "DEFAULT_HOST=$DEFAULT_HOST" \
+        "DEFAULT_PORT=$DEFAULT_PORT" \
         "INSTALL_PREFIX=$install_dir" && \
     ulimit -n 1024 && \
     make test/all CONFIGURATION="$CONFIGURATION"

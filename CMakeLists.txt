@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.3) # for include-what-you-use
+cmake_minimum_required(VERSION 3.19) # for COMMAND_ERROR_IS_FATAL
 
 project(cimple VERSION 0.0.1 LANGUAGES C)
 

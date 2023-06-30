@@ -15,7 +15,7 @@
 
 static struct settings default_settings(void)
 {
-	struct settings settings = {DEFAULT_HOST, DEFAULT_PORT};
+	struct settings settings = {default_host, default_port};
 	return settings;
 }
 

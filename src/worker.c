@@ -57,7 +57,7 @@ static struct settings *worker_settings_copy(const struct settings *src)
 	return result;
 
 free_host:
-	free(result->host);
+	free((void *)result->host);
 
 free_result:
 	free(result);
@@ -67,8 +67,8 @@ free_result:
 
 static void worker_settings_destroy(struct settings *settings)
 {
-	free(settings->port);
-	free(settings->host);
+	free((void *)settings->port);
+	free((void *)settings->host);
 	free(settings);
 }
 

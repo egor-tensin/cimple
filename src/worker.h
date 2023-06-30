@@ -9,8 +9,8 @@
 #define __WORKER_H__
 
 struct settings {
-	char *host;
-	char *port;
+	const char *host;
+	const char *port;
 };
 
 struct worker;

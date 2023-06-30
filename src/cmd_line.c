@@ -6,6 +6,7 @@
  */
 
 #include "cmd_line.h"
+#include "const.h"
 #include "file.h"
 #include "log.h"
 
@@ -62,7 +63,7 @@ void exit_with_version(void)
 {
 	char *binary = get_current_binary_name();
 
-	printf("%s %s\n", binary ? binary : "prog", VERSION);
+	printf("%s v%s (%s)\n", binary ? binary : "prog", project_version, project_rev);
 	free(binary);
 	exit(0);
 }

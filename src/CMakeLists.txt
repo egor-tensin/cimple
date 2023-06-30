@@ -5,17 +5,21 @@ add_compile_options(-std=c17 -Wpedantic -Wall -Wextra $<$<NOT:$<CONFIG:Debug>>:-
 # any features macros defined at all, and prepare to be amazed!
 add_compile_definitions(_GNU_SOURCE)
 
-add_compile_definitions(VERSION="${PROJECT_VERSION}")
+execute_process(
+    COMMAND git rev-parse --verify HEAD
+    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+    OUTPUT_VARIABLE PROJECT_REV
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    COMMAND_ERROR_IS_FATAL ANY)
 
 set(DEFAULT_HOST "127.0.0.1" CACHE STRING "Set default --host value")
-add_compile_definitions(DEFAULT_HOST="${DEFAULT_HOST}")
+set(DEFAULT_PORT "5556" CACHE STRING "Set default --port value")
+set(DEFAULT_SQLITE_PATH "/var/lib/cimple/cimple.sqlite" CACHE STRING "Set default SQLite database path")
 
-function(add_my_executable name)
-    list(POP_FRONT ARGV)
-    add_executable("${name}" ${ARGV})
-    set_target_properties("${name}" PROPERTIES OUTPUT_NAME "${PROJECT_NAME}-${name}")
-    install(TARGETS "${name}" RUNTIME DESTINATION bin)
-endfunction()
+# The input file has a funny extension, because if I use .c.in, CMake for no
+# reason thinks that it should use that to build the binaries and slaps me with
+# a CMP0115 policy warning.
+configure_file(const.c.template const.c ESCAPE_QUOTES @ONLY)
 
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
 
@@ -32,9 +36,17 @@ endfunction()
 
 generate_sql_header(sqlite)
 
+function(add_my_executable name)
+    list(POP_FRONT ARGV)
+    add_executable("${name}" ${ARGV})
+    set_target_properties("${name}" PROPERTIES OUTPUT_NAME "${PROJECT_NAME}-${name}")
+    install(TARGETS "${name}" RUNTIME DESTINATION bin)
+endfunction()
+
 add_my_executable(server server_main.c server.c
     cmd_line.c
     command.c
+    const.c
     event_loop.c
     file.c
     log.c
@@ -54,6 +66,7 @@ target_include_directories(server PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
 
 add_my_executable(client client_main.c client.c
     cmd_line.c
+    const.c
     file.c
     log.c
     msg.c
@@ -63,6 +76,7 @@ add_my_executable(worker worker_main.c worker.c
     ci.c
     cmd_line.c
     command.c
+    const.c
     event_loop.c
     file.c
     git.c
