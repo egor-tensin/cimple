@@ -45,6 +45,10 @@ jobs:
         run: make test
       - name: Run Valgrind tests
         run: make test/valgrind
+        # Valgrind gives a lot of seemingly bogus errors. Still good to verify
+        # that nothing terrible is going on; for example, these tests pass
+        # cleanly on Alpine edge (soon to be 3.19). Additionally, there're
+        # some problems w/ Clang 14 & Valgrind: https://bugs.kde.org/show_bug.cgi?id=452758
         continue-on-error: true
 
   publish:
