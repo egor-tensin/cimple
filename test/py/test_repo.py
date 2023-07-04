@@ -13,7 +13,7 @@ class LoggingEventRunComplete(LoggingEvent):
         super().__init__(timeout=60)
 
     def log_line_matches(self, line):
-        return 'Received a "run complete" message from worker' in line
+        return 'Received a "run finished" message from worker' in line
 
     def set(self):
         self.counter += 1

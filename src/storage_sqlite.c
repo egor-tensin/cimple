@@ -58,6 +58,7 @@ struct storage_sqlite {
 	sqlite3_stmt *stmt_repo_find;
 	sqlite3_stmt *stmt_repo_insert;
 	sqlite3_stmt *stmt_run_insert;
+	sqlite3_stmt *stmt_run_finished;
 };
 
 static int storage_sqlite_upgrade_to(struct storage_sqlite *storage, size_t version)
@@ -147,9 +148,10 @@ static int storage_sqlite_setup(struct storage_sqlite *storage)
 static int storage_sqlite_prepare_statements(struct storage_sqlite *storage)
 {
 	/* clang-format off */
-	static const char *const fmt_repo_find   = "SELECT id FROM cimple_repos WHERE url = ?;";
-	static const char *const fmt_repo_insert = "INSERT INTO cimple_repos(url) VALUES (?) RETURNING id;";
-	static const char *const fmt_run_insert  = "INSERT INTO cimple_runs(status, result, output, repo_id, rev) VALUES (1, 0, x'', ?, ?) RETURNING id;";
+	static const char *const fmt_repo_find    = "SELECT id FROM cimple_repos WHERE url = ?;";
+	static const char *const fmt_repo_insert  = "INSERT INTO cimple_repos(url) VALUES (?) RETURNING id;";
+	static const char *const fmt_run_insert   = "INSERT INTO cimple_runs(status, result, output, repo_id, rev) VALUES (1, -1, x'', ?, ?) RETURNING id;";
+	static const char *const fmt_run_finished = "UPDATE cimple_runs SET status = 2, result = ? WHERE id = ?;";
 	/* clang-format on */
 
 	int ret = 0;
@@ -163,9 +165,14 @@ static int storage_sqlite_prepare_statements(struct storage_sqlite *storage)
 	ret = sqlite_prepare(storage->db, fmt_run_insert, &storage->stmt_run_insert);
 	if (ret < 0)
 		goto finalize_repo_insert;
+	ret = sqlite_prepare(storage->db, fmt_run_finished, &storage->stmt_run_finished);
+	if (ret < 0)
+		goto finalize_run_insert;
 
 	return ret;
 
+finalize_run_insert:
+	sqlite_finalize(storage->stmt_run_insert);
 finalize_repo_insert:
 	sqlite_finalize(storage->stmt_repo_insert);
 finalize_repo_find:
@@ -176,6 +183,7 @@ finalize_repo_find:
 
 static void storage_sqlite_finalize_statements(struct storage_sqlite *storage)
 {
+	sqlite_finalize(storage->stmt_run_finished);
 	sqlite_finalize(storage->stmt_run_insert);
 	sqlite_finalize(storage->stmt_repo_insert);
 	sqlite_finalize(storage->stmt_repo_find);
@@ -326,6 +334,27 @@ int storage_sqlite_run_create(struct storage *storage, const char *repo_url, con
 	ret = storage_sqlite_insert_run(storage->sqlite, ret, rev);
 	if (ret < 0)
 		return ret;
+
+	return ret;
+}
+
+int storage_sqlite_run_finished(struct storage *storage, int run_id, int ec)
+{
+	sqlite3_stmt *stmt = storage->sqlite->stmt_run_finished;
+	int ret = 0;
+
+	ret = sqlite_bind_int(stmt, 1, ec);
+	if (ret < 0)
+		goto reset;
+	ret = sqlite_bind_int(stmt, 2, run_id);
+	if (ret < 0)
+		goto reset;
+	ret = sqlite_step(stmt);
+	if (ret < 0)
+		goto reset;
+
+reset:
+	sqlite_reset(stmt);
 
 	return ret;
 }

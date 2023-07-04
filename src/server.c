@@ -17,6 +17,7 @@
 #include "signal.h"
 #include "storage.h"
 #include "storage_sqlite.h"
+#include "string.h"
 #include "tcp_server.h"
 #include "worker_queue.h"
 
@@ -169,7 +170,10 @@ static void server_assign_run(struct server *server)
 	struct worker *worker = worker_queue_remove_first(&server->worker_queue);
 	log("Removed worker %d from the queue\n", worker_get_fd(worker));
 
-	const char *argv[] = {CMD_RUN, run_get_url(run), run_get_rev(run), NULL};
+	char id[16];
+	snprintf(id, sizeof(id), "%d", run_get_id(run));
+
+	const char *argv[] = {CMD_START, id, run_get_url(run), run_get_rev(run), NULL};
 	int ret = msg_talk_argv(worker_get_fd(worker), argv, NULL);
 
 	if (ret < 0) {
@@ -251,7 +255,7 @@ static int server_handle_cmd_run(const struct msg *request, struct msg **respons
 
 	int ret = 0;
 
-	ret = run_from_msg(&run, request);
+	ret = run_from_msg_unknown_id(&run, request);
 	if (ret < 0)
 		return ret;
 
@@ -275,14 +279,41 @@ destroy_run:
 	return ret;
 }
 
-static int server_handle_cmd_complete(UNUSED const struct msg *request,
-                                      UNUSED struct msg **response, void *_ctx)
+static int server_handle_cmd_finished(const struct msg *request, UNUSED struct msg **response,
+                                      void *_ctx)
 {
 	struct cmd_conn_ctx *ctx = (struct cmd_conn_ctx *)_ctx;
 	int client_fd = ctx->fd;
 	int ret = 0;
 
-	log("Received a \"run complete\" message from worker %d\n", client_fd);
+	log("Received a \"run finished\" message from worker %d\n", client_fd);
+
+	size_t msg_len = msg_get_length(request);
+
+	if (msg_len != 3) {
+		log_err("Invalid number of arguments for a message: %zu\n", msg_len);
+		msg_dump(request);
+		return -1;
+	}
+
+	const char **argv = msg_get_strings(request);
+
+	int run_id, ec;
+
+	ret = string_to_int(argv[1], &run_id);
+	if (ret < 0)
+		return ret;
+	ret = string_to_int(argv[2], &ec);
+	if (ret < 0)
+		return ret;
+
+	struct server *server = (struct server *)ctx->arg;
+
+	ret = storage_run_finished(&server->storage, run_id, ec);
+	if (ret < 0) {
+		log_err("Failed to mark run %d as finished\n", run_id);
+		return ret;
+	}
 
 	return ret;
 }
@@ -290,7 +321,7 @@ static int server_handle_cmd_complete(UNUSED const struct msg *request,
 static struct cmd_desc commands[] = {
     {CMD_NEW_WORKER, server_handle_cmd_new_worker},
     {CMD_RUN, server_handle_cmd_run},
-    {CMD_COMPLETE, server_handle_cmd_complete},
+    {CMD_FINISHED, server_handle_cmd_finished},
 };
 
 static const size_t numof_commands = sizeof(commands) / sizeof(commands[0]);

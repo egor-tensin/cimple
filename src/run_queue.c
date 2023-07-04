@@ -8,6 +8,7 @@
 #include "run_queue.h"
 #include "log.h"
 #include "msg.h"
+#include "string.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -57,7 +58,34 @@ fail:
 	return -1;
 }
 
+void run_destroy(struct run *entry)
+{
+	free(entry->rev);
+	free(entry->url);
+	free(entry);
+}
+
 int run_from_msg(struct run **run, const struct msg *msg)
+{
+	size_t msg_len = msg_get_length(msg);
+
+	if (msg_len != 4) {
+		log_err("Invalid number of arguments for a message: %zu\n", msg_len);
+		msg_dump(msg);
+		return -1;
+	}
+
+	const char **argv = msg_get_strings(msg);
+
+	int id = 0;
+	int ret = string_to_int(argv[1], &id);
+	if (ret < 0)
+		return ret;
+
+	return run_create(run, id, argv[2], argv[3]);
+}
+
+int run_from_msg_unknown_id(struct run **run, const struct msg *msg)
 {
 	size_t msg_len = msg_get_length(msg);
 
@@ -70,13 +98,6 @@ int run_from_msg(struct run **run, const struct msg *msg)
 	const char **argv = msg_get_strings(msg);
 	/* We don't know the ID yet. */
 	return run_create(run, 0, argv[1], argv[2]);
-}
-
-void run_destroy(struct run *entry)
-{
-	free(entry->rev);
-	free(entry->url);
-	free(entry);
 }
 
 int run_get_id(const struct run *entry)

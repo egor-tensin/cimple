@@ -35,6 +35,7 @@ int storage_create(struct storage *, const struct storage_settings *);
 void storage_destroy(struct storage *);
 
 int storage_run_create(struct storage *, const char *repo_url, const char *rev);
+int storage_run_finished(struct storage *, int run_id, int ec);
 int storage_get_run_queue(struct storage *, struct run_queue *);
 
 #endif

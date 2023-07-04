@@ -10,4 +10,6 @@
 
 char *stpecpy(char *dst, char *end, const char *src);
 
+int string_to_int(const char *src, int *result);
+
 #endif

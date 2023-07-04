@@ -6,7 +6,10 @@
  */
 
 #include "string.h"
+#include "log.h"
 
+#include <errno.h>
+#include <stdlib.h>
 #include <string.h>
 
 char *stpecpy(char *dst, char *end, const char *src)
@@ -22,4 +25,25 @@ char *stpecpy(char *dst, char *end, const char *src)
 
 	end[-1] = '\0';
 	return end;
+}
+
+int string_to_int(const char *src, int *result)
+{
+	char *endptr = NULL;
+
+	errno = 0;
+	long ret = strtol(src, &endptr, 10);
+
+	if (errno) {
+		log_errno("strtol");
+		return -1;
+	}
+
+	if (endptr == src || *endptr != '\0') {
+		log_err("Invalid number: %s\n", src);
+		return -1;
+	}
+
+	*result = (int)ret;
+	return 0;
 }

@@ -80,8 +80,23 @@ static int worker_set_stopping(UNUSED struct event_loop *loop, UNUSED int fd, UN
 	return 0;
 }
 
-static int worker_handle_cmd_run(const struct msg *request, UNUSED struct msg **response,
-                                 void *_ctx)
+static int worker_send_finished(struct worker *worker, const struct run *run,
+                                struct proc_output *output)
+{
+	char id[16];
+	char ec[16];
+
+	snprintf(id, sizeof(id), "%d", run_get_id(run));
+	snprintf(ec, sizeof(ec), "%d", output->ec);
+
+	const char *argv[] = {CMD_FINISHED, id, ec, NULL};
+
+	return msg_connect_and_talk_argv(worker->settings->host, worker->settings->port, argv,
+	                                 NULL);
+}
+
+static int worker_handle_cmd_start(const struct msg *request, UNUSED struct msg **response,
+                                   void *_ctx)
 {
 	struct cmd_conn_ctx *ctx = (struct cmd_conn_ctx *)_ctx;
 	struct run *run = NULL;
@@ -102,10 +117,7 @@ static int worker_handle_cmd_run(const struct msg *request, UNUSED struct msg **
 
 	proc_output_dump(&result);
 
-	struct worker *worker = (struct worker *)ctx->arg;
-	static const char *argv[] = {CMD_COMPLETE, NULL};
-
-	ret = msg_connect_and_talk_argv(worker->settings->host, worker->settings->port, argv, NULL);
+	ret = worker_send_finished((struct worker *)ctx->arg, run, &result);
 	if (ret < 0)
 		goto free_output;
 
@@ -118,7 +130,7 @@ free_output:
 }
 
 static struct cmd_desc commands[] = {
-    {CMD_RUN, worker_handle_cmd_run},
+    {CMD_START, worker_handle_cmd_start},
 };
 
 static const size_t numof_commands = sizeof(commands) / sizeof(commands[0]);

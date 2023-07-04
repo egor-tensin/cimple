@@ -15,8 +15,10 @@
 struct run;
 
 int run_create(struct run **, int id, const char *url, const char *rev);
-int run_from_msg(struct run **, const struct msg *);
 void run_destroy(struct run *);
+
+int run_from_msg(struct run **, const struct msg *);
+int run_from_msg_unknown_id(struct run **, const struct msg *);
 
 int run_get_id(const struct run *);
 const char *run_get_url(const struct run *);
