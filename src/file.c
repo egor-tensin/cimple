@@ -9,6 +9,7 @@
 #include "compiler.h"
 #include "log.h"
 
+#include <fcntl.h>
 #include <ftw.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -96,6 +97,19 @@ free:
 	free(buf);
 
 	return NULL;
+}
+
+int file_dup(int fd)
+{
+	int ret = 0;
+
+	ret = fcntl(fd, F_DUPFD_CLOEXEC, 0);
+	if (ret < 0) {
+		log_errno("fcntl");
+		return ret;
+	}
+
+	return ret;
 }
 
 void file_close(int fd)

@@ -15,6 +15,7 @@ int rm_rf(const char *dir);
 int my_chdir(const char *dir, char **old);
 char *my_readlink(const char *path);
 
+int file_dup(int fd);
 void file_close(int fd);
 
 int file_exists(const char *path);

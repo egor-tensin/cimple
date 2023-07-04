@@ -10,6 +10,7 @@
 #include "compiler.h"
 #include "const.h"
 #include "event_loop.h"
+#include "file.h"
 #include "log.h"
 #include "msg.h"
 #include "run_queue.h"
@@ -220,6 +221,11 @@ static int server_handle_cmd_new_worker(UNUSED const struct msg *request,
 
 	struct worker *worker = NULL;
 	int ret = 0;
+
+	ret = file_dup(client_fd);
+	if (ret < 0)
+		return ret;
+	client_fd = ret;
 
 	ret = worker_create(&worker, client_fd);
 	if (ret < 0)

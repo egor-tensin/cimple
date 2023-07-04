@@ -72,13 +72,13 @@ static void *connection_thread(void *_ctx)
 	 * handled in the main thread. */
 	ret = signal_block_sigterms();
 	if (ret < 0)
-		goto free_ctx;
+		goto close;
 
 	ctx->conn_handler(ctx->fd, ctx->arg);
 
-free_ctx:
+close:
+	net_close(ctx->fd);
 	free(ctx);
-
 	return NULL;
 }
 
