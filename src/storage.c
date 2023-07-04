@@ -15,10 +15,14 @@ typedef void (*storage_settings_destroy_t)(const struct storage_settings *);
 typedef int (*storage_create_t)(struct storage *, const struct storage_settings *);
 typedef void (*storage_destroy_t)(struct storage *);
 
+typedef int (*storage_run_create_t)(struct storage *, const char *repo_url, const char *rev);
+
 struct storage_api {
 	storage_settings_destroy_t destroy_settings;
 	storage_create_t create;
 	storage_destroy_t destroy;
+
+	storage_run_create_t run_create;
 };
 
 static const struct storage_api apis[] = {
@@ -26,6 +30,8 @@ static const struct storage_api apis[] = {
 	storage_sqlite_settings_destroy,
 	storage_sqlite_create,
 	storage_sqlite_destroy,
+
+	storage_sqlite_run_create,
     },
 };
 
@@ -75,4 +81,12 @@ void storage_destroy(struct storage *storage)
 	if (!api)
 		return;
 	api->destroy(storage);
+}
+
+int storage_run_create(struct storage *storage, const char *repo_url, const char *rev)
+{
+	const struct storage_api *api = get_api(storage->type);
+	if (!api)
+		return -1;
+	return api->run_create(storage, repo_url, rev);
 }

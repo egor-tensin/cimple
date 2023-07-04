@@ -125,11 +125,20 @@ static int server_enqueue_run(struct server *server, struct run *run)
 	if (ret < 0)
 		return ret;
 
+	ret = storage_run_create(&server->storage, run_get_url(run), run_get_rev(run));
+	if (ret < 0)
+		goto unlock;
+	run_set_id(run, ret);
+
 	run_queue_add_last(&server->run_queue, run);
-	log("Added a new run for repository %s to the queue\n", run_get_url(run));
+	log("Added a new run %d for repository %s to the queue\n", run_get_id(run),
+	    run_get_url(run));
 
 	server_notify(server);
+
+unlock:
 	server_unlock(server);
+
 	return ret;
 }
 
@@ -154,7 +163,7 @@ static int server_wait_for_action(struct server *server)
 static void server_assign_run(struct server *server)
 {
 	struct run *run = run_queue_remove_first(&server->run_queue);
-	log("Removed run for repository %s from the queue\n", run_get_url(run));
+	log("Removed run %d for repository %s from the queue\n", run_get_id(run), run_get_url(run));
 
 	struct worker *worker = worker_queue_remove_first(&server->worker_queue);
 	log("Removed worker %d from the queue\n", worker_get_fd(worker));
@@ -167,8 +176,8 @@ static void server_assign_run(struct server *server)
 		    run_get_url(run), worker_get_fd(worker));
 		run_queue_add_first(&server->run_queue, run);
 	} else {
-		log("Assigned run for repository %s to worker %d\n", run_get_url(run),
-		    worker_get_fd(worker));
+		log("Assigned run %d for repository %s to worker %d\n", run_get_id(run),
+		    run_get_url(run), worker_get_fd(worker));
 		run_destroy(run);
 	}
 

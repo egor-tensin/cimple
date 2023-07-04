@@ -53,6 +53,10 @@ void storage_sqlite_settings_destroy(const struct storage_settings *settings)
 
 struct storage_sqlite {
 	sqlite3 *db;
+
+	sqlite3_stmt *stmt_repo_find;
+	sqlite3_stmt *stmt_repo_insert;
+	sqlite3_stmt *stmt_run_insert;
 };
 
 static int storage_sqlite_upgrade_to(struct storage_sqlite *storage, size_t version)
@@ -124,7 +128,7 @@ static int storage_sqlite_upgrade(struct storage_sqlite *storage)
 	return storage_sqlite_upgrade_from_to(storage, current_version, newest_version);
 }
 
-static int storage_sqlite_prepare(struct storage_sqlite *storage)
+static int storage_sqlite_setup(struct storage_sqlite *storage)
 {
 	int ret = 0;
 
@@ -137,6 +141,43 @@ static int storage_sqlite_prepare(struct storage_sqlite *storage)
 		return ret;
 
 	return ret;
+}
+
+static int storage_sqlite_prepare_statements(struct storage_sqlite *storage)
+{
+	/* clang-format off */
+	static const char *const fmt_repo_find   = "SELECT id FROM cimple_repos WHERE url = ?;";
+	static const char *const fmt_repo_insert = "INSERT INTO cimple_repos(url) VALUES (?) RETURNING id;";
+	static const char *const fmt_run_insert  = "INSERT INTO cimple_runs(status, result, output, repo_id, rev) VALUES (1, 0, x'', ?, ?) RETURNING id;";
+	/* clang-format on */
+
+	int ret = 0;
+
+	ret = sqlite_prepare(storage->db, fmt_repo_find, &storage->stmt_repo_find);
+	if (ret < 0)
+		return ret;
+	ret = sqlite_prepare(storage->db, fmt_repo_insert, &storage->stmt_repo_insert);
+	if (ret < 0)
+		goto finalize_repo_find;
+	ret = sqlite_prepare(storage->db, fmt_run_insert, &storage->stmt_run_insert);
+	if (ret < 0)
+		goto finalize_repo_insert;
+
+	return ret;
+
+finalize_repo_insert:
+	sqlite_finalize(storage->stmt_repo_insert);
+finalize_repo_find:
+	sqlite_finalize(storage->stmt_repo_find);
+
+	return ret;
+}
+
+static void storage_sqlite_finalize_statements(struct storage_sqlite *storage)
+{
+	sqlite_finalize(storage->stmt_run_insert);
+	sqlite_finalize(storage->stmt_repo_insert);
+	sqlite_finalize(storage->stmt_repo_find);
 }
 
 int storage_sqlite_create(struct storage *storage, const struct storage_settings *settings)
@@ -157,7 +198,10 @@ int storage_sqlite_create(struct storage *storage, const struct storage_settings
 	ret = sqlite_open_rw(settings->sqlite->path, &sqlite->db);
 	if (ret < 0)
 		goto destroy;
-	ret = storage_sqlite_prepare(sqlite);
+	ret = storage_sqlite_setup(sqlite);
+	if (ret < 0)
+		goto close;
+	ret = storage_sqlite_prepare_statements(sqlite);
 	if (ret < 0)
 		goto close;
 
@@ -176,7 +220,111 @@ free:
 
 void storage_sqlite_destroy(struct storage *storage)
 {
+	storage_sqlite_finalize_statements(storage->sqlite);
 	sqlite_close(storage->sqlite->db);
 	sqlite_destroy();
 	free(storage->sqlite);
+}
+
+static int storage_sqlite_find_repo(struct storage_sqlite *storage, const char *url)
+{
+	sqlite3_stmt *stmt = storage->stmt_repo_find;
+	int ret = 0;
+
+	ret = sqlite_bind_text(stmt, 1, url);
+	if (ret < 0)
+		goto reset;
+	ret = sqlite_step(stmt);
+	if (ret < 0)
+		goto reset;
+
+	if (!ret)
+		goto reset;
+
+	ret = sqlite_column_int(stmt, 0);
+	goto reset;
+
+reset:
+	sqlite_reset(stmt);
+
+	return ret;
+}
+
+static int storage_sqlite_insert_repo(struct storage_sqlite *storage, const char *url)
+{
+	sqlite3_stmt *stmt = storage->stmt_repo_insert;
+	int ret = 0;
+
+	ret = storage_sqlite_find_repo(storage, url);
+	if (ret < 0)
+		return ret;
+
+	if (ret)
+		return ret;
+
+	ret = sqlite_bind_text(stmt, 1, url);
+	if (ret < 0)
+		goto reset;
+	ret = sqlite_step(stmt);
+	if (ret < 0)
+		goto reset;
+
+	if (!ret) {
+		ret = -1;
+		log_err("Failed to insert a repository\n");
+		goto reset;
+	}
+
+	ret = sqlite_column_int(stmt, 0);
+	goto reset;
+
+reset:
+	sqlite_reset(stmt);
+
+	return ret;
+}
+
+static int storage_sqlite_insert_run(struct storage_sqlite *storage, int repo_id, const char *rev)
+{
+	sqlite3_stmt *stmt = storage->stmt_run_insert;
+	int ret = 0;
+
+	ret = sqlite_bind_int(stmt, 1, repo_id);
+	if (ret < 0)
+		goto reset;
+	ret = sqlite_bind_text(stmt, 2, rev);
+	if (ret < 0)
+		goto reset;
+	ret = sqlite_step(stmt);
+	if (ret < 0)
+		goto reset;
+
+	if (!ret) {
+		ret = -1;
+		log_err("Failed to insert a run\n");
+		goto reset;
+	}
+
+	ret = sqlite_column_int(stmt, 0);
+	goto reset;
+
+reset:
+	sqlite_reset(stmt);
+
+	return ret;
+}
+
+int storage_sqlite_run_create(struct storage *storage, const char *repo_url, const char *rev)
+{
+	int ret = 0;
+
+	ret = storage_sqlite_insert_repo(storage->sqlite, repo_url);
+	if (ret < 0)
+		return ret;
+
+	ret = storage_sqlite_insert_run(storage->sqlite, ret, rev);
+	if (ret < 0)
+		return ret;
+
+	return ret;
 }

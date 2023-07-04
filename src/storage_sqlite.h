@@ -20,4 +20,6 @@ void storage_sqlite_settings_destroy(const struct storage_settings *);
 int storage_sqlite_create(struct storage *, const struct storage_settings *);
 void storage_sqlite_destroy(struct storage *);
 
+int storage_sqlite_run_create(struct storage *, const char *repo_url, const char *rev);
+
 #endif

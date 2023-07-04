@@ -111,6 +111,12 @@ int sqlite_prepare(sqlite3 *db, const char *stmt, sqlite3_stmt **result)
 	return ret;
 }
 
+void sqlite_reset(sqlite3_stmt *stmt)
+{
+	sqlite_errno_if(sqlite3_reset(stmt), "sqlite3_reset");
+	sqlite_errno_if(sqlite3_clear_bindings(stmt), "sqlite3_clear_bindings");
+}
+
 void sqlite_finalize(sqlite3_stmt *stmt)
 {
 	sqlite_errno_if(sqlite3_finalize(stmt), "sqlite3_finalize");
@@ -124,6 +130,7 @@ int sqlite_step(sqlite3_stmt *stmt)
 
 	switch (ret) {
 	case SQLITE_ROW:
+		return 1;
 	case SQLITE_DONE:
 		return 0;
 
@@ -198,6 +205,32 @@ int sqlite_column_blob(sqlite3_stmt *stmt, int index, unsigned char **_result)
 	return 0;
 }
 
+int sqlite_bind_int(sqlite3_stmt *stmt, int index, int value)
+{
+	int ret = 0;
+
+	ret = sqlite3_bind_int(stmt, index, value);
+	if (ret) {
+		sqlite_errno(ret, "sqlite3_bind_int");
+		return ret;
+	}
+
+	return ret;
+}
+
+int sqlite_bind_text(sqlite3_stmt *stmt, int index, const char *value)
+{
+	int ret = 0;
+
+	ret = sqlite3_bind_text(stmt, index, value, -1, SQLITE_STATIC);
+	if (ret) {
+		sqlite_errno(ret, "sqlite3_bind_text");
+		return ret;
+	}
+
+	return ret;
+}
+
 int sqlite_exec_as_transaction(sqlite3 *db, const char *stmt)
 {
 	static const char *const fmt = "BEGIN; %s COMMIT;";
@@ -236,6 +269,11 @@ int sqlite_get_user_version(sqlite3 *db, unsigned int *output)
 	ret = sqlite_step(stmt);
 	if (ret < 0)
 		goto finalize;
+	if (!ret) {
+		ret = -1;
+		log_err("Failed to read database version\n");
+		goto finalize;
+	}
 
 	result = sqlite_column_int(stmt, 0);
 	if (result < 0) {

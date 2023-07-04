@@ -14,12 +14,15 @@
 
 struct run;
 
-int run_create(struct run **, const char *url, const char *rev);
+int run_create(struct run **, const char *url, const char *rev, int id);
 int run_from_msg(struct run **, const struct msg *);
 void run_destroy(struct run *);
 
 const char *run_get_url(const struct run *);
 const char *run_get_rev(const struct run *);
+int run_get_id(const struct run *);
+
+void run_set_id(struct run *, int id);
 
 SIMPLEQ_HEAD(run_queue, run);
 

@@ -22,8 +22,12 @@ int sqlite_exec(sqlite3 *db, const char *stmt, sqlite3_callback callback);
 int sqlite_log_result(void *, int, char **, char **);
 
 int sqlite_prepare(sqlite3 *db, const char *stmt, sqlite3_stmt **result);
+void sqlite_reset(sqlite3_stmt *);
 void sqlite_finalize(sqlite3_stmt *);
 int sqlite_step(sqlite3_stmt *);
+
+int sqlite_bind_int(sqlite3_stmt *, int column_index, int value);
+int sqlite_bind_text(sqlite3_stmt *, int column_index, const char *value);
 
 int sqlite_column_int(sqlite3_stmt *, int column_index);
 int sqlite_column_text(sqlite3_stmt *, int column_index, char **result);
