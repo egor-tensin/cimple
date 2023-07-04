@@ -8,6 +8,7 @@
 #ifndef __PROTOCOL_H__
 #define __PROTOCOL_H__
 
+#include "msg.h"
 #include "process.h"
 #include "run_queue.h"
 

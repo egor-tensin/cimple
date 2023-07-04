@@ -8,8 +8,6 @@
 #ifndef __RUN_QUEUE_H__
 #define __RUN_QUEUE_H__
 
-#include "msg.h"
-
 #include <sys/queue.h>
 
 struct run;

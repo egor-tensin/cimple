@@ -7,8 +7,6 @@
 
 #include "run_queue.h"
 #include "log.h"
-#include "msg.h"
-#include "string.h"
 
 #include <stdlib.h>
 #include <string.h>
