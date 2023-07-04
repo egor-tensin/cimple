@@ -7,6 +7,7 @@
 
 #include "storage.h"
 #include "log.h"
+#include "run_queue.h"
 #include "storage_sqlite.h"
 
 #include <stddef.h>
@@ -16,6 +17,7 @@ typedef int (*storage_create_t)(struct storage *, const struct storage_settings 
 typedef void (*storage_destroy_t)(struct storage *);
 
 typedef int (*storage_run_create_t)(struct storage *, const char *repo_url, const char *rev);
+typedef int (*storage_get_run_queue_t)(struct storage *, struct run_queue *);
 
 struct storage_api {
 	storage_settings_destroy_t destroy_settings;
@@ -23,6 +25,7 @@ struct storage_api {
 	storage_destroy_t destroy;
 
 	storage_run_create_t run_create;
+	storage_get_run_queue_t get_run_queue;
 };
 
 static const struct storage_api apis[] = {
@@ -32,6 +35,7 @@ static const struct storage_api apis[] = {
 	storage_sqlite_destroy,
 
 	storage_sqlite_run_create,
+	storage_sqlite_get_run_queue,
     },
 };
 
@@ -89,4 +93,12 @@ int storage_run_create(struct storage *storage, const char *repo_url, const char
 	if (!api)
 		return -1;
 	return api->run_create(storage, repo_url, rev);
+}
+
+int storage_get_run_queue(struct storage *storage, struct run_queue *queue)
+{
+	const struct storage_api *api = get_api(storage->type);
+	if (!api)
+		return -1;
+	return api->get_run_queue(storage, queue);
 }

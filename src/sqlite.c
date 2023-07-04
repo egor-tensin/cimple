@@ -76,11 +76,11 @@ void sqlite_close(sqlite3 *db)
 	sqlite_errno_if(sqlite3_close(db), "sqlite3_close");
 }
 
-int sqlite_exec(sqlite3 *db, const char *stmt, sqlite3_callback callback)
+int sqlite_exec(sqlite3 *db, const char *stmt, sqlite3_callback callback, void *arg)
 {
 	int ret = 0;
 
-	ret = sqlite3_exec(db, stmt, callback, NULL, NULL);
+	ret = sqlite3_exec(db, stmt, callback, arg, NULL);
 	if (ret) {
 		sqlite_errno(ret, "sqlite3_exec");
 		return ret;
@@ -247,7 +247,7 @@ int sqlite_exec_as_transaction(sqlite3 *db, const char *stmt)
 	}
 	snprintf(full_stmt, nb, fmt, stmt);
 
-	ret = sqlite_exec(db, stmt, NULL);
+	ret = sqlite_exec(db, stmt, NULL, NULL);
 	goto free;
 
 free:
@@ -294,5 +294,5 @@ finalize:
 int sqlite_set_foreign_keys(sqlite3 *db)
 {
 	static const char *const sql = "PRAGMA foreign_keys = ON;";
-	return sqlite_exec(db, sql, NULL);
+	return sqlite_exec(db, sql, NULL, NULL);
 }

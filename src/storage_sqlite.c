@@ -7,6 +7,7 @@
 
 #include "storage_sqlite.h"
 #include "log.h"
+#include "run_queue.h"
 #include "sql/sqlite_sql.h"
 #include "sqlite.h"
 #include "storage.h"
@@ -325,6 +326,77 @@ int storage_sqlite_run_create(struct storage *storage, const char *repo_url, con
 	ret = storage_sqlite_insert_run(storage->sqlite, ret, rev);
 	if (ret < 0)
 		return ret;
+
+	return ret;
+}
+
+static int storage_sqlite_row_to_run(struct sqlite3_stmt *stmt, struct run **run)
+{
+	int ret = 0;
+
+	int id = sqlite_column_int(stmt, 0);
+
+	char *url = NULL;
+	ret = sqlite_column_text(stmt, 1, &url);
+	if (ret < 0)
+		return ret;
+
+	char *rev = NULL;
+	ret = sqlite_column_text(stmt, 2, &rev);
+	if (ret < 0)
+		goto free_url;
+
+	ret = run_create(run, id, url, rev);
+	if (ret < 0)
+		goto free_rev;
+
+	log("Adding a run %d for repository %s to the queue\n", id, url);
+
+free_rev:
+	free(rev);
+
+free_url:
+	free(url);
+
+	return ret;
+}
+
+int storage_sqlite_get_run_queue(struct storage *storage, struct run_queue *queue)
+{
+	/* clang-format off */
+	static const char *const fmt = "SELECT cimple_runs.id, cimple_repos.url, cimple_runs.rev FROM cimple_runs INNER JOIN cimple_repos ON cimple_runs.repo_id = cimple_repos.id WHERE cimple_runs.status = 1;";
+	/* clang-format on */
+
+	sqlite3_stmt *stmt;
+	int ret = 0;
+
+	ret = sqlite_prepare(storage->sqlite->db, fmt, &stmt);
+	if (ret < 0)
+		return ret;
+
+	while (1) {
+		ret = sqlite_step(stmt);
+		if (!ret)
+			break;
+		if (ret < 0)
+			goto run_queue_destroy;
+
+		struct run *run = NULL;
+
+		ret = storage_sqlite_row_to_run(stmt, &run);
+		if (ret < 0)
+			goto run_queue_destroy;
+
+		run_queue_add_last(queue, run);
+	}
+
+	goto finalize;
+
+run_queue_destroy:
+	run_queue_destroy(queue);
+
+finalize:
+	sqlite_finalize(stmt);
 
 	return ret;
 }

@@ -18,7 +18,7 @@ int sqlite_open_rw(const char *path, sqlite3 **db);
 int sqlite_open_ro(const char *path, sqlite3 **db);
 void sqlite_close(sqlite3 *db);
 
-int sqlite_exec(sqlite3 *db, const char *stmt, sqlite3_callback callback);
+int sqlite_exec(sqlite3 *db, const char *stmt, sqlite3_callback callback, void *arg);
 int sqlite_log_result(void *, int, char **, char **);
 
 int sqlite_prepare(sqlite3 *db, const char *stmt, sqlite3_stmt **result);

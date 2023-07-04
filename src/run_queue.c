@@ -14,13 +14,13 @@
 #include <sys/queue.h>
 
 struct run {
+	int id;
 	char *url;
 	char *rev;
-	int id;
 	SIMPLEQ_ENTRY(run) entries;
 };
 
-int run_create(struct run **_entry, const char *_url, const char *_rev, int id)
+int run_create(struct run **_entry, int id, const char *_url, const char *_rev)
 {
 	struct run *entry = malloc(sizeof(struct run));
 	if (!entry) {
@@ -40,9 +40,9 @@ int run_create(struct run **_entry, const char *_url, const char *_rev, int id)
 		goto free_url;
 	}
 
+	entry->id = id;
 	entry->url = url;
 	entry->rev = rev;
-	entry->id = id;
 
 	*_entry = entry;
 	return 0;
@@ -69,7 +69,7 @@ int run_from_msg(struct run **run, const struct msg *msg)
 
 	const char **argv = msg_get_strings(msg);
 	/* We don't know the ID yet. */
-	return run_create(run, argv[1], argv[2], 0);
+	return run_create(run, 0, argv[1], argv[2]);
 }
 
 void run_destroy(struct run *entry)
@@ -77,6 +77,11 @@ void run_destroy(struct run *entry)
 	free(entry->rev);
 	free(entry->url);
 	free(entry);
+}
+
+int run_get_id(const struct run *entry)
+{
+	return entry->id;
 }
 
 const char *run_get_url(const struct run *entry)
@@ -87,11 +92,6 @@ const char *run_get_url(const struct run *entry)
 const char *run_get_rev(const struct run *entry)
 {
 	return entry->rev;
-}
-
-int run_get_id(const struct run *entry)
-{
-	return entry->id;
 }
 
 void run_set_id(struct run *entry, int id)

@@ -339,21 +339,26 @@ int server_create(struct server **_server, const struct settings *settings)
 		goto close_signalfd;
 
 	worker_queue_create(&server->worker_queue);
-	run_queue_create(&server->run_queue);
 
 	ret = storage_sqlite_settings_create(&storage_settings, settings->sqlite_path);
 	if (ret < 0)
-		goto destroy_run_queue;
+		goto destroy_worker_queue;
 
 	ret = storage_create(&server->storage, &storage_settings);
 	storage_settings_destroy(&storage_settings);
+	if (ret < 0)
+		goto destroy_worker_queue;
+
+	run_queue_create(&server->run_queue);
+
+	ret = storage_get_run_queue(&server->storage, &server->run_queue);
 	if (ret < 0)
 		goto destroy_run_queue;
 
 	ret = tcp_server_create(&server->tcp_server, settings->port, cmd_dispatcher_handle_conn,
 	                        server->cmd_dispatcher);
 	if (ret < 0)
-		goto destroy_storage;
+		goto destroy_run_queue;
 
 	ret = tcp_server_add_to_event_loop(server->tcp_server, server->event_loop);
 	if (ret < 0)
@@ -371,12 +376,12 @@ int server_create(struct server **_server, const struct settings *settings)
 destroy_tcp_server:
 	tcp_server_destroy(server->tcp_server);
 
-destroy_storage:
-	storage_destroy(&server->storage);
-
 destroy_run_queue:
 	run_queue_destroy(&server->run_queue);
 
+	storage_destroy(&server->storage);
+
+destroy_worker_queue:
 	worker_queue_destroy(&server->worker_queue);
 
 close_signalfd:

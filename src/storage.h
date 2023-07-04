@@ -8,6 +8,7 @@
 #ifndef __STORAGE_H__
 #define __STORAGE_H__
 
+#include "run_queue.h"
 #include "storage_sqlite.h"
 
 enum storage_type {
@@ -34,5 +35,6 @@ int storage_create(struct storage *, const struct storage_settings *);
 void storage_destroy(struct storage *);
 
 int storage_run_create(struct storage *, const char *repo_url, const char *rev);
+int storage_get_run_queue(struct storage *, struct run_queue *);
 
 #endif
