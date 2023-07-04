@@ -52,6 +52,8 @@ add_my_executable(server server_main.c server.c
     log.c
     msg.c
     net.c
+    process.c
+    protocol.c
     run_queue.c
     signal.c
     sql/sqlite_sql.h
@@ -84,6 +86,7 @@ add_my_executable(worker worker_main.c worker.c
     msg.c
     net.c
     process.c
+    protocol.c
     run_queue.c
     signal.c
     string.c)

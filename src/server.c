@@ -13,6 +13,7 @@
 #include "file.h"
 #include "log.h"
 #include "msg.h"
+#include "protocol.h"
 #include "run_queue.h"
 #include "signal.h"
 #include "storage.h"
@@ -170,12 +171,19 @@ static void server_assign_run(struct server *server)
 	struct worker *worker = worker_queue_remove_first(&server->worker_queue);
 	log("Removed worker %d from the queue\n", worker_get_fd(worker));
 
-	char id[16];
-	snprintf(id, sizeof(id), "%d", run_get_id(run));
+	struct msg *start_msg = NULL;
+	int ret = 0;
 
-	const char *argv[] = {CMD_START, id, run_get_url(run), run_get_rev(run), NULL};
-	int ret = msg_talk_argv(worker_get_fd(worker), argv, NULL);
+	ret = msg_start_create(&start_msg, run);
+	if (ret < 0)
+		goto exit;
 
+	ret = msg_talk(worker_get_fd(worker), start_msg, NULL);
+	msg_free(start_msg);
+	if (ret < 0)
+		goto exit;
+
+exit:
 	if (ret < 0) {
 		log("Failed to assign run for repository %s to worker %d, requeueing\n",
 		    run_get_url(run), worker_get_fd(worker));
@@ -221,17 +229,15 @@ static int server_handle_cmd_new_worker(UNUSED const struct msg *request,
 {
 	struct cmd_conn_ctx *ctx = (struct cmd_conn_ctx *)_ctx;
 	struct server *server = (struct server *)ctx->arg;
-	int client_fd = ctx->fd;
-
-	struct worker *worker = NULL;
 	int ret = 0;
 
-	ret = file_dup(client_fd);
+	ret = file_dup(ctx->fd);
 	if (ret < 0)
 		return ret;
-	client_fd = ret;
 
-	ret = worker_create(&worker, client_fd);
+	struct worker *worker = NULL;
+
+	ret = worker_create(&worker, ret);
 	if (ret < 0)
 		return ret;
 
@@ -251,11 +257,11 @@ static int server_handle_cmd_run(const struct msg *request, struct msg **respons
 {
 	struct cmd_conn_ctx *ctx = (struct cmd_conn_ctx *)_ctx;
 	struct server *server = (struct server *)ctx->arg;
-	struct run *run = NULL;
-
 	int ret = 0;
 
-	ret = run_from_msg_unknown_id(&run, request);
+	struct run *run = NULL;
+
+	ret = msg_run_parse(request, &run);
 	if (ret < 0)
 		return ret;
 
@@ -283,33 +289,20 @@ static int server_handle_cmd_finished(const struct msg *request, UNUSED struct m
                                       void *_ctx)
 {
 	struct cmd_conn_ctx *ctx = (struct cmd_conn_ctx *)_ctx;
-	int client_fd = ctx->fd;
+	struct server *server = (struct server *)ctx->arg;
 	int ret = 0;
 
-	log("Received a \"run finished\" message from worker %d\n", client_fd);
+	log("Received a \"run finished\" message from worker %d\n", ctx->fd);
 
-	size_t msg_len = msg_get_length(request);
+	int run_id;
+	struct proc_output output;
 
-	if (msg_len != 3) {
-		log_err("Invalid number of arguments for a message: %zu\n", msg_len);
-		msg_dump(request);
-		return -1;
-	}
-
-	const char **argv = msg_get_strings(request);
-
-	int run_id, ec;
-
-	ret = string_to_int(argv[1], &run_id);
-	if (ret < 0)
-		return ret;
-	ret = string_to_int(argv[2], &ec);
+	ret = msg_finished_parse(request, &run_id, &output);
 	if (ret < 0)
 		return ret;
 
-	struct server *server = (struct server *)ctx->arg;
-
-	ret = storage_run_finished(&server->storage, run_id, ec);
+	ret = storage_run_finished(&server->storage, run_id, output.ec);
+	proc_output_free(&output);
 	if (ret < 0) {
 		log_err("Failed to mark run %d as finished\n", run_id);
 		return ret;

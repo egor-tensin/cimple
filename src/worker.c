@@ -16,6 +16,7 @@
 #include "msg.h"
 #include "net.h"
 #include "process.h"
+#include "protocol.h"
 #include "run_queue.h"
 #include "signal.h"
 
@@ -80,33 +81,20 @@ static int worker_set_stopping(UNUSED struct event_loop *loop, UNUSED int fd, UN
 	return 0;
 }
 
-static int worker_send_finished(struct worker *worker, const struct run *run,
-                                struct proc_output *output)
-{
-	char id[16];
-	char ec[16];
-
-	snprintf(id, sizeof(id), "%d", run_get_id(run));
-	snprintf(ec, sizeof(ec), "%d", output->ec);
-
-	const char *argv[] = {CMD_FINISHED, id, ec, NULL};
-
-	return msg_connect_and_talk_argv(worker->settings->host, worker->settings->port, argv,
-	                                 NULL);
-}
-
 static int worker_handle_cmd_start(const struct msg *request, UNUSED struct msg **response,
                                    void *_ctx)
 {
 	struct cmd_conn_ctx *ctx = (struct cmd_conn_ctx *)_ctx;
-	struct run *run = NULL;
-	struct proc_output result;
+	struct worker *worker = (struct worker *)ctx->arg;
 	int ret = 0;
 
-	ret = run_from_msg(&run, request);
+	struct run *run = NULL;
+
+	ret = msg_start_parse(request, &run);
 	if (ret < 0)
 		return ret;
 
+	struct proc_output result;
 	proc_output_init(&result);
 
 	ret = ci_run_git_repo(run_get_url(run), run_get_rev(run), &result);
@@ -117,9 +105,19 @@ static int worker_handle_cmd_start(const struct msg *request, UNUSED struct msg 
 
 	proc_output_dump(&result);
 
-	ret = worker_send_finished((struct worker *)ctx->arg, run, &result);
+	struct msg *finished_msg = NULL;
+
+	ret = msg_finished_create(&finished_msg, run_get_id(run), &result);
 	if (ret < 0)
 		goto free_output;
+
+	ret = msg_connect_and_talk(worker->settings->host, worker->settings->port, finished_msg,
+	                           NULL);
+	if (ret < 0)
+		goto free_finished_msg;
+
+free_finished_msg:
+	msg_free(finished_msg);
 
 free_output:
 	proc_output_free(&result);
@@ -218,9 +216,14 @@ int worker_main(struct worker *worker)
 			return ret;
 
 		const int fd = ret;
-		static const char *argv[] = {CMD_NEW_WORKER, NULL};
+		struct msg *new_worker_msg = NULL;
 
-		ret = msg_send_argv(fd, argv);
+		ret = msg_new_worker_create(&new_worker_msg);
+		if (ret < 0)
+			return ret;
+
+		ret = msg_send(fd, new_worker_msg);
+		msg_free(new_worker_msg);
 		if (ret < 0)
 			return ret;
 
