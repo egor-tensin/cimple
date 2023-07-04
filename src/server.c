@@ -380,11 +380,9 @@ int server_create(struct server **_server, const struct settings *settings)
 	if (ret < 0)
 		goto destroy_worker_queue;
 
-	run_queue_create(&server->run_queue);
-
 	ret = storage_get_run_queue(&server->storage, &server->run_queue);
 	if (ret < 0)
-		goto destroy_run_queue;
+		goto destroy_storage;
 
 	ret = tcp_server_create(&server->tcp_server, settings->port, cmd_dispatcher_handle_conn,
 	                        server->cmd_dispatcher);
@@ -410,6 +408,7 @@ destroy_tcp_server:
 destroy_run_queue:
 	run_queue_destroy(&server->run_queue);
 
+destroy_storage:
 	storage_destroy(&server->storage);
 
 destroy_worker_queue:

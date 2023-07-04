@@ -403,6 +403,8 @@ int storage_sqlite_get_run_queue(struct storage *storage, struct run_queue *queu
 	if (ret < 0)
 		return ret;
 
+	run_queue_create(queue);
+
 	while (1) {
 		ret = sqlite_step(stmt);
 		if (!ret)
