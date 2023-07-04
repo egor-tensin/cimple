@@ -208,36 +208,39 @@ void worker_destroy(struct worker *worker)
 
 int worker_main(struct worker *worker)
 {
-	int ret = 0;
+	int ret = 0, fd = -1;
 
 	while (!worker->stopping) {
 		ret = net_connect(worker->settings->host, worker->settings->port);
 		if (ret < 0)
 			return ret;
+		fd = ret;
 
-		const int fd = ret;
 		struct msg *new_worker_msg = NULL;
 
 		ret = msg_new_worker_create(&new_worker_msg);
 		if (ret < 0)
-			return ret;
+			goto close;
 
 		ret = msg_send(fd, new_worker_msg);
 		msg_free(new_worker_msg);
 		if (ret < 0)
-			return ret;
+			goto close;
 
 		ret = event_loop_add_once(worker->event_loop, fd, POLLIN,
 		                          cmd_dispatcher_handle_event, worker->cmd_dispatcher);
 		if (ret < 0)
-			return ret;
+			goto close;
 
 		log("Waiting for a new command\n");
 
 		ret = event_loop_run(worker->event_loop);
 		if (ret < 0)
-			return ret;
+			goto close;
 	}
+
+close:
+	net_close(fd);
 
 	return ret;
 }
