@@ -18,7 +18,7 @@ INSERT INTO cimple_run_status(id, label) VALUES (2, 'finished');
 CREATE TABLE cimple_runs (
 	id INTEGER PRIMARY KEY,
 	status INTEGER NOT NULL,
-	result INTEGER NOT NULL,
+	ec INTEGER NOT NULL,
 	output BLOB NOT NULL,
 	repo_id INTEGER NOT NULL,
 	rev TEXT NOT NULL,

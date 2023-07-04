@@ -150,8 +150,8 @@ static int storage_sqlite_prepare_statements(struct storage_sqlite *storage)
 	/* clang-format off */
 	static const char *const fmt_repo_find    = "SELECT id FROM cimple_repos WHERE url = ?;";
 	static const char *const fmt_repo_insert  = "INSERT INTO cimple_repos(url) VALUES (?) RETURNING id;";
-	static const char *const fmt_run_insert   = "INSERT INTO cimple_runs(status, result, output, repo_id, rev) VALUES (1, -1, x'', ?, ?) RETURNING id;";
-	static const char *const fmt_run_finished = "UPDATE cimple_runs SET status = 2, result = ? WHERE id = ?;";
+	static const char *const fmt_run_insert   = "INSERT INTO cimple_runs(status, ec, output, repo_id, rev) VALUES (1, -1, x'', ?, ?) RETURNING id;";
+	static const char *const fmt_run_finished = "UPDATE cimple_runs SET status = 2, ec = ? WHERE id = ?;";
 	/* clang-format on */
 
 	int ret = 0;
