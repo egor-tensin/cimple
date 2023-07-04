@@ -28,7 +28,8 @@ static inline void log_prefix_timestamp(FILE *dest)
 
 	buf[0] = '\0';
 	used += strftime(buf + used, sizeof(buf) - used, "%F %T", &tm);
-	used += snprintf(buf + used, sizeof(buf) - used, ".%03ld | ", tv.tv_usec / 1000);
+	long long msec = (long long)tv.tv_usec / 1000;
+	used += snprintf(buf + used, sizeof(buf) - used, ".%03lld | ", msec);
 	fprintf(dest, "%s", buf);
 }
 
