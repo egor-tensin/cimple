@@ -17,7 +17,7 @@ enum storage_type {
 struct storage_settings {
 	enum storage_type type;
 	union {
-		struct storage_settings_sqlite *sqlite;
+		struct storage_sqlite_settings *sqlite;
 	};
 };
 

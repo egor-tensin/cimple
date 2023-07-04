@@ -326,7 +326,7 @@ int server_create(struct server **_server, const struct settings *settings)
 	worker_queue_create(&server->worker_queue);
 	run_queue_create(&server->run_queue);
 
-	ret = storage_settings_create_sqlite(&storage_settings, settings->sqlite_path);
+	ret = storage_sqlite_settings_create(&storage_settings, settings->sqlite_path);
 	if (ret < 0)
 		goto destroy_run_queue;
 

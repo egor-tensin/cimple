@@ -9,15 +9,15 @@
 #define __STORAGE_SQLITE_H__
 
 struct storage_settings;
-struct storage_settings_sqlite;
+struct storage_sqlite_setttings;
 
 struct storage;
 struct storage_sqlite;
 
-int storage_settings_create_sqlite(struct storage_settings *, const char *path);
-void storage_settings_destroy_sqlite(const struct storage_settings *);
+int storage_sqlite_settings_create(struct storage_settings *, const char *path);
+void storage_sqlite_settings_destroy(const struct storage_settings *);
 
-int storage_create_sqlite(struct storage *, const struct storage_settings *);
-void storage_destroy_sqlite(struct storage *);
+int storage_sqlite_create(struct storage *, const struct storage_settings *);
+void storage_sqlite_destroy(struct storage *);
 
 #endif

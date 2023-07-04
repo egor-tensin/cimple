@@ -17,13 +17,13 @@
 #include <stdlib.h>
 #include <string.h>
 
-struct storage_settings_sqlite {
+struct storage_sqlite_settings {
 	char *path;
 };
 
-int storage_settings_create_sqlite(struct storage_settings *settings, const char *path)
+int storage_sqlite_settings_create(struct storage_settings *settings, const char *path)
 {
-	struct storage_settings_sqlite *sqlite = malloc(sizeof(struct storage_settings_sqlite));
+	struct storage_sqlite_settings *sqlite = malloc(sizeof(struct storage_sqlite_settings));
 	if (!sqlite) {
 		log_errno("malloc");
 		return -1;
@@ -45,7 +45,7 @@ free:
 	return -1;
 }
 
-void storage_settings_destroy_sqlite(const struct storage_settings *settings)
+void storage_sqlite_settings_destroy(const struct storage_settings *settings)
 {
 	free(settings->sqlite->path);
 	free(settings->sqlite);
@@ -55,7 +55,7 @@ struct storage_sqlite {
 	sqlite3 *db;
 };
 
-static int storage_upgrade_sqlite_to(struct storage_sqlite *storage, size_t version)
+static int storage_sqlite_upgrade_to(struct storage_sqlite *storage, size_t version)
 {
 	static const char *const fmt = "%s PRAGMA user_version = %zu;";
 
@@ -82,13 +82,13 @@ free:
 	return ret;
 }
 
-static int storage_upgrade_sqlite_from_to(struct storage_sqlite *storage, size_t from, size_t to)
+static int storage_sqlite_upgrade_from_to(struct storage_sqlite *storage, size_t from, size_t to)
 {
 	int ret = 0;
 
 	for (size_t i = from; i < to; ++i) {
 		log("Upgrading SQLite database from version %zu to version %zu\n", i, i + 1);
-		ret = storage_upgrade_sqlite_to(storage, i);
+		ret = storage_sqlite_upgrade_to(storage, i);
 		if (ret < 0) {
 			log_err("Failed to upgrade to version %zu\n", i + 1);
 			return ret;
@@ -98,7 +98,7 @@ static int storage_upgrade_sqlite_from_to(struct storage_sqlite *storage, size_t
 	return ret;
 }
 
-static int storage_upgrade_sqlite(struct storage_sqlite *storage)
+static int storage_sqlite_upgrade(struct storage_sqlite *storage)
 {
 	unsigned int current_version = 0;
 	int ret = 0;
@@ -121,10 +121,10 @@ static int storage_upgrade_sqlite(struct storage_sqlite *storage)
 		return 0;
 	}
 
-	return storage_upgrade_sqlite_from_to(storage, current_version, newest_version);
+	return storage_sqlite_upgrade_from_to(storage, current_version, newest_version);
 }
 
-static int storage_prepare_sqlite(struct storage_sqlite *storage)
+static int storage_sqlite_prepare(struct storage_sqlite *storage)
 {
 	int ret = 0;
 
@@ -132,14 +132,14 @@ static int storage_prepare_sqlite(struct storage_sqlite *storage)
 	if (ret < 0)
 		return ret;
 
-	ret = storage_upgrade_sqlite(storage);
+	ret = storage_sqlite_upgrade(storage);
 	if (ret < 0)
 		return ret;
 
 	return ret;
 }
 
-int storage_create_sqlite(struct storage *storage, const struct storage_settings *settings)
+int storage_sqlite_create(struct storage *storage, const struct storage_settings *settings)
 {
 	int ret = 0;
 
@@ -157,7 +157,7 @@ int storage_create_sqlite(struct storage *storage, const struct storage_settings
 	ret = sqlite_open_rw(settings->sqlite->path, &sqlite->db);
 	if (ret < 0)
 		goto destroy;
-	ret = storage_prepare_sqlite(sqlite);
+	ret = storage_sqlite_prepare(sqlite);
 	if (ret < 0)
 		goto close;
 
@@ -174,7 +174,7 @@ free:
 	return ret;
 }
 
-void storage_destroy_sqlite(struct storage *storage)
+void storage_sqlite_destroy(struct storage *storage)
 {
 	sqlite_close(storage->sqlite->db);
 	sqlite_destroy();

@@ -23,9 +23,9 @@ struct storage_api {
 
 static const struct storage_api apis[] = {
     {
-	storage_settings_destroy_sqlite,
-	storage_create_sqlite,
-	storage_destroy_sqlite,
+	storage_sqlite_settings_destroy,
+	storage_sqlite_create,
+	storage_sqlite_destroy,
     },
 };
 
