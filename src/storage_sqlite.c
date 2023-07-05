@@ -149,7 +149,7 @@ static int storage_sqlite_prepare_statements(struct storage_sqlite *storage)
 {
 	/* clang-format off */
 	static const char *const fmt_repo_find    = "SELECT id FROM cimple_repos WHERE url = ?;";
-	static const char *const fmt_repo_insert  = "INSERT INTO cimple_repos(url) VALUES (?) RETURNING id;";
+	static const char *const fmt_repo_insert  = "INSERT INTO cimple_repos(url) VALUES (?) ON CONFLICT(url) DO NOTHING;";
 	static const char *const fmt_run_insert   = "INSERT INTO cimple_runs(status, ec, output, repo_id, rev) VALUES (1, -1, x'', ?, ?) RETURNING id;";
 	static const char *const fmt_run_finished = "UPDATE cimple_runs SET status = 2, ec = ? WHERE id = ?;";
 	/* clang-format on */
@@ -264,13 +264,6 @@ static int storage_sqlite_insert_repo(struct storage_sqlite *storage, const char
 	sqlite3_stmt *stmt = storage->stmt_repo_insert;
 	int ret = 0;
 
-	ret = storage_sqlite_find_repo(storage, url);
-	if (ret < 0)
-		return ret;
-
-	if (ret)
-		return ret;
-
 	ret = sqlite_bind_text(stmt, 1, url);
 	if (ret < 0)
 		goto reset;
@@ -278,14 +271,9 @@ static int storage_sqlite_insert_repo(struct storage_sqlite *storage, const char
 	if (ret < 0)
 		goto reset;
 
-	if (!ret) {
-		ret = -1;
-		log_err("Failed to insert a repository\n");
+	ret = storage_sqlite_find_repo(storage, url);
+	if (ret < 0)
 		goto reset;
-	}
-
-	ret = sqlite_column_int(stmt, 0);
-	goto reset;
 
 reset:
 	sqlite_reset(stmt);
