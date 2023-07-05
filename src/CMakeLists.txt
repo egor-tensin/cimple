@@ -5,6 +5,12 @@ add_compile_options(-std=c17 -Wpedantic -Wall -Wextra $<$<NOT:$<CONFIG:Debug>>:-
 # any features macros defined at all, and prepare to be amazed!
 add_compile_definitions(_GNU_SOURCE)
 
+# Valgrind on Ubuntu Focal doesn't like DWARF version 5 debug info generated
+# by Clang 14.
+if("${CMAKE_C_COMPILER_ID}" STREQUAL "Clang")
+    add_compile_options(-fdebug-default-version=4)
+endif()
+
 execute_process(
     COMMAND git rev-parse --verify HEAD
     WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
