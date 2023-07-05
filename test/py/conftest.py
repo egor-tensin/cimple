@@ -5,10 +5,10 @@
 
 import logging
 import os
-import random
 
 from pytest import fixture
 
+from lib.net import random_unused_port
 from lib.process import CmdLine
 from lib.test_repo import TestRepo
 
@@ -75,11 +75,6 @@ def pytest_generate_tests(metafunc):
             metafunc.parametrize(opt.codename, metafunc.config.getoption(opt.codename))
 
 
-@fixture(scope='session')
-def rng():
-    random.seed()
-
-
 class Paths:
     def __init__(self, pytestconfig):
         for opt in BINARY_PARAMS:
@@ -113,9 +108,9 @@ def version(pytestconfig):
     return pytestconfig.getoption(PARAM_VERSION.codename)
 
 
-@fixture
-def server_port(rng):
-    return str(random.randint(2000, 50000))
+@fixture(scope='session')
+def server_port():
+    return str(random_unused_port())
 
 
 @fixture
