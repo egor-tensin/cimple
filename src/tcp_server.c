@@ -89,6 +89,7 @@ static void client_destroy(struct client *client)
 	SIMPLEQ_REMOVE(&client->server->client_queue, client, client, entries);
 	pthread_errno_if(pthread_join(client->thread, NULL), "pthread_join");
 	net_close(client->cleanup_fd);
+	net_close(client->conn_fd);
 	free(client);
 }
 
