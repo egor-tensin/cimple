@@ -33,6 +33,8 @@ struct worker {
 
 	struct event_loop *event_loop;
 	int signalfd;
+
+	struct run *run;
 };
 
 static struct settings *worker_settings_copy(const struct settings *src)
@@ -88,41 +90,9 @@ static int worker_handle_cmd_start(const struct msg *request, UNUSED struct msg 
 	struct worker *worker = (struct worker *)ctx->arg;
 	int ret = 0;
 
-	struct run *run = NULL;
-
-	ret = msg_start_parse(request, &run);
+	ret = msg_start_parse(request, &worker->run);
 	if (ret < 0)
 		return ret;
-
-	struct proc_output result;
-	proc_output_init(&result);
-
-	ret = ci_run_git_repo(run_get_url(run), run_get_rev(run), &result);
-	if (ret < 0) {
-		log_err("Run failed with an error\n");
-		goto free_output;
-	}
-
-	proc_output_dump(&result);
-
-	struct msg *finished_msg = NULL;
-
-	ret = msg_finished_create(&finished_msg, run_get_id(run), &result);
-	if (ret < 0)
-		goto free_output;
-
-	ret = msg_connect_and_talk(worker->settings->host, worker->settings->port, finished_msg,
-	                           NULL);
-	if (ret < 0)
-		goto free_finished_msg;
-
-free_finished_msg:
-	msg_free(finished_msg);
-
-free_output:
-	proc_output_free(&result);
-
-	run_destroy(run);
 
 	return ret;
 }
@@ -206,43 +176,95 @@ void worker_destroy(struct worker *worker)
 	free(worker);
 }
 
-int worker_main(struct worker *worker)
+static int worker_do_run(struct worker *worker)
+{
+	int ret = 0;
+
+	struct proc_output result;
+	proc_output_init(&result);
+
+	ret = ci_run_git_repo(run_get_url(worker->run), run_get_rev(worker->run), &result);
+	if (ret < 0) {
+		log_err("Run failed with an error\n");
+		goto free_output;
+	}
+
+	proc_output_dump(&result);
+
+	struct msg *finished_msg = NULL;
+
+	ret = msg_finished_create(&finished_msg, run_get_id(worker->run), &result);
+	if (ret < 0)
+		goto free_output;
+
+	ret = msg_connect_and_talk(worker->settings->host, worker->settings->port, finished_msg,
+	                           NULL);
+	if (ret < 0)
+		goto free_finished_msg;
+
+free_finished_msg:
+	msg_free(finished_msg);
+
+free_output:
+	proc_output_free(&result);
+
+	run_destroy(worker->run);
+
+	return ret;
+}
+
+static int worker_get_run(struct worker *worker)
 {
 	int ret = 0, fd = -1;
 
-	while (!worker->stopping) {
-		ret = net_connect(worker->settings->host, worker->settings->port);
+	ret = net_connect(worker->settings->host, worker->settings->port);
+	if (ret < 0)
+		return ret;
+	fd = ret;
+
+	struct msg *new_worker_msg = NULL;
+
+	ret = msg_new_worker_create(&new_worker_msg);
+	if (ret < 0)
+		goto close;
+
+	ret = msg_send(fd, new_worker_msg);
+	msg_free(new_worker_msg);
+	if (ret < 0)
+		goto close;
+
+	ret = event_loop_add_once(worker->event_loop, fd, POLLIN, cmd_dispatcher_handle_event,
+	                          worker->cmd_dispatcher);
+	if (ret < 0)
+		goto close;
+
+	log("Waiting for a new command\n");
+
+	ret = event_loop_run(worker->event_loop);
+	if (ret < 0)
+		goto close;
+
+close:
+	net_close(fd);
+
+	return ret;
+}
+
+int worker_main(struct worker *worker)
+{
+	int ret = 0;
+
+	while (1) {
+		ret = worker_get_run(worker);
 		if (ret < 0)
 			return ret;
-		fd = ret;
 
-		struct msg *new_worker_msg = NULL;
-
-		ret = msg_new_worker_create(&new_worker_msg);
-		if (ret < 0)
-			goto close;
-
-		ret = msg_send(fd, new_worker_msg);
-		msg_free(new_worker_msg);
-		if (ret < 0)
-			goto close;
-
-		ret = event_loop_add_once(worker->event_loop, fd, POLLIN,
-		                          cmd_dispatcher_handle_event, worker->cmd_dispatcher);
-		if (ret < 0)
-			goto close;
-
-		log("Waiting for a new command\n");
-
-		ret = event_loop_run(worker->event_loop);
-		if (ret < 0)
-			goto close;
-
-	close:
-		net_close(fd);
-
-		if (ret < 0)
+		if (worker->stopping)
 			break;
+
+		ret = worker_do_run(worker);
+		if (ret < 0)
+			return ret;
 	}
 
 	return ret;
