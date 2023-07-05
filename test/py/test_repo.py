@@ -3,6 +3,8 @@
 # For details, see https://github.com/egor-tensin/cimple.
 # Distributed under the MIT License.
 
+import pytest
+
 from lib.process import LoggingEvent
 
 
@@ -45,3 +47,8 @@ def test_repo_2(server_and_workers, test_repo, client):
 
 def test_repo_10(server_and_workers, test_repo, client):
     _test_repo_internal(server_and_workers, test_repo, client, 10)
+
+
+@pytest.mark.stress
+def test_repo_2000(server_and_workers, test_repo, client):
+    _test_repo_internal(server_and_workers, test_repo, client, 2000)

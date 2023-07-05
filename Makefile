@@ -45,21 +45,38 @@ build:
 install: build
 	cmake --install '$(call escape,$(cmake_dir))'
 
-.PHONY: test
-test:
+.PHONY: test/sanity
+test/sanity:
 	@echo -----------------------------------------------------------------
-	@echo Running tests
+	@echo Running sanity tests
 	@echo -----------------------------------------------------------------
 	ctest --test-dir '$(call escape,$(cmake_dir))' \
-		--verbose --exclude-regex python_tests_valgrind
+		--verbose --tests-regex python_tests_sanity
 
 .PHONY: test/valgrind
 test/valgrind:
 	@echo -----------------------------------------------------------------
-	@echo Running tests w/ Valgrind
+	@echo Running sanity tests w/ Valgrind
 	@echo -----------------------------------------------------------------
 	ctest --test-dir '$(call escape,$(cmake_dir))' \
 		--verbose --tests-regex python_tests_valgrind
 
+.PHONY: test/stress
+test/stress:
+	@echo -----------------------------------------------------------------
+	@echo Running stress tests
+	@echo -----------------------------------------------------------------
+	ctest --test-dir '$(call escape,$(cmake_dir))' \
+		--verbose --tests-regex python_tests_stress
+
+.PHONY: test/docker
+test/docker: test/sanity
+
+.PHONY: test/local
+test/local: test/sanity test/stress
+
+.PHONY: test
+test: test/local
+
 .PHONY: test/all
-test/all: test test/valgrind
+test/all: test/sanity test/stress test/valgrind

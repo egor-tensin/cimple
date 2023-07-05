@@ -16,9 +16,12 @@ function(add_python_tests name)
     set_tests_properties("${name}" PROPERTIES TIMEOUT 300)
 endfunction()
 
-add_python_tests(python_tests
-    Python3::Interpreter -m pytest ${python_test_args})
+add_python_tests(python_tests_sanity
+    Python3::Interpreter -m pytest ${python_test_args} -m "not stress")
+
+add_python_tests(python_tests_stress
+    Python3::Interpreter -m pytest ${python_test_args} -m "stress")
 
 add_python_tests(python_tests_valgrind
-    Python3::Interpreter -m pytest ${python_test_args}
+    Python3::Interpreter -m pytest ${python_test_args} -m "not stress"
         --valgrind-binary "${CMAKE_CURRENT_SOURCE_DIR}/../src/valgrind.sh")

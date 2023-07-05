@@ -25,7 +25,7 @@ RUN cd -- "$src_dir" && \
         "DEFAULT_PORT=$DEFAULT_PORT" \
         "INSTALL_PREFIX=$install_dir" && \
     ulimit -n 1024 && \
-    make test CONFIGURATION="$CONFIGURATION"
+    make test/docker
 
 FROM base
 
