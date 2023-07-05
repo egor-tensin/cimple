@@ -377,14 +377,10 @@ int server_create(struct server **_server, const struct settings *settings)
 	if (ret < 0)
 		goto destroy_storage;
 
-	ret = tcp_server_create(&server->tcp_server, settings->port, cmd_dispatcher_handle_conn,
-	                        server->cmd_dispatcher);
+	ret = tcp_server_create(&server->tcp_server, server->event_loop, settings->port,
+	                        cmd_dispatcher_handle_conn, server->cmd_dispatcher);
 	if (ret < 0)
 		goto destroy_run_queue;
-
-	ret = tcp_server_add_to_event_loop(server->tcp_server, server->event_loop);
-	if (ret < 0)
-		goto destroy_tcp_server;
 
 	ret = pthread_create(&server->main_thread, NULL, server_main_thread, server);
 	if (ret) {

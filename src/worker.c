@@ -237,10 +237,13 @@ int worker_main(struct worker *worker)
 		ret = event_loop_run(worker->event_loop);
 		if (ret < 0)
 			goto close;
-	}
 
-close:
-	net_close(fd);
+	close:
+		net_close(fd);
+
+		if (ret < 0)
+			break;
+	}
 
 	return ret;
 }

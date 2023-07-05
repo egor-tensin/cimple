@@ -9,12 +9,10 @@
 #include "log.h"
 #include "net.h"
 
-#include <pthread.h>
 #include <stdlib.h>
 #include <sys/queue.h>
 
 struct worker {
-	pthread_t thread;
 	int fd;
 	SIMPLEQ_ENTRY(worker) entries;
 };
@@ -27,7 +25,6 @@ int worker_create(struct worker **_entry, int fd)
 		return -1;
 	}
 
-	entry->thread = pthread_self();
 	entry->fd = fd;
 
 	*_entry = entry;
@@ -36,8 +33,6 @@ int worker_create(struct worker **_entry, int fd)
 
 void worker_destroy(struct worker *entry)
 {
-	log("Waiting for worker %d thread to exit\n", entry->fd);
-	pthread_errno_if(pthread_join(entry->thread, NULL), "pthread_join");
 	net_close(entry->fd);
 	free(entry);
 }

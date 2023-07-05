@@ -7,7 +7,6 @@
 
 #include "event_loop.h"
 #include "log.h"
-#include "net.h"
 #include "string.h"
 
 #include <poll.h>
@@ -126,7 +125,6 @@ static void event_loop_remove(struct event_loop *loop, struct event_fd *entry)
 	log_debug("Removing descriptor %d from event loop\n", entry->fd);
 
 	SIMPLEQ_REMOVE(&loop->entries, entry, event_fd, entries);
-	net_close(entry->fd);
 	event_fd_destroy(entry);
 	--loop->nfds;
 }
@@ -191,11 +189,15 @@ static struct pollfd *make_pollfds(const struct event_loop *loop)
 
 int event_loop_run(struct event_loop *loop)
 {
+	/* Cache the number of event descriptors so that event handlers can
+	 * append new ones. */
+	const nfds_t nfds = loop->nfds;
+
 	struct pollfd *fds = make_pollfds(loop);
 	if (!fds)
 		return -1;
 
-	int ret = poll(fds, loop->nfds, -1);
+	int ret = poll(fds, nfds, -1);
 	if (ret < 0) {
 		log_errno("poll");
 		return ret;
@@ -203,7 +205,7 @@ int event_loop_run(struct event_loop *loop)
 	ret = 0;
 
 	struct event_fd *entry = SIMPLEQ_FIRST(&loop->entries);
-	for (nfds_t i = 0; i < loop->nfds; ++i) {
+	for (nfds_t i = 0; i < nfds; ++i) {
 		struct event_fd *next = SIMPLEQ_NEXT(entry, entries);
 
 		if (!fds[i].revents)
