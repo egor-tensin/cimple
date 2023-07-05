@@ -8,6 +8,7 @@
 #include "tcp_server.h"
 #include "compiler.h"
 #include "event_loop.h"
+#include "file.h"
 #include "log.h"
 #include "net.h"
 #include "signal.h"
@@ -88,7 +89,7 @@ static void client_destroy(struct client *client)
 
 	SIMPLEQ_REMOVE(&client->server->client_queue, client, client, entries);
 	pthread_errno_if(pthread_join(client->thread, NULL), "pthread_join");
-	net_close(client->cleanup_fd);
+	file_close(client->cleanup_fd);
 	net_close(client->conn_fd);
 	free(client);
 }
@@ -117,7 +118,9 @@ static void *client_thread_func(void *_client)
 	if (ret < 0)
 		goto cleanup;
 
-	client->server->conn_handler(client->conn_fd, client->server->conn_handler_arg);
+	ret = client->server->conn_handler(client->conn_fd, client->server->conn_handler_arg);
+	if (ret < 0)
+		goto cleanup;
 
 cleanup:
 	log_errno_if(eventfd_write(client->cleanup_fd, 1), "eventfd_write");
@@ -187,7 +190,7 @@ remove_from_client_queue:
 	SIMPLEQ_REMOVE(&server->client_queue, client, client, entries);
 
 close_cleanup_fd:
-	net_close(client->cleanup_fd);
+	file_close(client->cleanup_fd);
 
 free:
 	free(client);
