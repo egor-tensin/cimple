@@ -145,9 +145,8 @@ static struct cmd_conn_ctx *make_conn_ctx(int fd, void *arg)
 	return ctx;
 }
 
-int cmd_dispatcher_handle_conn(int conn_fd, void *_dispatcher)
+static int cmd_dispatcher_handle_conn_internal(int conn_fd, struct cmd_dispatcher *dispatcher)
 {
-	struct cmd_dispatcher *dispatcher = (struct cmd_dispatcher *)_dispatcher;
 	struct msg *request = NULL, *response = NULL;
 	int ret = 0;
 
@@ -181,44 +180,18 @@ free_ctx:
 	return ret;
 }
 
+int cmd_dispatcher_handle_conn(int conn_fd, void *_dispatcher)
+{
+	return cmd_dispatcher_handle_conn_internal(conn_fd, (struct cmd_dispatcher *)_dispatcher);
+}
+
 int cmd_dispatcher_handle_event(UNUSED struct event_loop *loop, int fd, short revents,
                                 void *_dispatcher)
 {
-	struct cmd_dispatcher *dispatcher = (struct cmd_dispatcher *)_dispatcher;
-	struct msg *request = NULL, *response = NULL;
-	int ret = 0;
-
 	if (!(revents & POLLIN)) {
 		log_err("Descriptor %d is not readable\n", fd);
 		return -1;
 	}
 
-	struct cmd_conn_ctx *new_ctx = make_conn_ctx(fd, dispatcher->ctx);
-	if (!new_ctx)
-		return -1;
-
-	ret = msg_recv(fd, &request);
-	if (ret < 0)
-		goto free_ctx;
-
-	ret = cmd_dispatcher_handle_internal(dispatcher, request, &response, new_ctx);
-	if (ret < 0)
-		goto free_response;
-
-	if (response) {
-		ret = msg_send(fd, response);
-		if (ret < 0)
-			goto free_response;
-	}
-
-free_response:
-	if (response)
-		msg_free(response);
-
-	msg_free(request);
-
-free_ctx:
-	free(new_ctx);
-
-	return ret;
+	return cmd_dispatcher_handle_conn_internal(fd, (struct cmd_dispatcher *)_dispatcher);
 }
