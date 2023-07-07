@@ -41,6 +41,10 @@ build:
 		-B '$(call escape,$(cmake_dir))'
 	cmake --build '$(call escape,$(cmake_dir))' -- -j
 
+.PHONY: release
+release: CONFIGURATION := Release
+release: build
+
 .PHONY: install
 install: build
 	cmake --install '$(call escape,$(cmake_dir))'
