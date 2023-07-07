@@ -125,24 +125,21 @@ static int server_enqueue_run(struct server *server, struct run *run)
 {
 	int ret = 0;
 
+	ret = storage_run_create(&server->storage, run_get_url(run), run_get_rev(run));
+	if (ret < 0)
+		return ret;
+	run_set_id(run, ret);
+
 	ret = server_lock(server);
 	if (ret < 0)
 		return ret;
-
-	ret = storage_run_create(&server->storage, run_get_url(run), run_get_rev(run));
-	if (ret < 0)
-		goto unlock;
-	run_set_id(run, ret);
 
 	run_queue_add_last(&server->run_queue, run);
 	log("Added a new run %d for repository %s to the queue\n", run_get_id(run),
 	    run_get_url(run));
 
 	server_notify(server);
-
-unlock:
 	server_unlock(server);
-
 	return ret;
 }
 
@@ -297,9 +294,7 @@ static int server_handle_cmd_finished(const struct msg *request, UNUSED struct m
 	struct server *server = (struct server *)ctx->arg;
 	int ret = 0;
 
-	log("Received a \"run finished\" message from worker %d\n", ctx->fd);
-
-	int run_id;
+	int run_id = 0;
 	struct proc_output output;
 
 	ret = msg_finished_parse(request, &run_id, &output);
@@ -307,11 +302,15 @@ static int server_handle_cmd_finished(const struct msg *request, UNUSED struct m
 		return ret;
 
 	ret = storage_run_finished(&server->storage, run_id, output.ec);
-	proc_output_free(&output);
 	if (ret < 0) {
 		log_err("Failed to mark run %d as finished\n", run_id);
-		return ret;
+		goto free_output;
 	}
+
+	log("Marked run %d as finished\n", run_id);
+
+free_output:
+	proc_output_free(&output);
 
 	return ret;
 }

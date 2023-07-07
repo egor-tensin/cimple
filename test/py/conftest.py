@@ -8,6 +8,7 @@ import os
 
 from pytest import fixture
 
+from lib.db import Database
 from lib.net import random_unused_port
 from lib.process import CmdLine
 from lib.test_repo import TestRepo
@@ -190,3 +191,8 @@ def client(client_cmd):
 @fixture
 def test_repo(tmp_path):
     return TestRepo(tmp_path)
+
+
+@fixture
+def sqlite_db(server, sqlite_path):
+    return Database(sqlite_path)
