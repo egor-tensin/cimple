@@ -46,7 +46,7 @@ void sqlite_destroy(void)
 	sqlite_errno_if(sqlite3_shutdown(), "sqlite3_shutdown");
 }
 
-int sqlite_open(const char *path, sqlite3 **db, int flags)
+static int sqlite_open(const char *path, sqlite3 **db, int flags)
 {
 	int ret = 0;
 
@@ -89,7 +89,7 @@ int sqlite_exec(sqlite3 *db, const char *stmt, sqlite3_callback callback, void *
 	return ret;
 }
 
-int sqlite_log_result(UNUSED void *arg, int numof_columns, char **values, char **column_names)
+int sqlite_exec_log_result(UNUSED void *arg, int numof_columns, char **values, char **column_names)
 {
 	log("Row:\n");
 	for (int i = 0; i < numof_columns; ++i) {
