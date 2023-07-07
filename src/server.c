@@ -13,6 +13,7 @@
 #include "file.h"
 #include "log.h"
 #include "msg.h"
+#include "net.h"
 #include "process.h"
 #include "protocol.h"
 #include "run_queue.h"
@@ -235,11 +236,12 @@ static int server_handle_cmd_new_worker(UNUSED const struct msg *request,
 	if (ret < 0)
 		return ret;
 
+	const int fd = ret;
 	struct worker *worker = NULL;
 
-	ret = worker_create(&worker, ret);
+	ret = worker_create(&worker, fd);
 	if (ret < 0)
-		return ret;
+		goto close;
 
 	ret = server_enqueue_worker(server, worker);
 	if (ret < 0)
@@ -249,6 +251,9 @@ static int server_handle_cmd_new_worker(UNUSED const struct msg *request,
 
 destroy_worker:
 	worker_destroy(worker);
+
+close:
+	net_close(fd);
 
 	return ret;
 }
