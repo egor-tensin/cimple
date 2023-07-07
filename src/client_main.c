@@ -24,9 +24,7 @@ static struct settings default_settings(void)
 
 const char *get_usage_string(void)
 {
-	/* clang-format off */
 	return "[-h|--help] [-V|--version] [-v|--verbose] [-H|--host HOST] [-p|--port PORT] ACTION [ARG...]";
-	/* clang-format on */
 }
 
 static int parse_settings(struct settings *settings, int argc, char *argv[])

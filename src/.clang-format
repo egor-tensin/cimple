@@ -11,3 +11,4 @@ IndentCaseLabels: false
 ColumnLimit: 100
 AlignConsecutiveMacros: Consecutive
 AllowShortFunctionsOnASingleLine: Empty
+BreakStringLiterals: false

@@ -147,12 +147,13 @@ static int storage_sqlite_setup(struct storage_sqlite *storage)
 
 static int storage_sqlite_prepare_statements(struct storage_sqlite *storage)
 {
-	/* clang-format off */
-	static const char *const fmt_repo_find    = "SELECT id FROM cimple_repos WHERE url = ?;";
-	static const char *const fmt_repo_insert  = "INSERT INTO cimple_repos(url) VALUES (?) ON CONFLICT(url) DO NOTHING;";
-	static const char *const fmt_run_insert   = "INSERT INTO cimple_runs(status, ec, output, repo_id, rev) VALUES (1, -1, x'', ?, ?) RETURNING id;";
-	static const char *const fmt_run_finished = "UPDATE cimple_runs SET status = 2, ec = ? WHERE id = ?;";
-	/* clang-format on */
+	static const char *const fmt_repo_find = "SELECT id FROM cimple_repos WHERE url = ?;";
+	static const char *const fmt_repo_insert =
+	    "INSERT INTO cimple_repos(url) VALUES (?) ON CONFLICT(url) DO NOTHING;";
+	static const char *const fmt_run_insert =
+	    "INSERT INTO cimple_runs(status, ec, output, repo_id, rev) VALUES (1, -1, x'', ?, ?) RETURNING id;";
+	static const char *const fmt_run_finished =
+	    "UPDATE cimple_runs SET status = 2, ec = ? WHERE id = ?;";
 
 	int ret = 0;
 
@@ -380,9 +381,9 @@ free_url:
 
 int storage_sqlite_get_run_queue(struct storage *storage, struct run_queue *queue)
 {
-	/* clang-format off */
-	static const char *const fmt = "SELECT cimple_runs.id, cimple_repos.url, cimple_runs.rev FROM cimple_runs INNER JOIN cimple_repos ON cimple_runs.repo_id = cimple_repos.id WHERE cimple_runs.status = 1;";
-	/* clang-format on */
+	static const char *const fmt =
+	    "SELECT cimple_runs.id, cimple_repos.url, cimple_runs.rev FROM cimple_runs"
+	    " INNER JOIN cimple_repos ON cimple_runs.repo_id = cimple_repos.id WHERE cimple_runs.status = 1;";
 
 	sqlite3_stmt *stmt;
 	int ret = 0;
