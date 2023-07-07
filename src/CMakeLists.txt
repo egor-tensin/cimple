@@ -5,6 +5,12 @@ add_compile_options(-std=c17 -Wpedantic -Wall -Wextra $<$<NOT:$<CONFIG:Debug>>:-
 # any features macros defined at all, and prepare to be amazed!
 add_compile_definitions(_GNU_SOURCE)
 
+option(COVERAGE "Enable line coverage analysis")
+if(COVERAGE)
+    add_compile_options(--coverage -fprofile-update=atomic)
+    add_link_options(--coverage)
+endif()
+
 # Valgrind on Ubuntu Focal doesn't like DWARF version 5 debug info generated
 # by Clang 14.
 if("${CMAKE_C_COMPILER_ID}" STREQUAL "Clang")

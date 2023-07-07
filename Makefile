@@ -4,18 +4,21 @@ src_dir := $(abspath .)
 build_dir := $(src_dir)/build
 cmake_dir := $(build_dir)/cmake
 install_dir := $(build_dir)/install
+coverage_dir := $(build_dir)/coverage
 
 COMPILER ?= clang
 CONFIGURATION ?= Debug
 DEFAULT_HOST ?= 127.0.0.1
 DEFAULT_PORT ?= 5556
 INSTALL_PREFIX ?= $(install_dir)
+COVERAGE ?=
 
 $(eval $(call noexpand,COMPILER))
 $(eval $(call noexpand,CONFIGURATION))
 $(eval $(call noexpand,DEFAULT_HOST))
 $(eval $(call noexpand,DEFAULT_PORT))
 $(eval $(call noexpand,INSTALL_PREFIX))
+$(eval $(call noexpand,COVERAGE))
 
 .PHONY: all
 all: build
@@ -37,6 +40,7 @@ build:
 		-D 'CMAKE_INSTALL_PREFIX=$(call escape,$(INSTALL_PREFIX))' \
 		-D 'DEFAULT_HOST=$(call escape,$(DEFAULT_HOST))' \
 		-D 'DEFAULT_PORT=$(call escape,$(DEFAULT_PORT))' \
+		-D 'COVERAGE=$(call escape,$(COVERAGE))' \
 		-S '$(call escape,$(src_dir))' \
 		-B '$(call escape,$(cmake_dir))'
 	cmake --build '$(call escape,$(cmake_dir))' -- -j
@@ -44,6 +48,20 @@ build:
 .PHONY: release
 release: CONFIGURATION := Release
 release: build
+
+.PHONY: coverage
+coverage: COMPILER := gcc
+coverage: CONFIGURATION := Debug
+coverage: COVERAGE := 1
+coverage: clean build test
+	@echo -----------------------------------------------------------------
+	@echo Generating code coverage report
+	@echo -----------------------------------------------------------------
+	@mkdir -p -- '$(call escape,$(coverage_dir))'
+	gcovr --html-details '$(call escape,$(coverage_dir))/index.html' --print-summary
+ifndef CI
+	xdg-open '$(call escape,$(coverage_dir))/index.html' &> /dev/null
+endif
 
 .PHONY: install
 install: build
