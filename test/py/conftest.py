@@ -129,20 +129,49 @@ class CmdLineWorker(CmdLine):
 
 
 @fixture
-def server(base_cmd_line, paths, server_port, sqlite_path):
+def server_exe(paths):
+    return CmdLineServer(paths.server_binary)
+
+
+@fixture
+def worker_exe(paths):
+    return CmdLineWorker(paths.worker_binary)
+
+
+@fixture
+def client_exe(paths):
+    return CmdLine(paths.client_binary)
+
+
+@fixture
+def server_cmd(base_cmd_line, paths, server_port, sqlite_path):
     args = ['--port', server_port, '--sqlite', sqlite_path]
-    cmd_line = CmdLineServer.wrap(base_cmd_line, CmdLine(paths.server_binary, *args))
-    with cmd_line.run_async() as server:
+    return CmdLineServer.wrap(base_cmd_line, CmdLine(paths.server_binary, *args))
+
+
+@fixture
+def worker_cmd(base_cmd_line, paths, server_port):
+    args = ['--host', '127.0.0.1', '--port', server_port]
+    return CmdLineWorker.wrap(base_cmd_line, CmdLine(paths.worker_binary, *args))
+
+
+@fixture
+def client_cmd(base_cmd_line, paths, server_port):
+    args = ['--host', '127.0.0.1', '--port', server_port]
+    return CmdLine.wrap(base_cmd_line, CmdLine(paths.client_binary, *args))
+
+
+@fixture
+def server(server_cmd):
+    with server_cmd.run_async() as server:
         yield server
     assert server.returncode == 0
 
 
 @fixture
-def workers(base_cmd_line, paths, server_port):
-    args = ['--host', '127.0.0.1', '--port', server_port]
-    cmd_line = CmdLineWorker.wrap(base_cmd_line, CmdLine(paths.worker_binary, *args))
-    with cmd_line.run_async() as worker1, \
-         cmd_line.run_async() as worker2:
+def workers(worker_cmd):
+    with worker_cmd.run_async() as worker1, \
+         worker_cmd.run_async() as worker2:
         yield [worker1, worker2]
     assert worker1.returncode == 0
     assert worker2.returncode == 0
@@ -154,10 +183,8 @@ def server_and_workers(server, workers):
 
 
 @fixture
-def client(base_cmd_line, paths, server_port):
-    args = ['--host', '127.0.0.1', '--port', server_port]
-    cmd_line = CmdLine.wrap(base_cmd_line, CmdLine(paths.client_binary, *args))
-    return cmd_line
+def client(client_cmd):
+    return client_cmd
 
 
 @fixture

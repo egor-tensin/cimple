@@ -6,6 +6,7 @@
  */
 
 #include "client.h"
+#include "cmd_line.h"
 #include "compiler.h"
 #include "log.h"
 #include "msg.h"
@@ -35,25 +36,30 @@ void client_destroy(struct client *client)
 	free(client);
 }
 
-int client_main(UNUSED const struct client *client, const struct settings *settings,
+int client_main(UNUSED const struct client *client, const struct settings *settings, int argc,
                 const char **argv)
 {
 	struct msg *response = NULL;
 	int ret = 0;
 
-	ret = msg_connect_and_talk_argv(settings->host, settings->port, argv, &response);
-	if (ret < 0)
-		return ret;
+	if (argc < 1) {
+		exit_with_usage_err("no message to send to the server");
+		return -1;
+	}
 
-	if (!msg_is_success(response)) {
-		log_err("Server failed to process the request\n");
-		msg_dump(response);
-		ret = -1;
+	ret = msg_connect_and_talk_argv(settings->host, settings->port, argv, &response);
+	if (ret < 0 || !response || !msg_is_success(response)) {
+		log_err("Failed to connect to server or it couldn't process the request\n");
+		if (response)
+			msg_dump(response);
+		if (!ret)
+			ret = -1;
 		goto free_response;
 	}
 
 free_response:
-	msg_free(response);
+	if (response)
+		msg_free(response);
 
 	return ret;
 }

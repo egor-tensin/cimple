@@ -24,7 +24,9 @@ static struct settings default_settings(void)
 
 const char *get_usage_string(void)
 {
-	return "[-h|--help] [-V|--version] [-v|--verbose] [-H|--host HOST] [-p|--port PORT]";
+	/* clang-format off */
+	return "[-h|--help] [-V|--version] [-v|--verbose] [-H|--host HOST] [-p|--port PORT] ACTION [ARG...]";
+	/* clang-format on */
 }
 
 static int parse_settings(struct settings *settings, int argc, char *argv[])
@@ -84,7 +86,7 @@ int main(int argc, char *argv[])
 	if (ret < 0)
 		return ret;
 
-	ret = client_main(client, &settings, (const char **)argv + optind);
+	ret = client_main(client, &settings, argc - optind, (const char **)argv + optind);
 	if (ret < 0)
 		goto destroy_client;
 

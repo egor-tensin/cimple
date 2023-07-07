@@ -89,6 +89,9 @@ class CmdLine:
     def run(self, *argv):
         return Process.run(*self.argv, *argv)
 
+    def try_run(self, *argv):
+        return Process.try_run(*self.argv, *argv)
+
     @contextmanager
     def run_async(self, *argv):
         with Process(self, *argv) as process:
@@ -145,6 +148,13 @@ class Process(subprocess.Popen):
             ec, output = e.returncode, e.stdout
             Process._log_process_end(argv, ec, output)
             raise
+
+    @staticmethod
+    def try_run(*args, **kwargs):
+        try:
+            return 0, Process.run(*args, **kwargs)
+        except subprocess.CalledProcessError as e:
+            return e.returncode, e.stdout
 
     def __init__(self, cmd_line, *args):
         self.cmd_line = cmd_line
