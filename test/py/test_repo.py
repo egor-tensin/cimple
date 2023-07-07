@@ -27,18 +27,16 @@ class LoggingEventRunComplete(LoggingEvent):
             super().set()
 
 
-def _test_repo_internal(server_and_workers, test_repo, client, numof_processes, runs_per_process, db):
+def _test_repo_internal(env, repo, numof_processes, runs_per_process):
     numof_runs = numof_processes * runs_per_process
-
-    server, workers = server_and_workers
 
     event = LoggingEventRunComplete(numof_runs)
     # Count the number of times the server receives the "run complete" message.
-    server.logger.add_event(event)
+    env.server.logger.add_event(event)
 
     def client_runner():
         for i in range(runs_per_process):
-            client.run('run', test_repo.path, 'HEAD')
+            env.client.run('run', repo.path, 'HEAD')
 
     processes = [Process(target=client_runner) for i in range(numof_processes)]
     for proc in processes:
@@ -47,32 +45,32 @@ def _test_repo_internal(server_and_workers, test_repo, client, numof_processes, 
         proc.join()
 
     event.wait()
-    assert numof_runs == test_repo.count_ci_output_files()
+    assert numof_runs == repo.count_ci_output_files()
 
-    runs = db.get_all_runs()
+    runs = env.db.get_all_runs()
     assert numof_runs == len(runs)
 
     for id, status, ec, output, url, rev in runs:
         assert status == 'finished', f'Invalid status for run {id}: {status}'
 
 
-def test_repo_1_client_1_run(server_and_workers, test_repo, client, sqlite_db):
-    _test_repo_internal(server_and_workers, test_repo, client, 1, 1, sqlite_db)
+def test_repo_1_client_1_run(env, test_repo):
+    _test_repo_internal(env, test_repo, 1, 1)
 
 
-def test_repo_1_client_2_runs(server_and_workers, test_repo, client, sqlite_db):
-    _test_repo_internal(server_and_workers, test_repo, client, 1, 2, sqlite_db)
+def test_repo_1_client_2_runs(env, test_repo):
+    _test_repo_internal(env, test_repo, 1, 2)
 
 
-def test_repo_1_client_10_runs(server_and_workers, test_repo, client, sqlite_db):
-    _test_repo_internal(server_and_workers, test_repo, client, 1, 10, sqlite_db)
-
-
-@pytest.mark.stress
-def test_repo_1_client_2000_runs(server_and_workers, test_repo, client, sqlite_db):
-    _test_repo_internal(server_and_workers, test_repo, client, 1, 2000, sqlite_db)
+def test_repo_1_client_10_runs(env, test_repo):
+    _test_repo_internal(env, test_repo, 1, 10)
 
 
 @pytest.mark.stress
-def test_repo_4_clients_500_runs(server_and_workers, test_repo, client, sqlite_db):
-    _test_repo_internal(server_and_workers, test_repo, client, 4, 500, sqlite_db)
+def test_repo_1_client_2000_runs(env, test_repo):
+    _test_repo_internal(env, test_repo, 1, 2000)
+
+
+@pytest.mark.stress
+def test_repo_4_clients_500_runs(env, test_repo):
+    _test_repo_internal(env, test_repo, 4, 500)

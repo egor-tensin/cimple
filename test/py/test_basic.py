@@ -65,5 +65,5 @@ def test_run_noop_server(server):
     pass
 
 
-def test_run_noop_server_and_workers(server_and_workers):
+def test_run_noop_server_and_workers(server, workers):
     pass

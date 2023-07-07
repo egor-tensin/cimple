@@ -119,6 +119,11 @@ def sqlite_path(tmp_path):
     return os.path.join(tmp_path, 'cimple.sqlite')
 
 
+@fixture
+def sqlite_db(server, sqlite_path):
+    return Database(sqlite_path)
+
+
 class CmdLineServer(CmdLine):
     def log_line_means_process_ready(self, line):
         return line.endswith('Waiting for new connections')
@@ -179,11 +184,6 @@ def workers(worker_cmd):
 
 
 @fixture
-def server_and_workers(server, workers):
-    yield server, workers
-
-
-@fixture
 def client(client_cmd):
     return client_cmd
 
@@ -193,6 +193,14 @@ def test_repo(tmp_path):
     return TestRepo(tmp_path)
 
 
+class Env:
+    def __init__(self, server, workers, client, db):
+        self.server = server
+        self.workers = workers
+        self.client = client
+        self.db = db
+
+
 @fixture
-def sqlite_db(server, sqlite_path):
-    return Database(sqlite_path)
+def env(server, workers, client, sqlite_db):
+    return Env(server, workers, client, sqlite_db)
