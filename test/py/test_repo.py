@@ -54,23 +54,14 @@ def _test_repo_internal(env, repo, numof_processes, runs_per_process):
         assert status == 'finished', f'Invalid status for run {id}: {status}'
 
 
-def test_repo_1_client_1_run(env, test_repo):
-    _test_repo_internal(env, test_repo, 1, 1)
-
-
-def test_repo_1_client_2_runs(env, test_repo):
-    _test_repo_internal(env, test_repo, 1, 2)
-
-
-def test_repo_1_client_10_runs(env, test_repo):
-    _test_repo_internal(env, test_repo, 1, 10)
+@pytest.mark.parametrize('numof_clients,runs_per_client',
+                         [(1, 1), (1, 2), (1, 10), (2, 1), (2, 10), (10, 1), (10, 10)])
+def test_repo(env, test_repo, numof_clients, runs_per_client):
+    _test_repo_internal(env, test_repo, numof_clients, runs_per_client)
 
 
 @pytest.mark.stress
-def test_repo_1_client_2000_runs(env, test_repo):
-    _test_repo_internal(env, test_repo, 1, 2000)
-
-
-@pytest.mark.stress
-def test_repo_4_clients_500_runs(env, test_repo):
-    _test_repo_internal(env, test_repo, 4, 500)
+@pytest.mark.parametrize('numof_clients,runs_per_client',
+                         [(1, 2000), (4, 500)])
+def test_repo_stress(env, test_repo, numof_clients, runs_per_client):
+    _test_repo_internal(env, test_repo, numof_clients, runs_per_client)
