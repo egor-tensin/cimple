@@ -31,7 +31,6 @@ CREATE INDEX cimple_runs_index_status ON cimple_runs(status);
 CREATE INDEX cimple_runs_index_repo_id ON cimple_runs(repo_id);
 
 CREATE VIEW cimple_runs_readable AS
-	SELECT run.id, status.label, run.ec, run.output, repo.url, run.rev
-		FROM cimple_runs AS run
+	SELECT run.id, status.label, run.ec, run.output, repo.url, run.rev FROM cimple_runs AS run
 		INNER JOIN cimple_run_status as status ON run.status = status.id
 		INNER JOIN cimple_repos as repo ON run.repo_id = repo.id;
