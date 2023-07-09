@@ -57,14 +57,29 @@ def _test_repo_internal(env, repo, numof_processes, runs_per_process):
         assert repo.run_output_matches(output), f"Output doesn't match: {output}"
 
 
-@pytest.mark.parametrize('numof_clients,runs_per_client',
-                         [(1, 1), (1, 2), (1, 10), (2, 1), (2, 10), (10, 1), (10, 10)])
+# Reference: https://github.com/pytest-dev/pytest/issues/3628
+# Automatic generation of readable test IDs.
+def my_parametrize(names, values, ids=None, **kwargs):
+    _names = names.split(',') if isinstance(names, str) else names
+    if not ids:
+        if len(_names) == 1:
+            ids = [f'{names}={v}' for v in values]
+        else:
+            ids = [
+                '-'.join(f'{k}={v}' for k, v in zip(_names, combination))
+                for combination in values
+            ]
+    return pytest.mark.parametrize(names, values, ids=ids, **kwargs)
+
+
+@my_parametrize('runs_per_client', [1, 5])
+@my_parametrize('numof_clients', [1, 5])
 def test_repo(env, test_repo, numof_clients, runs_per_client):
     _test_repo_internal(env, test_repo, numof_clients, runs_per_client)
 
 
 @pytest.mark.stress
-@pytest.mark.parametrize('numof_clients,runs_per_client',
-                         [(1, 2000), (4, 500)])
+@my_parametrize(('numof_clients', 'runs_per_client'),
+                [(10, 50), (1, 2000), (4, 500)])
 def test_repo_stress(env, test_repo, numof_clients, runs_per_client):
     _test_repo_internal(env, test_repo, numof_clients, runs_per_client)

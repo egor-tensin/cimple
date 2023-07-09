@@ -188,7 +188,8 @@ def client(client_cmd):
     return client_cmd
 
 
-@fixture(params=[TestRepoOutputSimple, TestRepoOutputEmpty])
+@fixture(params=[TestRepoOutputSimple, TestRepoOutputEmpty],
+         ids=['output_simple', 'output_empty'])
 def test_repo(tmp_path, request):
     return request.param(os.path.join(tmp_path, 'repo'))
 
