@@ -4,18 +4,12 @@
 # Distributed under the MIT License.
 
 from contextlib import closing
-import random
 import socket
 
 
-def port_is_open(host, port):
-    with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as sock:
-        return sock.connect_ex((host, port)) == 0
-
-
 def random_unused_port():
-    while True:
-        port = random.randint(20000, 40000)
-        if port_is_open('127.0.0.1', port):
-            continue
+    with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as sock:
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        sock.bind(('0.0.0.0', 0))
+        port = sock.getsockname()[1]
         return port
