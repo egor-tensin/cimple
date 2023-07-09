@@ -2,6 +2,7 @@ find_package(Python3 REQUIRED COMPONENTS Interpreter)
 
 set(python_test_args
     --no-header -v
+    --durations=0 --durations-min=1.0
     "${CMAKE_CURRENT_SOURCE_DIR}/py"
     --server-binary "$<TARGET_FILE:server>"
     --worker-binary "$<TARGET_FILE:worker>"
