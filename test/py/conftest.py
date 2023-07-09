@@ -11,7 +11,7 @@ from pytest import fixture
 from lib.db import Database
 from lib.net import random_unused_port
 from lib.process import CmdLine
-from lib.test_repo import TestRepo
+from lib.test_repo import TestRepoOutputSimple, TestRepoOutputEmpty
 
 
 class Param:
@@ -188,9 +188,9 @@ def client(client_cmd):
     return client_cmd
 
 
-@fixture
-def test_repo(tmp_path):
-    return TestRepo(tmp_path)
+@fixture(params=[TestRepoOutputSimple, TestRepoOutputEmpty])
+def test_repo(tmp_path, request):
+    return request.param(os.path.join(tmp_path, 'repo'))
 
 
 class Env:

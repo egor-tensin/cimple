@@ -3,8 +3,10 @@
 # For details, see https://github.com/egor-tensin/cimple.
 # Distributed under the MIT License.
 
+import abc
 import logging
 import os
+import shlex
 import shutil
 
 from .process import Process
@@ -24,28 +26,114 @@ class Repo:
         Process.run(*args, cwd=self.path, **kwargs)
 
 
+CI_SCRIPT = R'''#!/usr/bin/env bash
+
+set -o errexit -o nounset -o pipefail
+shopt -s inherit_errexit lastpipe
+
+readonly runs_dir={runs_dir}
+
+readonly run_output_template=run_XXXXXX
+
+run_output_path="$( mktemp --tmpdir="$runs_dir" "$run_output_template" )"
+readonly run_output_path
+
+touch -- "$run_output_path"
+'''
+
+
 class TestRepo(Repo):
     # Prevent Pytest from discovering test cases in this class:
     __test__ = False
 
-    DATA_DIR = 'test_repo'
-    CI_SCRIPT = 'ci.sh'
-    OUTPUT_DIR = 'output'
+    def _format_ci_script(self):
+        runs_dir = shlex.quote(self.runs_dir)
+        return CI_SCRIPT.format(runs_dir=runs_dir)
 
-    @staticmethod
-    def get_ci_script():
-        return os.path.join(os.path.dirname(__file__), TestRepo.DATA_DIR, TestRepo.CI_SCRIPT)
+    def __init__(self, path, ci_script='ci.sh'):
+        super().__init__(path)
+
+        self.runs_dir = os.path.join(self.path, 'runs')
+        os.makedirs(self.runs_dir, exist_ok=True)
+
+        self.ci_script_path = os.path.join(self.path, ci_script)
+        with open(self.ci_script_path, mode='x') as f:
+            f.write(self._format_ci_script())
+        os.chmod(self.ci_script_path, 0o755)
+
+        self.run('git', 'add', '--', ci_script)
+        self.run('git', 'commit', '-q', '-m', 'add CI script')
+
+    def count_run_files(self):
+        return len([name for name in os.listdir(self.runs_dir) if os.path.isfile(os.path.join(self.runs_dir, name))])
+
+
+class TestRepoOutput(TestRepo, abc.ABC):
+    __test__ = False
+
+    OUTPUT_SCRIPT_NAME = 'generate-output'
 
     def __init__(self, path):
         super().__init__(path)
-        shutil.copy(self.get_ci_script(), self.path)
-        self.run('git', 'add', '.')
-        self.run('git', 'commit', '-q', '-m', 'add CI script')
-        self.output_dir = os.path.join(self.path, TestRepo.OUTPUT_DIR)
-        os.makedirs(self.output_dir, exist_ok=True)
 
-    def count_ci_output_files(self):
-        return len([name for name in os.listdir(self.output_dir) if os.path.isfile(os.path.join(self.output_dir, name))])
+        self.output_script_path = os.path.join(self.path, TestRepoOutput.OUTPUT_SCRIPT_NAME)
+        with open(self.output_script_path, mode='x') as f:
+            f.write(self._format_output_script())
+        os.chmod(self.output_script_path, 0o755)
 
-    def output_matches(self, output):
+        with open(self.ci_script_path, mode='a') as f:
+            f.write(self._format_ci_script_addition())
+
+        self.run('git', 'add', '--', TestRepoOutput.OUTPUT_SCRIPT_NAME)
+        self.run('git', 'add', '-u')
+        self.run('git', 'commit', '-q', '-m', 'add output script')
+
+    @abc.abstractmethod
+    def _format_output_script(self):
+        pass
+
+    def _format_ci_script_addition(self):
+        return R'{output_script} | tee -a "$run_output_path"'.format(
+            output_script=shlex.quote(self.output_script_path))
+
+    @abc.abstractmethod
+    def run_output_matches(self, output):
+        pass
+
+
+OUTPUT_SCRIPT_SIMPLE = R'''#!/usr/bin/env bash
+
+set -o errexit -o nounset -o pipefail
+shopt -s inherit_errexit lastpipe
+
+timestamp="$( date --iso-8601=ns )"
+readonly timestamp
+
+echo "A CI run happened at $timestamp"
+'''
+
+
+class TestRepoOutputSimple(TestRepoOutput):
+    __test__ = False
+
+    def _format_output_script(self):
+        return OUTPUT_SCRIPT_SIMPLE
+
+    def run_output_matches(self, output):
         return output.decode().startswith('A CI run happened at ')
+
+
+OUTPUT_SCRIPT_EMPTY = R'''#!/bin/sh
+
+true
+'''
+
+
+class TestRepoOutputEmpty(TestRepoOutput):
+    __test__ = False
+
+    def _format_output_script(self):
+        return OUTPUT_SCRIPT_EMPTY
+
+    def run_output_matches(self, output):
+        return len(output) == 0

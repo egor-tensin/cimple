@@ -47,14 +47,14 @@ def _test_repo_internal(env, repo, numof_processes, runs_per_process):
     for proc in processes:
         proc.join()
 
-    assert numof_runs == repo.count_ci_output_files()
+    assert numof_runs == repo.count_run_files()
 
     runs = env.db.get_all_runs()
     assert numof_runs == len(runs)
 
     for id, status, ec, output, url, rev in runs:
         assert status == 'finished', f'Invalid status for run {id}: {status}'
-        assert repo.output_matches(output), f"Output doesn't match: {output}"
+        assert repo.run_output_matches(output), f"Output doesn't match: {output}"
 
 
 @pytest.mark.parametrize('numof_clients,runs_per_client',
