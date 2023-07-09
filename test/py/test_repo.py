@@ -41,10 +41,12 @@ def _test_repo_internal(env, repo, numof_processes, runs_per_process):
     processes = [Process(target=client_runner) for i in range(numof_processes)]
     for proc in processes:
         proc.start()
+
+    event.wait()
+
     for proc in processes:
         proc.join()
 
-    event.wait()
     assert numof_runs == repo.count_ci_output_files()
 
     runs = env.db.get_all_runs()
