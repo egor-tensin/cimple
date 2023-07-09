@@ -7,6 +7,7 @@
 
 #include "storage_sqlite.h"
 #include "log.h"
+#include "process.h"
 #include "run_queue.h"
 #include "sql/sqlite_sql.h"
 #include "sqlite.h"
@@ -207,7 +208,7 @@ static int storage_sqlite_prepare_statements(struct storage_sqlite *storage)
 	static const char *const fmt_run_insert =
 	    "INSERT INTO cimple_runs(status, ec, output, repo_id, rev) VALUES (?, -1, x'', ?, ?) RETURNING id;";
 	static const char *const fmt_run_finished =
-	    "UPDATE cimple_runs SET status = ?, ec = ? WHERE id = ?;";
+	    "UPDATE cimple_runs SET status = ?, ec = ?, output = ? WHERE id = ?;";
 
 	int ret = 0;
 
@@ -395,7 +396,8 @@ int storage_sqlite_run_create(struct storage *storage, const char *repo_url, con
 	return ret;
 }
 
-int storage_sqlite_run_finished(struct storage *storage, int run_id, int ec)
+int storage_sqlite_run_finished(struct storage *storage, int run_id,
+                                const struct proc_output *output)
 {
 	struct prepared_stmt *stmt = &storage->sqlite->stmt_run_finished;
 	int ret = 0;
@@ -406,10 +408,13 @@ int storage_sqlite_run_finished(struct storage *storage, int run_id, int ec)
 	ret = sqlite_bind_int(stmt->impl, 1, RUN_STATUS_FINISHED);
 	if (ret < 0)
 		goto reset;
-	ret = sqlite_bind_int(stmt->impl, 2, ec);
+	ret = sqlite_bind_int(stmt->impl, 2, output->ec);
 	if (ret < 0)
 		goto reset;
-	ret = sqlite_bind_int(stmt->impl, 3, run_id);
+	ret = sqlite_bind_blob(stmt->impl, 3, output->data, output->data_size);
+	if (ret < 0)
+		goto reset;
+	ret = sqlite_bind_int(stmt->impl, 4, run_id);
 	if (ret < 0)
 		goto reset;
 	ret = sqlite_step(stmt->impl);

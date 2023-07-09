@@ -7,6 +7,7 @@
 
 #include "storage.h"
 #include "log.h"
+#include "process.h"
 #include "run_queue.h"
 #include "storage_sqlite.h"
 
@@ -17,7 +18,7 @@ typedef int (*storage_create_t)(struct storage *, const struct storage_settings 
 typedef void (*storage_destroy_t)(struct storage *);
 
 typedef int (*storage_run_create_t)(struct storage *, const char *repo_url, const char *rev);
-typedef int (*storage_run_finished_t)(struct storage *, int repo_id, int ec);
+typedef int (*storage_run_finished_t)(struct storage *, int repo_id, const struct proc_output *);
 typedef int (*storage_get_run_queue_t)(struct storage *, struct run_queue *);
 
 struct storage_api {
@@ -98,12 +99,12 @@ int storage_run_create(struct storage *storage, const char *repo_url, const char
 	return api->run_create(storage, repo_url, rev);
 }
 
-int storage_run_finished(struct storage *storage, int run_id, int ec)
+int storage_run_finished(struct storage *storage, int run_id, const struct proc_output *output)
 {
 	const struct storage_api *api = get_api(storage->type);
 	if (!api)
 		return -1;
-	return api->run_finished(storage, run_id, ec);
+	return api->run_finished(storage, run_id, output);
 }
 
 int storage_get_run_queue(struct storage *storage, struct run_queue *queue)

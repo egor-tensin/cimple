@@ -4,7 +4,7 @@ ARG install_dir="/app/install"
 
 FROM base AS builder
 
-RUN build_deps='bash bsd-compat-headers build-base clang cmake coreutils git libgit2-dev py3-pytest sqlite-dev valgrind' && \
+RUN build_deps='bash bsd-compat-headers build-base clang cmake coreutils git libgit2-dev libsodium-dev py3-pytest sqlite-dev valgrind' && \
     apk add -q --no-cache $build_deps
 
 ARG COMPILER=clang
@@ -31,7 +31,7 @@ FROM base
 
 LABEL maintainer="Egor Tensin <Egor.Tensin@gmail.com>"
 
-RUN runtime_deps='tini libgit2 sqlite-dev' && \
+RUN runtime_deps='tini libgit2 libsodium sqlite-dev' && \
     apk add -q --no-cache $runtime_deps
 
 ARG install_dir

@@ -124,14 +124,14 @@ int file_exists(const char *path)
 	return !ret && S_ISREG(stat.st_mode);
 }
 
-int file_read(int fd, char **_contents, size_t *_size)
+int file_read(int fd, unsigned char **_contents, size_t *_size)
 {
 	size_t alloc_size = 256;
-	char *contents = NULL;
+	unsigned char *contents = NULL;
 	size_t size = 0;
 
 	while (1) {
-		char *tmp_contents = realloc(contents, alloc_size);
+		unsigned char *tmp_contents = realloc(contents, alloc_size);
 		if (!tmp_contents) {
 			log_errno("realloc");
 			free(contents);
@@ -139,7 +139,7 @@ int file_read(int fd, char **_contents, size_t *_size)
 		}
 		contents = tmp_contents;
 
-		ssize_t read_size = read(fd, contents + size, alloc_size - size - 1);
+		ssize_t read_size = read(fd, contents + size, alloc_size - size);
 
 		if (read_size < 0) {
 			log_errno("read");
@@ -154,9 +154,8 @@ int file_read(int fd, char **_contents, size_t *_size)
 		}
 
 		size += read_size;
-		contents[size] = '\0';
 
-		if (size == alloc_size - 1) {
+		if (size == alloc_size) {
 			alloc_size *= 2;
 		}
 	}

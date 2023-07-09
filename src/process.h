@@ -12,8 +12,8 @@
 
 struct proc_output {
 	int ec;
-	char *output;
-	size_t output_len;
+	unsigned char *data;
+	size_t data_size;
 };
 
 /* The exit code is only valid if the functions returns a non-negative number. */
@@ -25,8 +25,8 @@ int proc_spawn(const char *args[], const char *envp[], int *ec);
  * In that case, you'll need to free the output. */
 int proc_capture(const char *args[], const char *envp[], struct proc_output *result);
 
-void proc_output_init(struct proc_output *);
-void proc_output_free(const struct proc_output *);
+int proc_output_create(struct proc_output **);
+void proc_output_destroy(struct proc_output *);
 
 void proc_output_dump(const struct proc_output *);
 

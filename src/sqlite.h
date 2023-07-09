@@ -10,6 +10,8 @@
 
 #include <sqlite3.h>
 
+#include <stddef.h>
+
 int sqlite_init(void);
 void sqlite_destroy(void);
 
@@ -27,6 +29,7 @@ int sqlite_step(sqlite3_stmt *);
 
 int sqlite_bind_int(sqlite3_stmt *, int column_index, int value);
 int sqlite_bind_text(sqlite3_stmt *, int column_index, const char *value);
+int sqlite_bind_blob(sqlite3_stmt *, int column_index, unsigned char *value, size_t nb);
 
 int sqlite_column_int(sqlite3_stmt *, int column_index);
 int sqlite_column_text(sqlite3_stmt *, int column_index, char **result);

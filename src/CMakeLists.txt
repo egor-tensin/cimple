@@ -56,6 +56,7 @@ function(add_my_executable name)
 endfunction()
 
 add_my_executable(server server_main.c server.c
+    base64.c
     cmd_line.c
     command.c
     const.c
@@ -75,7 +76,7 @@ add_my_executable(server server_main.c server.c
     string.c
     tcp_server.c
     worker_queue.c)
-target_link_libraries(server PRIVATE pthread sqlite3)
+target_link_libraries(server PRIVATE pthread sodium sqlite3)
 target_include_directories(server PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
 
 add_my_executable(client client_main.c client.c
@@ -87,6 +88,7 @@ add_my_executable(client client_main.c client.c
     net.c)
 
 add_my_executable(worker worker_main.c worker.c
+    base64.c
     ci.c
     cmd_line.c
     command.c
@@ -102,4 +104,4 @@ add_my_executable(worker worker_main.c worker.c
     run_queue.c
     signal.c
     string.c)
-target_link_libraries(worker PRIVATE git2 pthread)
+target_link_libraries(worker PRIVATE git2 pthread sodium)

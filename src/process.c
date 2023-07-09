@@ -106,18 +106,18 @@ int proc_capture(const char *args[], const char *envp[], struct proc_output *res
 
 	file_close(pipe_fds[1]);
 
-	ret = file_read(pipe_fds[0], &result->output, &result->output_len);
+	ret = file_read(pipe_fds[0], &result->data, &result->data_size);
 	if (ret < 0)
 		goto close_pipe;
 
 	ret = wait_for_child(child_pid, &result->ec);
 	if (ret < 0)
-		goto free_output;
+		goto free_data;
 
 	goto close_pipe;
 
-free_output:
-	free(result->output);
+free_data:
+	free(result->data);
 
 close_pipe:
 	file_close(pipe_fds[0]);
@@ -127,23 +127,30 @@ close_pipe:
 	return ret;
 }
 
-void proc_output_init(struct proc_output *output)
+int proc_output_create(struct proc_output **_output)
 {
+	struct proc_output *output = calloc(1, sizeof(struct proc_output));
+	if (!output) {
+		log_errno("calloc");
+		return -1;
+	}
+
 	output->ec = 0;
-	output->output = NULL;
-	output->output_len = 0;
+	output->data = NULL;
+	output->data_size = 0;
+
+	*_output = output;
+	return 0;
 }
 
-void proc_output_free(const struct proc_output *output)
+void proc_output_destroy(struct proc_output *output)
 {
-	free(output->output);
+	free(output->data);
+	free(output);
 }
 
 void proc_output_dump(const struct proc_output *output)
 {
 	log("Process exit code: %d\n", output->ec);
-	log("Process output:\n%s", output->output);
-	if (!output->output || !output->output_len ||
-	    output->output[output->output_len - 1] != '\n')
-		log("\n");
+	log("Process output: %zu bytes\n", output->data_size);
 }

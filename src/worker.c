@@ -180,20 +180,22 @@ static int worker_do_run(struct worker *worker)
 {
 	int ret = 0;
 
-	struct proc_output result;
-	proc_output_init(&result);
+	struct proc_output *result = NULL;
+	ret = proc_output_create(&result);
+	if (ret < 0)
+		return ret;
 
-	ret = ci_run_git_repo(run_get_url(worker->run), run_get_rev(worker->run), &result);
+	ret = ci_run_git_repo(run_get_url(worker->run), run_get_rev(worker->run), result);
 	if (ret < 0) {
 		log_err("Run failed with an error\n");
 		goto free_output;
 	}
 
-	proc_output_dump(&result);
+	proc_output_dump(result);
 
 	struct msg *finished_msg = NULL;
 
-	ret = msg_finished_create(&finished_msg, run_get_id(worker->run), &result);
+	ret = msg_finished_create(&finished_msg, run_get_id(worker->run), result);
 	if (ret < 0)
 		goto free_output;
 
@@ -206,7 +208,7 @@ free_finished_msg:
 	msg_free(finished_msg);
 
 free_output:
-	proc_output_free(&result);
+	proc_output_destroy(result);
 
 	run_destroy(worker->run);
 

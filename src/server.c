@@ -295,13 +295,13 @@ static int server_handle_cmd_finished(const struct msg *request, UNUSED struct m
 	int ret = 0;
 
 	int run_id = 0;
-	struct proc_output output;
+	struct proc_output *output;
 
 	ret = msg_finished_parse(request, &run_id, &output);
 	if (ret < 0)
 		return ret;
 
-	ret = storage_run_finished(&server->storage, run_id, output.ec);
+	ret = storage_run_finished(&server->storage, run_id, output);
 	if (ret < 0) {
 		log_err("Failed to mark run %d as finished\n", run_id);
 		goto free_output;
@@ -310,7 +310,7 @@ static int server_handle_cmd_finished(const struct msg *request, UNUSED struct m
 	log("Marked run %d as finished\n", run_id);
 
 free_output:
-	proc_output_free(&output);
+	proc_output_destroy(output);
 
 	return ret;
 }

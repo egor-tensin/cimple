@@ -19,6 +19,6 @@ int file_dup(int fd);
 void file_close(int fd);
 
 int file_exists(const char *path);
-int file_read(int fd, char **output, size_t *size);
+int file_read(int fd, unsigned char **output, size_t *size);
 
 #endif

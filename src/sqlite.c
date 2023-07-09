@@ -11,6 +11,7 @@
 
 #include <sqlite3.h>
 
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -225,6 +226,19 @@ int sqlite_bind_text(sqlite3_stmt *stmt, int index, const char *value)
 	ret = sqlite3_bind_text(stmt, index, value, -1, SQLITE_STATIC);
 	if (ret) {
 		sqlite_errno(ret, "sqlite3_bind_text");
+		return ret;
+	}
+
+	return ret;
+}
+
+int sqlite_bind_blob(sqlite3_stmt *stmt, int index, unsigned char *value, size_t nb)
+{
+	int ret = 0;
+
+	ret = sqlite3_bind_blob64(stmt, index, value, nb, SQLITE_STATIC);
+	if (ret) {
+		sqlite_errno(ret, "sqlite3_bind_blob64");
 		return ret;
 	}
 

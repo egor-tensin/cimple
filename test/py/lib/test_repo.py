@@ -46,3 +46,6 @@ class TestRepo(Repo):
 
     def count_ci_output_files(self):
         return len([name for name in os.listdir(self.output_dir) if os.path.isfile(os.path.join(self.output_dir, name))])
+
+    def output_matches(self, output):
+        return output.decode().startswith('A CI run happened at ')

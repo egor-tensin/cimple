@@ -6,6 +6,7 @@
  */
 
 #include "protocol.h"
+#include "base64.h"
 #include "const.h"
 #include "log.h"
 #include "msg.h"
@@ -15,6 +16,7 @@
 
 #include <stddef.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 static int check_msg_length(const struct msg *msg, size_t expected)
 {
@@ -77,35 +79,65 @@ int msg_start_parse(const struct msg *msg, struct run **run)
 
 int msg_finished_create(struct msg **msg, int run_id, const struct proc_output *output)
 {
+	int ret = 0;
+
 	char id[16];
 	char ec[16];
 
 	snprintf(id, sizeof(id), "%d", run_id);
 	snprintf(ec, sizeof(ec), "%d", output->ec);
 
-	const char *argv[] = {CMD_FINISHED, id, ec, NULL};
+	char *b64data = NULL;
 
-	return msg_from_argv(msg, argv);
+	ret = base64_encode(output->data, output->data_size, &b64data);
+	if (ret < 0)
+		return ret;
+
+	const char *argv[] = {CMD_FINISHED, id, ec, b64data, NULL};
+
+	ret = msg_from_argv(msg, argv);
+	if (ret < 0)
+		goto free_b64data;
+
+free_b64data:
+	free(b64data);
+
+	return ret;
 }
 
-int msg_finished_parse(const struct msg *msg, int *run_id, struct proc_output *output)
+int msg_finished_parse(const struct msg *msg, int *run_id, struct proc_output **_output)
 {
 	int ret = 0;
 
-	ret = check_msg_length(msg, 3);
+	ret = check_msg_length(msg, 4);
 	if (ret < 0)
 		return ret;
 
 	const char **argv = msg_get_strings(msg);
 
-	proc_output_init(output);
+	struct proc_output *output = NULL;
+	ret = proc_output_create(&output);
+	if (ret < 0)
+		return ret;
 
 	ret = string_to_int(argv[1], run_id);
 	if (ret < 0)
-		return ret;
+		goto free_output;
 	ret = string_to_int(argv[2], &output->ec);
 	if (ret < 0)
-		return ret;
+		goto free_output;
 
-	return 0;
+	const char *b64data = argv[3];
+
+	ret = base64_decode(b64data, &output->data, &output->data_size);
+	if (ret < 0)
+		goto free_output;
+
+	*_output = output;
+	return ret;
+
+free_output:
+	proc_output_destroy(output);
+
+	return ret;
 }

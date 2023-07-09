@@ -20,6 +20,6 @@ int msg_start_create(struct msg **, const struct run *);
 int msg_start_parse(const struct msg *, struct run **);
 
 int msg_finished_create(struct msg **, int run_id, const struct proc_output *);
-int msg_finished_parse(const struct msg *, int *run_id, struct proc_output *);
+int msg_finished_parse(const struct msg *, int *run_id, struct proc_output **);
 
 #endif

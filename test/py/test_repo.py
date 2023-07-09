@@ -54,6 +54,7 @@ def _test_repo_internal(env, repo, numof_processes, runs_per_process):
 
     for id, status, ec, output, url, rev in runs:
         assert status == 'finished', f'Invalid status for run {id}: {status}'
+        assert repo.output_matches(output), f"Output doesn't match: {output}"
 
 
 @pytest.mark.parametrize('numof_clients,runs_per_client',
