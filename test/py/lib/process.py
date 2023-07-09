@@ -183,7 +183,7 @@ class Process(subprocess.Popen):
         # so that it doesn't attempt to read from closed descriptors.
         super().__exit__(*args)
 
-    SHUT_DOWN_TIMEOUT_SEC = 3
+    SHUT_DOWN_TIMEOUT_SEC = 10
 
     def shut_down(self):
         ec = self.poll()

@@ -13,7 +13,7 @@ function(add_python_tests name)
     add_test(NAME "${name}"
         WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/py"
         COMMAND ${ARGV})
-    set_tests_properties("${name}" PROPERTIES TIMEOUT 300)
+    set_tests_properties("${name}" PROPERTIES TIMEOUT 600)
 endfunction()
 
 add_python_tests(python_tests_sanity

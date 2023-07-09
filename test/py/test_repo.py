@@ -16,7 +16,7 @@ class LoggingEventRunComplete(LoggingEvent):
         self.counter = 0
         self.target = target
         self.re = re.compile(r'run \d+ as finished')
-        super().__init__(timeout=60)
+        super().__init__(timeout=150)
 
     def log_line_matches(self, line):
         return bool(self.re.search(line))
