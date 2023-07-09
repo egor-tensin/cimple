@@ -8,6 +8,7 @@
 #ifndef __STRING_H__
 #define __STRING_H__
 
+/* For details, see string_copying(7). */
 char *stpecpy(char *dst, char *end, const char *src);
 
 int string_to_int(const char *src, int *result);
