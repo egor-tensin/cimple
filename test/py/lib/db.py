@@ -4,12 +4,14 @@
 # Distributed under the MIT License.
 
 from contextlib import closing, contextmanager
+import logging
 import sqlite3
 
 
 class Database:
     def __init__(self, path):
-        self.conn = sqlite3.connect(f'file:{path}?mode=ro')
+        logging.info('Opening SQLite database: %s', path)
+        self.conn = sqlite3.connect(f'file:{path}?mode=ro', uri=True)
 
     def __enter__(self):
         return self
