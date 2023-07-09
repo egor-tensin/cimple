@@ -4,8 +4,10 @@
 # Distributed under the MIT License.
 
 import abc
+import base64
 import logging
 import os
+import random
 import shlex
 import shutil
 
@@ -137,3 +139,31 @@ class TestRepoOutputEmpty(TestRepoOutput):
 
     def run_output_matches(self, output):
         return len(output) == 0
+
+
+# Making it a bash script introduces way too much overhead with all the
+# argument expansions; it slows things down considerably.
+OUTPUT_SCRIPT_LONG = R'''#!/usr/bin/env python3
+
+output = {output}
+
+import sys
+sys.stdout.write(output)
+'''
+
+
+class TestRepoOutputLong(TestRepoOutput):
+    __test__ = False
+
+    OUTPUT_LEN_KB = 300
+
+    def __init__(self, *args, **kwargs):
+        nb = TestRepoOutputLong.OUTPUT_LEN_KB * 1024
+        self.output = base64.encodebytes(random.randbytes(nb)).decode()
+        super().__init__(*args, **kwargs)
+
+    def _format_output_script(self):
+        return OUTPUT_SCRIPT_LONG.format(output=repr(self.output))
+
+    def run_output_matches(self, output):
+        return output.decode() == self.output

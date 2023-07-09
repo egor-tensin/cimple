@@ -188,7 +188,7 @@ int net_recv(int fd, void *buf, size_t size)
 	ssize_t read_total = 0;
 
 	while ((size_t)read_total < size) {
-		ssize_t read_now = read(fd, buf, size);
+		ssize_t read_now = read(fd, (unsigned char *)buf + read_total, size - read_total);
 		if (!read_now)
 			break;
 
