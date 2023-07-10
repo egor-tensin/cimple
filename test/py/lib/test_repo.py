@@ -28,18 +28,10 @@ class Repo:
         Process.run(*args, cwd=self.path, **kwargs)
 
 
-CI_SCRIPT = r'''#!/usr/bin/env bash
-
-set -o errexit -o nounset -o pipefail
-shopt -s inherit_errexit lastpipe
-
+CI_SCRIPT = r'''#!/bin/sh -e
 readonly runs_dir={runs_dir}
-
 readonly run_output_template=run_XXXXXX
-
 run_output_path="$( mktemp --tmpdir="$runs_dir" "$run_output_template" )"
-readonly run_output_path
-
 touch -- "$run_output_path"
 '''
 
@@ -103,14 +95,8 @@ class TestRepoOutput(TestRepo, abc.ABC):
         pass
 
 
-OUTPUT_SCRIPT_SIMPLE = r'''#!/usr/bin/env bash
-
-set -o errexit -o nounset -o pipefail
-shopt -s inherit_errexit lastpipe
-
+OUTPUT_SCRIPT_SIMPLE = r'''#!/bin/sh -e
 timestamp="$( date --iso-8601=ns )"
-readonly timestamp
-
 echo "A CI run happened at $timestamp"
 '''
 
@@ -126,8 +112,6 @@ class TestRepoOutputSimple(TestRepoOutput):
 
 
 OUTPUT_SCRIPT_EMPTY = r'''#!/bin/sh
-
-true
 '''
 
 
@@ -144,9 +128,7 @@ class TestRepoOutputEmpty(TestRepoOutput):
 # Making it a bash script introduces way too much overhead with all the
 # argument expansions; it slows things down considerably.
 OUTPUT_SCRIPT_LONG = r'''#!/usr/bin/env python3
-
 output = {output}
-
 import sys
 sys.stdout.write(output)
 '''
@@ -170,9 +152,7 @@ class TestRepoOutputLong(TestRepoOutput):
 
 
 OUTPUT_SCRIPT_NULL = r'''#!/usr/bin/env python3
-
 output = {output}
-
 import sys
 sys.stdout.buffer.write(output)
 '''
