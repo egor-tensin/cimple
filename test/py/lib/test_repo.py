@@ -167,3 +167,29 @@ class TestRepoOutputLong(TestRepoOutput):
 
     def run_output_matches(self, output):
         return output.decode() == self.output
+
+
+OUTPUT_SCRIPT_NULL = R'''#!/usr/bin/env python3
+
+output = {output}
+
+import sys
+sys.stdout.buffer.write(output)
+'''
+
+
+class TestRepoOutputNull(TestRepoOutput):
+    __test__ = False
+
+    OUTPUT = b'123\x00456'
+
+    def __init__(self, *args, **kwargs):
+        self.output = TestRepoOutputNull.OUTPUT
+        super().__init__(*args, **kwargs)
+
+    def _format_output_script(self):
+        assert len(self.output) == 7
+        return OUTPUT_SCRIPT_NULL.format(output=repr(self.output))
+
+    def run_output_matches(self, output):
+        return output == self.output
