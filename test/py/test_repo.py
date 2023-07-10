@@ -3,11 +3,13 @@
 # For details, see https://github.com/egor-tensin/cimple.
 # Distributed under the MIT License.
 
-from multiprocessing import Process
+import logging
+import multiprocessing as mp
 import re
 
 import pytest
 
+from lib.logging import child_logging_thread, configure_logging_in_child
 from lib.process import LoggingEvent
 
 
@@ -27,6 +29,13 @@ class LoggingEventRunComplete(LoggingEvent):
             super().set()
 
 
+def client_runner(log_queue, client, runs_per_process, repo):
+    with configure_logging_in_child(log_queue):
+        logging.info('Executing %s clients', runs_per_process)
+        for i in range(runs_per_process):
+            client.run('run', repo.path, 'HEAD')
+
+
 def _test_repo_internal(env, repo, numof_processes, runs_per_process):
     numof_runs = numof_processes * runs_per_process
 
@@ -34,18 +43,17 @@ def _test_repo_internal(env, repo, numof_processes, runs_per_process):
     # Count the number of times the server receives the "run complete" message.
     env.server.logger.add_event(event)
 
-    def client_runner():
-        for i in range(runs_per_process):
-            env.client.run('run', repo.path, 'HEAD')
+    with child_logging_thread() as log_queue:
+        ctx = mp.get_context('spawn')
+        args = (log_queue, env.client, runs_per_process, repo)
+        processes = [ctx.Process(target=client_runner, args=args) for i in range(numof_processes)]
+        for proc in processes:
+            proc.start()
 
-    processes = [Process(target=client_runner) for i in range(numof_processes)]
-    for proc in processes:
-        proc.start()
+        event.wait()
 
-    event.wait()
-
-    for proc in processes:
-        proc.join()
+        for proc in processes:
+            proc.join()
 
     assert numof_runs == repo.count_run_files()
 
