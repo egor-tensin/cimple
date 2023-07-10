@@ -28,7 +28,7 @@ class Repo:
         Process.run(*args, cwd=self.path, **kwargs)
 
 
-CI_SCRIPT = R'''#!/usr/bin/env bash
+CI_SCRIPT = r'''#!/usr/bin/env bash
 
 set -o errexit -o nounset -o pipefail
 shopt -s inherit_errexit lastpipe
@@ -95,7 +95,7 @@ class TestRepoOutput(TestRepo, abc.ABC):
         pass
 
     def _format_ci_script_addition(self):
-        return R'{output_script} | tee -a "$run_output_path"'.format(
+        return r'{output_script} | tee -a "$run_output_path"'.format(
             output_script=shlex.quote(self.output_script_path))
 
     @abc.abstractmethod
@@ -103,7 +103,7 @@ class TestRepoOutput(TestRepo, abc.ABC):
         pass
 
 
-OUTPUT_SCRIPT_SIMPLE = R'''#!/usr/bin/env bash
+OUTPUT_SCRIPT_SIMPLE = r'''#!/usr/bin/env bash
 
 set -o errexit -o nounset -o pipefail
 shopt -s inherit_errexit lastpipe
@@ -125,7 +125,7 @@ class TestRepoOutputSimple(TestRepoOutput):
         return output.decode().startswith('A CI run happened at ')
 
 
-OUTPUT_SCRIPT_EMPTY = R'''#!/bin/sh
+OUTPUT_SCRIPT_EMPTY = r'''#!/bin/sh
 
 true
 '''
@@ -143,7 +143,7 @@ class TestRepoOutputEmpty(TestRepoOutput):
 
 # Making it a bash script introduces way too much overhead with all the
 # argument expansions; it slows things down considerably.
-OUTPUT_SCRIPT_LONG = R'''#!/usr/bin/env python3
+OUTPUT_SCRIPT_LONG = r'''#!/usr/bin/env python3
 
 output = {output}
 
@@ -169,7 +169,7 @@ class TestRepoOutputLong(TestRepoOutput):
         return output.decode() == self.output
 
 
-OUTPUT_SCRIPT_NULL = R'''#!/usr/bin/env python3
+OUTPUT_SCRIPT_NULL = r'''#!/usr/bin/env python3
 
 output = {output}
 
@@ -181,14 +181,14 @@ sys.stdout.buffer.write(output)
 class TestRepoOutputNull(TestRepoOutput):
     __test__ = False
 
-    OUTPUT = b'123\x00456'
+    OUTPUT = b'123\x00456\x00789'
 
     def __init__(self, *args, **kwargs):
+        assert len(TestRepoOutputNull.OUTPUT) == 11
         self.output = TestRepoOutputNull.OUTPUT
         super().__init__(*args, **kwargs)
 
     def _format_output_script(self):
-        assert len(self.output) == 7
         return OUTPUT_SCRIPT_NULL.format(output=repr(self.output))
 
     def run_output_matches(self, output):
