@@ -120,7 +120,7 @@ static int storage_sqlite_upgrade_to(struct storage_sqlite *storage, size_t vers
 {
 	static const char *const fmt = "%s PRAGMA user_version = %zu;";
 
-	const char *script = sql_sqlite_files[version];
+	const char *script = sqlite_schemas[version];
 	int ret = 0;
 
 	ret = snprintf(NULL, 0, fmt, script, version + 1);
@@ -169,7 +169,7 @@ static int storage_sqlite_upgrade(struct storage_sqlite *storage)
 		return ret;
 	log("SQLite database version: %u\n", current_version);
 
-	size_t newest_version = sizeof(sql_sqlite_files) / sizeof(sql_sqlite_files[0]);
+	size_t newest_version = sizeof(sqlite_schemas) / sizeof(sqlite_schemas[0]);
 	log("Newest database version: %zu\n", newest_version);
 
 	if (current_version > newest_version) {

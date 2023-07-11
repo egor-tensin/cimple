@@ -42,11 +42,11 @@ class Generator:
 
     @property
     def var_name_prefix(self):
-        return f'sql_{self.name}'
+        return f'{self.name}'
 
     def sql_file_to_var_name(self, path):
         name = os.path.splitext(os.path.basename(path))[0]
-        return f'{self.var_name_prefix}_{name}'
+        return f'{self.var_name_prefix}_schema_{name}'
 
     @staticmethod
     def sql_file_to_string_literal(path):
@@ -64,7 +64,7 @@ class Generator:
             value = self.sql_file_to_string_literal(path)
             self.write(f'static const char *const {name} = "{value}";')
         self.write('')
-        self.write(f'static const char *const {self.var_name_prefix}_files[] = {{')
+        self.write(f'static const char *const {self.var_name_prefix}_schemas[] = {{')
         for var in vars:
             self.write(f'\t{var},')
         self.write('};')
