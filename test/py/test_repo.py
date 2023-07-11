@@ -62,6 +62,7 @@ def _test_repo_internal(env, repo, numof_processes, runs_per_process):
 
     for id, status, ec, output, url, rev in runs:
         assert status == 'finished', f'Invalid status for run {id}: {status}'
+        assert repo.run_exit_code_matches(ec), f"Exit code doesn't match: {ec}"
         assert repo.run_output_matches(output), f"Output doesn't match: {output}"
 
 
@@ -80,6 +81,12 @@ def my_parametrize(names, values, ids=None, **kwargs):
     return pytest.mark.parametrize(names, values, ids=ids, **kwargs)
 
 
+def test_sigsegv(sigsegv):
+    ec, output = sigsegv.try_run()
+    assert ec == -11
+    assert output == 'Started the test program.\n'
+
+
 @my_parametrize('runs_per_client', [1, 5])
 @my_parametrize('numof_clients', [1, 5])
 def test_repo(env, test_repo, numof_clients, runs_per_client):
@@ -89,5 +96,5 @@ def test_repo(env, test_repo, numof_clients, runs_per_client):
 @pytest.mark.stress
 @my_parametrize(('numof_clients', 'runs_per_client'),
                 [(10, 50), (1, 2000), (4, 500)])
-def test_repo_stress(env, test_repo, numof_clients, runs_per_client):
-    _test_repo_internal(env, test_repo, numof_clients, runs_per_client)
+def test_repo_stress(env, stress_test_repo, numof_clients, runs_per_client):
+    _test_repo_internal(env, stress_test_repo, numof_clients, runs_per_client)

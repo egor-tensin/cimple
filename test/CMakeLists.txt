@@ -1,3 +1,5 @@
+add_subdirectory(sigsegv)
+
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
 
 set(python_test_args
@@ -7,6 +9,7 @@ set(python_test_args
     --server-binary "$<TARGET_FILE:server>"
     --worker-binary "$<TARGET_FILE:worker>"
     --client-binary "$<TARGET_FILE:client>"
+    --sigsegv-binary "$<TARGET_FILE:sigsegv>"
     --project-version "${PROJECT_VERSION}")
 
 function(add_python_tests name)

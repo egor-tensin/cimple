@@ -40,10 +40,6 @@ class TestRepo(Repo):
     # Prevent Pytest from discovering test cases in this class:
     __test__ = False
 
-    def _format_ci_script(self):
-        runs_dir = shlex.quote(self.runs_dir)
-        return CI_SCRIPT.format(runs_dir=runs_dir)
-
     def __init__(self, path, ci_script='ci.sh'):
         super().__init__(path)
 
@@ -51,12 +47,36 @@ class TestRepo(Repo):
         os.makedirs(self.runs_dir, exist_ok=True)
 
         self.ci_script_path = os.path.join(self.path, ci_script)
-        with open(self.ci_script_path, mode='x') as f:
-            f.write(self._format_ci_script())
-        os.chmod(self.ci_script_path, 0o755)
 
+        self.write_ci_script()
         self.run('git', 'add', '--', ci_script)
         self.run('git', 'commit', '-q', '-m', 'add CI script')
+
+    @staticmethod
+    @abc.abstractmethod
+    def codename():
+        pass
+
+    @staticmethod
+    def enabled_for_stress_testing():
+        return False
+
+    @abc.abstractmethod
+    def run_exit_code_matches(self, ec):
+        pass
+
+    @abc.abstractmethod
+    def run_output_matches(self, output):
+        pass
+
+    def write_ci_script(self):
+        with open(self.ci_script_path, mode='x') as f:
+            f.write(self.format_ci_script())
+        os.chmod(self.ci_script_path, 0o755)
+
+    def format_ci_script(self):
+        runs_dir = shlex.quote(self.runs_dir)
+        return CI_SCRIPT.format(runs_dir=runs_dir)
 
     def count_run_files(self):
         return len([name for name in os.listdir(self.runs_dir) if os.path.isfile(os.path.join(self.runs_dir, name))])
@@ -68,31 +88,30 @@ class TestRepoOutput(TestRepo, abc.ABC):
     OUTPUT_SCRIPT_NAME = 'generate-output'
 
     def __init__(self, path):
+        self.output_script_path = os.path.join(path, TestRepoOutput.OUTPUT_SCRIPT_NAME)
         super().__init__(path)
 
-        self.output_script_path = os.path.join(self.path, TestRepoOutput.OUTPUT_SCRIPT_NAME)
-        with open(self.output_script_path, mode='x') as f:
-            f.write(self._format_output_script())
-        os.chmod(self.output_script_path, 0o755)
-
-        with open(self.ci_script_path, mode='a') as f:
-            f.write(self._format_ci_script_addition())
-
+        self.write_output_script()
         self.run('git', 'add', '--', TestRepoOutput.OUTPUT_SCRIPT_NAME)
-        self.run('git', 'add', '-u')
         self.run('git', 'commit', '-q', '-m', 'add output script')
 
-    @abc.abstractmethod
-    def _format_output_script(self):
-        pass
-
-    def _format_ci_script_addition(self):
-        return r'{output_script} | tee -a "$run_output_path"'.format(
+    def format_ci_script(self):
+        script = super().format_ci_script()
+        added = r'{output_script} | tee -a "$run_output_path"'.format(
             output_script=shlex.quote(self.output_script_path))
+        return f'{script}\n{added}\n'
+
+    def write_output_script(self):
+        with open(self.output_script_path, mode='x') as f:
+            f.write(self.format_output_script())
+        os.chmod(self.output_script_path, 0o755)
 
     @abc.abstractmethod
-    def run_output_matches(self, output):
+    def format_output_script(self):
         pass
+
+    def run_exit_code_matches(self, ec):
+        return ec == 0
 
 
 OUTPUT_SCRIPT_SIMPLE = r'''#!/bin/sh -e
@@ -104,7 +123,15 @@ echo "A CI run happened at $timestamp"
 class TestRepoOutputSimple(TestRepoOutput):
     __test__ = False
 
-    def _format_output_script(self):
+    @staticmethod
+    def codename():
+        return 'output_simple'
+
+    @staticmethod
+    def enabled_for_stress_testing():
+        return True
+
+    def format_output_script(self):
         return OUTPUT_SCRIPT_SIMPLE
 
     def run_output_matches(self, output):
@@ -118,7 +145,11 @@ OUTPUT_SCRIPT_EMPTY = r'''#!/bin/sh
 class TestRepoOutputEmpty(TestRepoOutput):
     __test__ = False
 
-    def _format_output_script(self):
+    @staticmethod
+    def codename():
+        return 'output_empty'
+
+    def format_output_script(self):
         return OUTPUT_SCRIPT_EMPTY
 
     def run_output_matches(self, output):
@@ -144,7 +175,15 @@ class TestRepoOutputLong(TestRepoOutput):
         self.output = base64.encodebytes(random.randbytes(nb)).decode()
         super().__init__(*args, **kwargs)
 
-    def _format_output_script(self):
+    @staticmethod
+    def codename():
+        return 'output_long'
+
+    @staticmethod
+    def enabled_for_stress_testing():
+        return True
+
+    def format_output_script(self):
         return OUTPUT_SCRIPT_LONG.format(output=repr(self.output))
 
     def run_output_matches(self, output):
@@ -168,8 +207,40 @@ class TestRepoOutputNull(TestRepoOutput):
         self.output = TestRepoOutputNull.OUTPUT
         super().__init__(*args, **kwargs)
 
-    def _format_output_script(self):
+    @staticmethod
+    def codename():
+        return 'output_null'
+
+    def format_output_script(self):
         return OUTPUT_SCRIPT_NULL.format(output=repr(self.output))
 
     def run_output_matches(self, output):
         return output == self.output
+
+
+class TestRepoSegfault(TestRepo):
+    __test__ = False
+
+    def __init__(self, repo_path, prog_path):
+        self.prog_path = prog_path
+        self.prog_name = os.path.basename(prog_path)
+        super().__init__(repo_path)
+
+        shutil.copy(prog_path, self.path)
+        self.run('git', 'add', '--', self.prog_name)
+        self.run('git', 'commit', '-q', '-m', 'add test program')
+
+    @staticmethod
+    def codename():
+        return 'segfault'
+
+    def format_ci_script(self):
+        script = super().format_ci_script()
+        added = r'exec {prog}'.format(prog=shlex.quote(f'./{self.prog_name}'))
+        return f'{script}\n{added}\n'
+
+    def run_exit_code_matches(self, ec):
+        return ec < 0
+
+    def run_output_matches(self, output):
+        return "Started the test program.\n" == output.decode()

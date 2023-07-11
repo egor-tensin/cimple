@@ -4,6 +4,9 @@ project(cimple VERSION 0.0.1 LANGUAGES C)
 
 enable_testing()
 
+add_compile_options(-std=c17 -Wpedantic -Wall -Wextra)
+add_compile_options($<$<NOT:$<CONFIG:Debug>>:-Werror>)
+
 add_subdirectory(src)
 add_subdirectory(test)
 

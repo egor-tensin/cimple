@@ -8,7 +8,7 @@ import os
 
 from pytest import fixture
 
-from lib import test_repo
+from lib import test_repo as repo
 from lib.db import Database
 from lib.net import random_unused_port
 from lib.process import CmdLine
@@ -45,7 +45,7 @@ class ParamBinary(Param):
 
 
 BINARY_PARAMS = [
-    ParamBinary(name) for name in ('server', 'worker', 'client')
+    ParamBinary(name) for name in ('server', 'worker', 'client', 'sigsegv')
 ]
 
 PARAM_VALGRIND = ParamBinary('valgrind', required=False)
@@ -162,9 +162,14 @@ def worker_cmd(base_cmd_line, paths, server_port):
 
 
 @fixture
-def client_cmd(base_cmd_line, paths, server_port):
+def client(base_cmd_line, paths, server_port):
     args = ['--host', '127.0.0.1', '--port', server_port]
     return CmdLine.wrap(base_cmd_line, CmdLine(paths.client_binary, *args))
+
+
+@fixture
+def sigsegv(paths):
+    return CmdLine(paths.sigsegv_binary)
 
 
 @fixture
@@ -184,19 +189,35 @@ def workers(worker_cmd):
 
 
 @fixture
-def client(client_cmd):
-    return client_cmd
+def repo_path(tmp_path):
+    return os.path.join(tmp_path, 'repo')
 
 
-@fixture(params=[
-             test_repo.TestRepoOutputSimple,
-             test_repo.TestRepoOutputEmpty,
-             test_repo.TestRepoOutputLong,
-             test_repo.TestRepoOutputNull,
-         ],
-         ids=['output_simple', 'output_empty', 'output_long', 'output_null'])
-def test_repo(tmp_path, request):
-    return request.param(os.path.join(tmp_path, 'repo'))
+ALL_REPOS = [
+    repo.TestRepoOutputSimple,
+    repo.TestRepoOutputEmpty,
+    repo.TestRepoOutputLong,
+    repo.TestRepoOutputNull,
+    repo.TestRepoSegfault,
+]
+
+
+def _make_repo(repo_path, paths, cls):
+    args = [repo_path]
+    if cls is repo.TestRepoSegfault:
+        args += [paths.sigsegv_binary]
+    return cls(*args)
+
+
+@fixture(params=ALL_REPOS, ids=[repo.codename() for repo in ALL_REPOS])
+def test_repo(repo_path, paths, request):
+    return _make_repo(repo_path, paths, request.param)
+
+
+@fixture(params=[repo for repo in ALL_REPOS if repo.enabled_for_stress_testing()],
+         ids=[repo.codename() for repo in ALL_REPOS if repo.enabled_for_stress_testing()])
+def stress_test_repo(repo_path, paths, request):
+    return _make_repo(repo_path, paths, request.param)
 
 
 class Env:
