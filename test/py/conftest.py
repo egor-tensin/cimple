@@ -3,6 +3,7 @@
 # For details, see https://github.com/egor-tensin/cimple.
 # Distributed under the MIT License.
 
+from collections import namedtuple
 import logging
 import os
 
@@ -220,12 +221,7 @@ def stress_test_repo(repo_path, paths, request):
     return _make_repo(repo_path, paths, request.param)
 
 
-class Env:
-    def __init__(self, server, workers, client, db):
-        self.server = server
-        self.workers = workers
-        self.client = client
-        self.db = db
+Env = namedtuple('Env', ['server', 'workers', 'client', 'db'])
 
 
 @fixture
