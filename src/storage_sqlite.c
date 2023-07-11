@@ -206,9 +206,9 @@ static int storage_sqlite_prepare_statements(struct storage_sqlite *storage)
 	static const char *const fmt_repo_insert =
 	    "INSERT INTO cimple_repos(url) VALUES (?) ON CONFLICT(url) DO NOTHING;";
 	static const char *const fmt_run_insert =
-	    "INSERT INTO cimple_runs(status, ec, output, repo_id, rev) VALUES (?, -1, x'', ?, ?) RETURNING id;";
+	    "INSERT INTO cimple_runs(status, exit_code, output, repo_id, repo_rev) VALUES (?, -1, x'', ?, ?) RETURNING id;";
 	static const char *const fmt_run_finished =
-	    "UPDATE cimple_runs SET status = ?, ec = ?, output = ? WHERE id = ?;";
+	    "UPDATE cimple_runs SET status = ?, exit_code = ?, output = ? WHERE id = ?;";
 
 	int ret = 0;
 
@@ -462,8 +462,7 @@ free_url:
 int storage_sqlite_get_run_queue(struct storage *storage, struct run_queue *queue)
 {
 	static const char *const fmt =
-	    "SELECT cimple_runs.id, cimple_repos.url, cimple_runs.rev FROM cimple_runs"
-	    " INNER JOIN cimple_repos ON cimple_runs.repo_id = cimple_repos.id WHERE cimple_runs.status = ?;";
+	    "SELECT id, repo_url, repo_rev FROM cimple_runs_view WHERE status = ?;";
 
 	sqlite3_stmt *stmt;
 	int ret = 0;

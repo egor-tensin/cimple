@@ -26,5 +26,5 @@ class Database:
 
     def get_all_runs(self):
         with self.get_cursor() as cur:
-            cur.execute('SELECT * FROM cimple_runs_readable')
+            cur.execute('SELECT * FROM cimple_runs_view')
             return cur.fetchall()
