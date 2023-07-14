@@ -31,7 +31,7 @@ FROM base
 
 LABEL maintainer="Egor Tensin <Egor.Tensin@gmail.com>"
 
-RUN runtime_deps='tini libgit2 libsodium sqlite-dev' && \
+RUN runtime_deps='libgit2 libsodium sqlite tini' && \
     apk add -q --no-cache $runtime_deps
 
 ARG install_dir
