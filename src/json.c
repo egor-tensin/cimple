@@ -75,7 +75,7 @@ int json_send(struct json_object *obj, int fd)
 		return -1;
 
 	struct buf *buf = NULL;
-	ret = buf_pack_strings(&buf, 1, &str);
+	ret = buf_create_from_string(&buf, str);
 	free((char *)str);
 	if (ret < 0)
 		return ret;

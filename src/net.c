@@ -241,6 +241,11 @@ free:
 	return ret;
 }
 
+int buf_create_from_string(struct buf **buf, const char *str)
+{
+	return buf_create(buf, str, strlen(str) + 1);
+}
+
 void buf_destroy(struct buf *buf)
 {
 	free(buf->data);
@@ -255,88 +260,6 @@ uint32_t buf_get_size(const struct buf *buf)
 void *buf_get_data(const struct buf *buf)
 {
 	return buf->data;
-}
-
-static size_t count_strings(const void *_data, size_t size)
-{
-	const unsigned char *data = (const unsigned char *)_data;
-	const unsigned char *it = memchr(data, '\0', size);
-
-	size_t numof_strings = 0;
-	while (it) {
-		it = memchr(it + 1, '\0', size - (it - data) - 1);
-		++numof_strings;
-	}
-
-	return numof_strings;
-}
-
-int buf_pack_strings(struct buf **_buf, size_t argc, const char **argv)
-{
-	struct buf *buf = malloc(sizeof(struct buf));
-	if (!buf) {
-		log_errno("malloc");
-		return -1;
-	}
-
-	buf->size = 0;
-	for (size_t i = 0; i < argc; ++i)
-		buf->size += strlen(argv[i]) + 1;
-
-	buf->data = malloc(buf->size);
-	if (!buf->data) {
-		log_errno("malloc");
-		goto free_buf;
-	}
-
-	char *it = (char *)buf->data;
-	for (size_t i = 0; i < argc; ++i) {
-		it = stpcpy(it, argv[i]) + 1;
-	}
-
-	*_buf = buf;
-	return 0;
-
-free_buf:
-	free(buf);
-
-	return -1;
-}
-
-int buf_unpack_strings(const struct buf *buf, size_t *_argc, const char ***_argv)
-{
-	size_t argc = count_strings(buf->data, buf->size);
-	size_t copied = 0;
-
-	const char **argv = calloc(argc + 1, sizeof(const char *));
-	if (!argv) {
-		log_errno("calloc");
-		return -1;
-	}
-
-	const char *it = (const char *)buf->data;
-	for (copied = 0; copied < argc; ++copied) {
-		argv[copied] = strdup(it);
-		if (!argv[copied]) {
-			log_errno("strdup");
-			goto free;
-		}
-
-		it += strlen(argv[copied]) + 1;
-	}
-
-	*_argc = argc;
-	*_argv = argv;
-	return 0;
-
-free:
-	for (size_t i = 0; i < copied; ++i) {
-		free((char *)argv[i]);
-	}
-
-	free(argv);
-
-	return -1;
 }
 
 int net_send_buf(int fd, const struct buf *buf)
