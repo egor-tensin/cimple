@@ -99,9 +99,9 @@ def base_cmd_line(pytestconfig):
     cmd_line = CmdLine.unbuffered()
     valgrind = pytestconfig.getoption(PARAM_VALGRIND.codename)
     if valgrind is not None:
-        # Signal to Valgrind that ci.sh should obviously be exempt from memory
-        # leak checking:
-        cmd_line = CmdLine.wrap(CmdLine(valgrind, '--trace-children-skip=*/ci.sh', '--'), cmd_line)
+        # Signal to Valgrind that ci scripts should obviously be exempt from
+        # memory leak checking:
+        cmd_line = CmdLine.wrap(CmdLine(valgrind, '--trace-children-skip=*/ci', '--'), cmd_line)
     return cmd_line
 
 

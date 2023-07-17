@@ -42,6 +42,8 @@ static int wait_for_child(pid_t pid, int *ec)
 
 	if (WIFEXITED(status))
 		*ec = WEXITSTATUS(status);
+	else if (WIFSIGNALED(status))
+		*ec = status; /* Same as $?. */
 	else
 		*ec = -1;
 

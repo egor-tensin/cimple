@@ -40,7 +40,7 @@ class TestRepo(Repo):
     # Prevent Pytest from discovering test cases in this class:
     __test__ = False
 
-    def __init__(self, path, ci_script='ci.sh'):
+    def __init__(self, path, ci_script='ci'):
         super().__init__(path)
 
         self.runs_dir = os.path.join(self.path, 'runs')
@@ -78,8 +78,11 @@ class TestRepo(Repo):
         runs_dir = shlex.quote(self.runs_dir)
         return CI_SCRIPT.format(runs_dir=runs_dir)
 
-    def count_run_files(self):
+    def _count_run_files(self):
         return len([name for name in os.listdir(self.runs_dir) if os.path.isfile(os.path.join(self.runs_dir, name))])
+
+    def run_files_are_present(self, expected):
+        assert expected == self._count_run_files()
 
 
 class TestRepoOutput(TestRepo, abc.ABC):
@@ -223,24 +226,22 @@ class TestRepoSegfault(TestRepo):
 
     def __init__(self, repo_path, prog_path):
         self.prog_path = prog_path
-        self.prog_name = os.path.basename(prog_path)
         super().__init__(repo_path)
-
-        shutil.copy(prog_path, self.path)
-        self.run('git', 'add', '--', self.prog_name)
-        self.run('git', 'commit', '-q', '-m', 'add test program')
 
     @staticmethod
     def codename():
         return 'segfault'
 
-    def format_ci_script(self):
-        script = super().format_ci_script()
-        added = r'exec {prog}'.format(prog=shlex.quote(f'./{self.prog_name}'))
-        return f'{script}\n{added}\n'
+    def write_ci_script(self):
+        shutil.copy(self.prog_path, self.ci_script_path)
 
     def run_exit_code_matches(self, ec):
-        return ec < 0
+        # If WIFSIGNALED(status) && WTERMSIG(status) == SIGSEGV, then the $?
+        # would be 139.
+        return ec == 139
 
     def run_output_matches(self, output):
         return "Started the test program.\n" == output.decode()
+
+    def run_files_are_present(self, *args):
+        return True

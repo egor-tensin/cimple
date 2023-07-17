@@ -61,7 +61,7 @@ def _test_repo_internal(env, repo, numof_processes, runs_per_process):
         for proc in processes:
             proc.join()
 
-    assert numof_runs == repo.count_run_files()
+    repo.run_files_are_present(numof_runs)
 
     runs = env.db.get_all_runs()
     assert numof_runs == len(runs)
