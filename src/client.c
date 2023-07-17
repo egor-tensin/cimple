@@ -8,10 +8,15 @@
 #include "client.h"
 #include "cmd_line.h"
 #include "compiler.h"
+#include "const.h"
+#include "json_rpc.h"
 #include "log.h"
-#include "msg.h"
+#include "net.h"
+#include "protocol.h"
+#include "run_queue.h"
 
 #include <stdlib.h>
+#include <string.h>
 
 struct client {
 	int dummy;
@@ -36,30 +41,70 @@ void client_destroy(struct client *client)
 	free(client);
 }
 
-int client_main(UNUSED const struct client *client, const struct settings *settings, int argc,
-                const char **argv)
+static int make_request(struct jsonrpc_request **request, int argc, const char **argv)
 {
-	struct msg *response = NULL;
-	int ret = 0;
-
 	if (argc < 1) {
-		exit_with_usage_err("no message to send to the server");
+		exit_with_usage_err("no action specified");
 		return -1;
 	}
 
-	ret = msg_connect_and_talk_argv(settings->host, settings->port, argv, &response);
-	if (ret < 0 || !response || !msg_is_success(response)) {
-		log_err("Failed to connect to server or it couldn't process the request\n");
-		if (response)
-			msg_dump(response);
-		if (!ret)
-			ret = -1;
+	if (!strcmp(argv[0], CMD_RUN)) {
+		if (argc != 3)
+			return -1;
+
+		struct run *run = NULL;
+		int ret = run_create(&run, 0, argv[1], argv[2]);
+		if (ret < 0)
+			return ret;
+
+		ret = run_request_create(request, run);
+		run_destroy(run);
+		return ret;
+	}
+
+	return -1;
+}
+
+int client_main(UNUSED const struct client *client, const struct settings *settings, int argc,
+                const char **argv)
+{
+	int ret = 0;
+
+	struct jsonrpc_request *request = NULL;
+	ret = make_request(&request, argc, argv);
+	if (ret < 0) {
+		exit_with_usage_err("invalid request");
+		return ret;
+	}
+
+	ret = net_connect(settings->host, settings->port);
+	if (ret < 0)
+		goto free_request;
+	int fd = ret;
+
+	ret = jsonrpc_request_send(request, fd);
+	if (ret < 0)
+		goto close;
+
+	struct jsonrpc_response *response = NULL;
+	ret = jsonrpc_response_recv(&response, fd);
+	if (ret < 0)
+		goto close;
+
+	if (jsonrpc_response_is_error(response)) {
+		log_err("server failed to process the request\n");
+		ret = -1;
 		goto free_response;
 	}
 
 free_response:
-	if (response)
-		msg_free(response);
+	jsonrpc_response_destroy(response);
+
+close:
+	net_close(fd);
+
+free_request:
+	jsonrpc_request_destroy(request);
 
 	return ret;
 }

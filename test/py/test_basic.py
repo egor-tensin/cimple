@@ -47,18 +47,18 @@ def test_cmd_line_invalid_option(server_exe, worker_exe, client_exe):
     _test_cmd_line_invalid_option_internal(client_exe, 'client')
 
 
-def test_run_client_no_msg(client):
+def test_run_client_no_action(client):
     ec, output = client.try_run()
     assert ec != 0, f'Invalid exit code {ec}, output:\n{output}'
-    prefix = 'usage error: no message to send to the server\n'
+    prefix = 'usage error: no action specified\n'
     assert output.startswith(prefix), f'Invalid output:\n{output}'
 
 
-def test_run_client_invalid_msg(server, client):
+def test_run_client_invalid_request(server, client):
     ec, output = client.try_run('hello')
     assert ec != 0, f'Invalid exit code {ec}, output:\n{output}'
-    suffix = "Failed to connect to server or it couldn't process the request\n"
-    assert output.endswith(suffix), f'Invalid output:\n{output}'
+    prefix = 'usage error: invalid request\n'
+    assert output.startswith(prefix), f'Invalid output:\n{output}'
 
 
 def test_run_noop_server(server):

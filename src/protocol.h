@@ -8,18 +8,20 @@
 #ifndef __PROTOCOL_H__
 #define __PROTOCOL_H__
 
-#include "msg.h"
+#include "json_rpc.h"
 #include "process.h"
 #include "run_queue.h"
 
-int msg_run_parse(const struct msg *, struct run **);
+int run_request_create(struct jsonrpc_request **, const struct run *);
+int run_request_parse(const struct jsonrpc_request *, struct run **);
 
-int msg_new_worker_create(struct msg **);
+int new_worker_request_create(struct jsonrpc_request **);
+int new_worker_request_parse(const struct jsonrpc_request *);
 
-int msg_start_create(struct msg **, const struct run *);
-int msg_start_parse(const struct msg *, struct run **);
+int start_request_create(struct jsonrpc_request **, const struct run *);
+int start_request_parse(const struct jsonrpc_request *, struct run **);
 
-int msg_finished_create(struct msg **, int run_id, const struct proc_output *);
-int msg_finished_parse(const struct msg *, int *run_id, struct proc_output **);
+int finished_request_create(struct jsonrpc_request **, int run_id, const struct proc_output *);
+int finished_request_parse(const struct jsonrpc_request *, int *run_id, struct proc_output **);
 
 #endif

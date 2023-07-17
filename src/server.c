@@ -11,8 +11,8 @@
 #include "const.h"
 #include "event_loop.h"
 #include "file.h"
+#include "json_rpc.h"
 #include "log.h"
-#include "msg.h"
 #include "net.h"
 #include "process.h"
 #include "protocol.h"
@@ -169,15 +169,15 @@ static void server_assign_run(struct server *server)
 	struct worker *worker = worker_queue_remove_first(&server->worker_queue);
 	log("Removed worker %d from the queue\n", worker_get_fd(worker));
 
-	struct msg *start_msg = NULL;
+	struct jsonrpc_request *start_request = NULL;
 	int ret = 0;
 
-	ret = msg_start_create(&start_msg, run);
+	ret = start_request_create(&start_request, run);
 	if (ret < 0)
 		goto exit;
 
-	ret = msg_talk(worker_get_fd(worker), start_msg, NULL);
-	msg_free(start_msg);
+	ret = jsonrpc_request_send(start_request, worker_get_fd(worker));
+	jsonrpc_request_destroy(start_request);
 	if (ret < 0)
 		goto exit;
 
@@ -222,8 +222,8 @@ exit:
 	return NULL;
 }
 
-static int server_handle_cmd_new_worker(UNUSED const struct msg *request,
-                                        UNUSED struct msg **response, void *_ctx)
+static int server_handle_cmd_new_worker(UNUSED const struct jsonrpc_request *request,
+                                        UNUSED struct jsonrpc_response **response, void *_ctx)
 {
 	struct cmd_conn_ctx *ctx = (struct cmd_conn_ctx *)_ctx;
 	struct server *server = (struct server *)ctx->arg;
@@ -255,7 +255,8 @@ close:
 	return ret;
 }
 
-static int server_handle_cmd_run(const struct msg *request, struct msg **response, void *_ctx)
+static int server_handle_cmd_run(const struct jsonrpc_request *request,
+                                 struct jsonrpc_response **response, void *_ctx)
 {
 	struct cmd_conn_ctx *ctx = (struct cmd_conn_ctx *)_ctx;
 	struct server *server = (struct server *)ctx->arg;
@@ -263,11 +264,11 @@ static int server_handle_cmd_run(const struct msg *request, struct msg **respons
 
 	struct run *run = NULL;
 
-	ret = msg_run_parse(request, &run);
+	ret = run_request_parse(request, &run);
 	if (ret < 0)
 		return ret;
 
-	ret = msg_success(response);
+	ret = jsonrpc_response_create(response, request, NULL);
 	if (ret < 0)
 		goto destroy_run;
 
@@ -278,7 +279,7 @@ static int server_handle_cmd_run(const struct msg *request, struct msg **respons
 	return ret;
 
 free_response:
-	msg_free(*response);
+	jsonrpc_response_destroy(*response);
 	*response = NULL;
 
 destroy_run:
@@ -287,8 +288,8 @@ destroy_run:
 	return ret;
 }
 
-static int server_handle_cmd_finished(const struct msg *request, UNUSED struct msg **response,
-                                      void *_ctx)
+static int server_handle_cmd_finished(const struct jsonrpc_request *request,
+                                      UNUSED struct jsonrpc_response **response, void *_ctx)
 {
 	struct cmd_conn_ctx *ctx = (struct cmd_conn_ctx *)_ctx;
 	struct server *server = (struct server *)ctx->arg;
@@ -297,7 +298,7 @@ static int server_handle_cmd_finished(const struct msg *request, UNUSED struct m
 	int run_id = 0;
 	struct proc_output *output;
 
-	ret = msg_finished_parse(request, &run_id, &output);
+	ret = finished_request_parse(request, &run_id, &output);
 	if (ret < 0)
 		return ret;
 

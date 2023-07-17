@@ -60,8 +60,9 @@ add_my_executable(server server_main.c server.c
     const.c
     event_loop.c
     file.c
+    json.c
+    json_rpc.c
     log.c
-    msg.c
     net.c
     process.c
     protocol.c
@@ -74,16 +75,22 @@ add_my_executable(server server_main.c server.c
     string.c
     tcp_server.c
     worker_queue.c)
-target_link_libraries(server PRIVATE pthread sodium sqlite3)
+target_link_libraries(server PRIVATE json-c pthread sodium sqlite3)
 target_include_directories(server PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
 
 add_my_executable(client client_main.c client.c
+    base64.c
     cmd_line.c
     const.c
     file.c
+    json.c
+    json_rpc.c
     log.c
-    msg.c
-    net.c)
+    net.c
+    process.c
+    protocol.c
+    run_queue.c)
+target_link_libraries(client PRIVATE json-c sodium)
 
 add_my_executable(worker worker_main.c worker.c
     base64.c
@@ -94,12 +101,13 @@ add_my_executable(worker worker_main.c worker.c
     event_loop.c
     file.c
     git.c
+    json.c
+    json_rpc.c
     log.c
-    msg.c
     net.c
     process.c
     protocol.c
     run_queue.c
     signal.c
     string.c)
-target_link_libraries(worker PRIVATE git2 pthread sodium)
+target_link_libraries(worker PRIVATE git2 json-c pthread sodium)

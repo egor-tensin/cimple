@@ -7,132 +7,181 @@
 
 #include "protocol.h"
 #include "base64.h"
+#include "compiler.h"
 #include "const.h"
-#include "log.h"
-#include "msg.h"
+#include "json_rpc.h"
 #include "process.h"
 #include "run_queue.h"
-#include "string.h"
 
 #include <stddef.h>
-#include <stdio.h>
+#include <stdint.h>
 #include <stdlib.h>
 
-static int check_msg_length(const struct msg *msg, size_t expected)
-{
-	size_t actual = msg_get_length(msg);
+static const char *const run_key_id = "id";
+static const char *const run_key_url = "url";
+static const char *const run_key_rev = "rev";
 
-	if (actual != expected) {
-		log_err("Invalid number of arguments for a message: %zu\n", actual);
-		msg_dump(msg);
-		return -1;
-	}
-
-	return 0;
-}
-
-int msg_run_parse(const struct msg *msg, struct run **run)
-{
-	int ret = check_msg_length(msg, 3);
-	if (ret < 0)
-		return ret;
-
-	const char **argv = msg_get_strings(msg);
-	/* We don't know the ID yet. */
-	return run_create(run, 0, argv[1], argv[2]);
-}
-
-int msg_new_worker_create(struct msg **msg)
-{
-	static const char *argv[] = {CMD_NEW_WORKER, NULL};
-	return msg_from_argv(msg, argv);
-}
-
-int msg_start_create(struct msg **msg, const struct run *run)
-{
-	char id[16];
-	snprintf(id, sizeof(id), "%d", run_get_id(run));
-
-	const char *argv[] = {CMD_START, id, run_get_url(run), run_get_rev(run), NULL};
-
-	return msg_from_argv(msg, argv);
-}
-
-int msg_start_parse(const struct msg *msg, struct run **run)
+int run_request_create(struct jsonrpc_request **request, const struct run *run)
 {
 	int ret = 0;
 
-	ret = check_msg_length(msg, 4);
+	ret = jsonrpc_request_create(request, 1, CMD_RUN, NULL);
 	if (ret < 0)
 		return ret;
-
-	const char **argv = msg_get_strings(msg);
-
-	int id = 0;
-
-	ret = string_to_int(argv[1], &id);
+	ret = jsonrpc_request_set_param_string(*request, run_key_url, run_get_url(run));
 	if (ret < 0)
-		return ret;
-
-	return run_create(run, id, argv[2], argv[3]);
-}
-
-int msg_finished_create(struct msg **msg, int run_id, const struct proc_output *output)
-{
-	int ret = 0;
-
-	char id[16];
-	char ec[16];
-
-	snprintf(id, sizeof(id), "%d", run_id);
-	snprintf(ec, sizeof(ec), "%d", output->ec);
-
-	char *b64data = NULL;
-
-	ret = base64_encode(output->data, output->data_size, &b64data);
+		goto free_request;
+	ret = jsonrpc_request_set_param_string(*request, run_key_rev, run_get_rev(run));
 	if (ret < 0)
-		return ret;
+		goto free_request;
 
-	const char *argv[] = {CMD_FINISHED, id, ec, b64data, NULL};
+	return ret;
 
-	ret = msg_from_argv(msg, argv);
-	if (ret < 0)
-		goto free_b64data;
-
-free_b64data:
-	free(b64data);
+free_request:
+	jsonrpc_request_destroy(*request);
 
 	return ret;
 }
 
-int msg_finished_parse(const struct msg *msg, int *run_id, struct proc_output **_output)
+int run_request_parse(const struct jsonrpc_request *request, struct run **run)
 {
 	int ret = 0;
 
-	ret = check_msg_length(msg, 4);
+	const char *url = NULL;
+	ret = jsonrpc_request_get_param_string(request, run_key_url, &url);
+	if (ret < 0)
+		return ret;
+	const char *rev = NULL;
+	ret = jsonrpc_request_get_param_string(request, run_key_rev, &rev);
 	if (ret < 0)
 		return ret;
 
-	const char **argv = msg_get_strings(msg);
+	return run_create(run, 0, url, rev);
+}
+
+int new_worker_request_create(struct jsonrpc_request **request)
+{
+	return jsonrpc_notification_create(request, CMD_NEW_WORKER, NULL);
+}
+
+int new_worker_request_parse(UNUSED const struct jsonrpc_request *request)
+{
+	return 0;
+}
+
+int start_request_create(struct jsonrpc_request **request, const struct run *run)
+{
+	int ret = 0;
+
+	ret = jsonrpc_notification_create(request, CMD_START, NULL);
+	if (ret < 0)
+		return ret;
+	ret = jsonrpc_request_set_param_int(*request, run_key_id, run_get_id(run));
+	if (ret < 0)
+		goto free_request;
+	ret = jsonrpc_request_set_param_string(*request, run_key_url, run_get_url(run));
+	if (ret < 0)
+		goto free_request;
+	ret = jsonrpc_request_set_param_string(*request, run_key_rev, run_get_rev(run));
+	if (ret < 0)
+		goto free_request;
+
+	return ret;
+
+free_request:
+	jsonrpc_request_destroy(*request);
+
+	return ret;
+}
+
+int start_request_parse(const struct jsonrpc_request *request, struct run **run)
+{
+	int ret = 0;
+
+	int64_t id = 0;
+	ret = jsonrpc_request_get_param_int(request, run_key_id, &id);
+	if (ret < 0)
+		return ret;
+	const char *url = NULL;
+	ret = jsonrpc_request_get_param_string(request, run_key_url, &url);
+	if (ret < 0)
+		return ret;
+	const char *rev = NULL;
+	ret = jsonrpc_request_get_param_string(request, run_key_rev, &rev);
+	if (ret < 0)
+		return ret;
+
+	return run_create(run, (int)id, url, rev);
+}
+
+static const char *const finished_key_run_id = "run_id";
+static const char *const finished_key_ec = "exit_code";
+static const char *const finished_key_data = "output";
+
+int finished_request_create(struct jsonrpc_request **request, int run_id,
+                            const struct proc_output *output)
+{
+	int ret = 0;
+
+	ret = jsonrpc_notification_create(request, CMD_FINISHED, NULL);
+	if (ret < 0)
+		return ret;
+	ret = jsonrpc_request_set_param_int(*request, finished_key_run_id, run_id);
+	if (ret < 0)
+		goto free_request;
+	ret = jsonrpc_request_set_param_int(*request, finished_key_ec, output->ec);
+	if (ret < 0)
+		goto free_request;
+
+	char *b64data = NULL;
+	ret = base64_encode(output->data, output->data_size, &b64data);
+	if (ret < 0)
+		goto free_request;
+
+	ret = jsonrpc_request_set_param_string(*request, finished_key_data, b64data);
+	free(b64data);
+	if (ret < 0)
+		goto free_request;
+
+	return ret;
+
+free_request:
+	jsonrpc_request_destroy(*request);
+
+	return ret;
+}
+
+int finished_request_parse(const struct jsonrpc_request *request, int *_run_id,
+                           struct proc_output **_output)
+{
+	int ret = 0;
 
 	struct proc_output *output = NULL;
 	ret = proc_output_create(&output);
 	if (ret < 0)
 		return ret;
 
-	ret = string_to_int(argv[1], run_id);
-	if (ret < 0)
-		goto free_output;
-	ret = string_to_int(argv[2], &output->ec);
+	int64_t run_id = 0;
+	ret = jsonrpc_request_get_param_int(request, finished_key_run_id, &run_id);
 	if (ret < 0)
 		goto free_output;
 
-	const char *b64data = argv[3];
+	int64_t ec = -1;
+	ret = jsonrpc_request_get_param_int(request, finished_key_ec, &ec);
+	if (ret < 0)
+		goto free_output;
+	output->ec = (int)ec;
+
+	const char *b64data = NULL;
+	ret = jsonrpc_request_get_param_string(request, finished_key_data, &b64data);
+	if (ret < 0)
+		goto free_output;
 
 	ret = base64_decode(b64data, &output->data, &output->data_size);
 	if (ret < 0)
 		goto free_output;
 
+	*_run_id = (int)run_id;
 	*_output = output;
 	return ret;
 

@@ -13,7 +13,6 @@
 #include "event_loop.h"
 #include "git.h"
 #include "log.h"
-#include "msg.h"
 #include "net.h"
 #include "process.h"
 #include "protocol.h"
@@ -83,14 +82,14 @@ static int worker_set_stopping(UNUSED struct event_loop *loop, UNUSED int fd, UN
 	return 0;
 }
 
-static int worker_handle_cmd_start(const struct msg *request, UNUSED struct msg **response,
-                                   void *_ctx)
+static int worker_handle_cmd_start(const struct jsonrpc_request *request,
+                                   UNUSED struct jsonrpc_response **response, void *_ctx)
 {
 	struct cmd_conn_ctx *ctx = (struct cmd_conn_ctx *)_ctx;
 	struct worker *worker = (struct worker *)ctx->arg;
 	int ret = 0;
 
-	ret = msg_start_parse(request, &worker->run);
+	ret = start_request_parse(request, &worker->run);
 	if (ret < 0)
 		return ret;
 
@@ -193,19 +192,26 @@ static int worker_do_run(struct worker *worker)
 
 	proc_output_dump(result);
 
-	struct msg *finished_msg = NULL;
+	struct jsonrpc_request *finished_request = NULL;
 
-	ret = msg_finished_create(&finished_msg, run_get_id(worker->run), result);
+	ret = finished_request_create(&finished_request, run_get_id(worker->run), result);
 	if (ret < 0)
 		goto free_output;
 
-	ret = msg_connect_and_talk(worker->settings->host, worker->settings->port, finished_msg,
-	                           NULL);
+	ret = net_connect(worker->settings->host, worker->settings->port);
 	if (ret < 0)
-		goto free_finished_msg;
+		goto free_request;
+	int fd = ret;
 
-free_finished_msg:
-	msg_free(finished_msg);
+	ret = jsonrpc_request_send(finished_request, fd);
+	if (ret < 0)
+		goto close_conn;
+
+close_conn:
+	net_close(fd);
+
+free_request:
+	jsonrpc_request_destroy(finished_request);
 
 free_output:
 	proc_output_destroy(result);
@@ -224,14 +230,13 @@ static int worker_get_run(struct worker *worker)
 		return ret;
 	fd = ret;
 
-	struct msg *new_worker_msg = NULL;
-
-	ret = msg_new_worker_create(&new_worker_msg);
+	struct jsonrpc_request *new_worker_request = NULL;
+	ret = new_worker_request_create(&new_worker_request);
 	if (ret < 0)
 		goto close;
 
-	ret = msg_send(fd, new_worker_msg);
-	msg_free(new_worker_msg);
+	ret = jsonrpc_request_send(new_worker_request, fd);
+	jsonrpc_request_destroy(new_worker_request);
 	if (ret < 0)
 		goto close;
 

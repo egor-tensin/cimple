@@ -8,8 +8,8 @@
 #include "command.h"
 #include "compiler.h"
 #include "event_loop.h"
+#include "json_rpc.h"
 #include "log.h"
-#include "msg.h"
 
 #include <poll.h>
 #include <stdlib.h>
@@ -107,9 +107,10 @@ void cmd_dispatcher_destroy(struct cmd_dispatcher *dispatcher)
 }
 
 static int cmd_dispatcher_handle_internal(const struct cmd_dispatcher *dispatcher,
-                                          const struct msg *command, struct msg **result, void *arg)
+                                          const struct jsonrpc_request *request,
+                                          struct jsonrpc_response **result, void *arg)
 {
-	const char *actual_cmd = msg_get_first_string(command);
+	const char *actual_cmd = jsonrpc_request_get_method(request);
 
 	for (size_t i = 0; i < dispatcher->numof_cmds; ++i) {
 		struct cmd_desc *cmd = &dispatcher->cmds[i];
@@ -117,16 +118,15 @@ static int cmd_dispatcher_handle_internal(const struct cmd_dispatcher *dispatche
 		if (strcmp(cmd->name, actual_cmd))
 			continue;
 
-		return cmd->handler(command, result, arg);
+		return cmd->handler(request, result, arg);
 	}
 
-	log_err("Received an unknown command\n");
-	msg_dump(command);
+	log_err("Received an unknown command: %s\n", actual_cmd);
 	return -1;
 }
 
-int cmd_dispatcher_handle(const struct cmd_dispatcher *dispatcher, const struct msg *command,
-                          struct msg **result)
+int cmd_dispatcher_handle(const struct cmd_dispatcher *dispatcher,
+                          const struct jsonrpc_request *command, struct jsonrpc_response **result)
 {
 	return cmd_dispatcher_handle_internal(dispatcher, command, result, dispatcher->ctx);
 }
@@ -147,32 +147,59 @@ static struct cmd_conn_ctx *make_conn_ctx(int fd, void *arg)
 
 static int cmd_dispatcher_handle_conn_internal(int conn_fd, struct cmd_dispatcher *dispatcher)
 {
-	struct msg *request = NULL, *response = NULL;
 	int ret = 0;
 
 	struct cmd_conn_ctx *new_ctx = make_conn_ctx(conn_fd, dispatcher->ctx);
 	if (!new_ctx)
 		return -1;
 
-	ret = msg_recv(conn_fd, &request);
+	struct jsonrpc_request *request = NULL;
+	ret = jsonrpc_request_recv(&request, conn_fd);
 	if (ret < 0)
 		goto free_ctx;
 
-	ret = cmd_dispatcher_handle_internal(dispatcher, request, &response, new_ctx);
-	if (ret < 0)
-		goto free_response;
+	const int requires_response = !jsonrpc_request_is_notification(request);
 
-	if (response) {
-		ret = msg_send(conn_fd, response);
+	struct jsonrpc_response *default_response = NULL;
+	if (requires_response) {
+		ret = jsonrpc_response_create(&default_response, request, NULL);
 		if (ret < 0)
-			goto free_response;
+			goto free_request;
 	}
 
-free_response:
-	if (response)
-		msg_free(response);
+	struct jsonrpc_response *default_error = NULL;
+	if (requires_response) {
+		ret = jsonrpc_error_create(&default_error, request, -1, "An error occured");
+		if (ret < 0)
+			goto free_default_response;
+	}
 
-	msg_free(request);
+	struct jsonrpc_response *response = NULL;
+	ret = cmd_dispatcher_handle_internal(dispatcher, request, &response, new_ctx);
+
+	if (requires_response) {
+		struct jsonrpc_response *actual_response = response;
+		if (!actual_response) {
+			actual_response = ret < 0 ? default_error : default_response;
+		}
+		if (ret < 0 && !jsonrpc_response_is_error(actual_response)) {
+			actual_response = default_error;
+		}
+		ret = jsonrpc_response_send(actual_response, conn_fd) < 0 ? -1 : ret;
+	}
+
+	if (response)
+		jsonrpc_response_destroy(response);
+
+	if (default_error)
+		jsonrpc_response_destroy(default_error);
+
+free_default_response:
+	if (default_response)
+		jsonrpc_response_destroy(default_response);
+
+free_request:
+	jsonrpc_request_destroy(request);
 
 free_ctx:
 	free(new_ctx);
