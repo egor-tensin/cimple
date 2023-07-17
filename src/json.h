@@ -19,7 +19,7 @@
 		log_err("JSON: %s failed\n", fn);                                                  \
 	} while (0)
 
-char *json_to_string(struct json_object *);
+const char *json_to_string(struct json_object *);
 struct json_object *json_from_string(const char *);
 
 int json_clone(const struct json_object *, const char *key, struct json_object **value);

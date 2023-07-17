@@ -26,7 +26,7 @@ int buf_create_from_string(struct buf **, const char *);
 void buf_destroy(struct buf *);
 
 uint32_t buf_get_size(const struct buf *);
-void *buf_get_data(const struct buf *);
+const void *buf_get_data(const struct buf *);
 
 int net_send_buf(int fd, const struct buf *);
 int net_recv_buf(int fd, struct buf **);

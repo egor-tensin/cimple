@@ -210,35 +210,22 @@ int net_recv(int fd, void *buf, size_t size)
 
 struct buf {
 	uint32_t size;
-	void *data;
+	const void *data;
 };
 
 int buf_create(struct buf **_buf, const void *data, uint32_t size)
 {
-	int ret = 0;
-
 	struct buf *buf = malloc(sizeof(struct buf));
 	if (!buf) {
 		log_errno("malloc");
 		return -1;
 	}
 
-	buf->data = malloc(size);
-	if (!buf->data) {
-		log_errno("malloc");
-		goto free;
-	}
-
+	buf->data = data;
 	buf->size = size;
-	memcpy(buf->data, data, size);
 
 	*_buf = buf;
-	return ret;
-
-free:
-	free(buf);
-
-	return ret;
+	return 0;
 }
 
 int buf_create_from_string(struct buf **buf, const char *str)
@@ -248,7 +235,6 @@ int buf_create_from_string(struct buf **buf, const char *str)
 
 void buf_destroy(struct buf *buf)
 {
-	free(buf->data);
 	free(buf);
 }
 
@@ -257,7 +243,7 @@ uint32_t buf_get_size(const struct buf *buf)
 	return buf->size;
 }
 
-void *buf_get_data(const struct buf *buf)
+const void *buf_get_data(const struct buf *buf)
 {
 	return buf->data;
 }
@@ -305,8 +291,6 @@ int net_recv_buf(int fd, struct buf **buf)
 	ret = buf_create(buf, data, size);
 	if (ret < 0)
 		goto free_data;
-
-	free(data);
 
 	return ret;
 

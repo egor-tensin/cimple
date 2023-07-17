@@ -17,21 +17,14 @@
 #include <stdlib.h>
 #include <string.h>
 
-char *json_to_string(struct json_object *obj)
+const char *json_to_string(struct json_object *obj)
 {
 	const char *result = json_object_to_json_string(obj);
 	if (!result) {
 		json_errno("json_object_to_json_string");
 		return NULL;
 	}
-
-	char *_result = strdup(result);
-	if (!_result) {
-		log_errno("strdup");
-		return NULL;
-	}
-
-	return _result;
+	return result;
 }
 
 struct json_object *json_from_string(const char *src)
@@ -76,15 +69,11 @@ int json_send(struct json_object *obj, int fd)
 
 	struct buf *buf = NULL;
 	ret = buf_create_from_string(&buf, str);
-	free((char *)str);
 	if (ret < 0)
 		return ret;
 
 	ret = net_send_buf(fd, buf);
 	buf_destroy(buf);
-	if (ret < 0)
-		return ret;
-
 	return ret;
 }
 
@@ -103,6 +92,7 @@ struct json_object *json_recv(int fd)
 		goto destroy_buf;
 
 destroy_buf:
+	free((void *)buf_get_data(buf));
 	buf_destroy(buf);
 
 	return result;
