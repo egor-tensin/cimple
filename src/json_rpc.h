@@ -24,9 +24,6 @@ int jsonrpc_notification_create(struct jsonrpc_request **, const char *method,
                                 struct json_object *params);
 int jsonrpc_request_is_notification(const struct jsonrpc_request *);
 
-const char *jsonrpc_request_to_string(struct jsonrpc_request *);
-int jsonrpc_request_parse(struct jsonrpc_request **, const char *src);
-
 int jsonrpc_request_send(const struct jsonrpc_request *, int fd);
 int jsonrpc_request_recv(struct jsonrpc_request **, int fd);
 
@@ -47,9 +44,6 @@ void jsonrpc_response_destroy(struct jsonrpc_response *);
 int jsonrpc_error_create(struct jsonrpc_response **, struct jsonrpc_request *, int code,
                          const char *message);
 int jsonrpc_response_is_error(const struct jsonrpc_response *);
-
-const char *jsonrpc_response_to_string(struct jsonrpc_response *);
-int jsonrpc_response_parse(struct jsonrpc_response **, const char *src);
 
 int jsonrpc_response_send(const struct jsonrpc_response *, int fd);
 int jsonrpc_response_recv(struct jsonrpc_response **, int fd);

@@ -257,11 +257,6 @@ int jsonrpc_request_is_notification(const struct jsonrpc_request *request)
 	return !json_has(request->impl, jsonrpc_key_id);
 }
 
-const char *jsonrpc_request_to_string(struct jsonrpc_request *request)
-{
-	return json_to_string(request->impl);
-}
-
 static int jsonrpc_request_from_json(struct jsonrpc_request **_request, struct json_object *impl)
 {
 	int ret = 0;
@@ -287,26 +282,6 @@ static int jsonrpc_request_from_json(struct jsonrpc_request **_request, struct j
 	request->impl = impl;
 
 	*_request = request;
-	return ret;
-}
-
-int jsonrpc_request_parse(struct jsonrpc_request **_request, const char *src)
-{
-	struct json_object *impl = json_from_string(src);
-	if (!impl) {
-		log_err("JSON-RPC: failed to parse request\n");
-		return -1;
-	}
-
-	int ret = jsonrpc_request_from_json(_request, impl);
-	if (ret < 0)
-		goto free_impl;
-
-	return ret;
-
-free_impl:
-	json_object_put(impl);
-
 	return ret;
 }
 
@@ -511,11 +486,6 @@ int jsonrpc_response_is_error(const struct jsonrpc_response *response)
 	return json_has(response->impl, jsonrpc_key_error);
 }
 
-const char *jsonrpc_response_to_string(struct jsonrpc_response *response)
-{
-	return json_to_string(response->impl);
-}
-
 static int jsonrpc_response_from_json(struct jsonrpc_response **_response, struct json_object *impl)
 {
 	int ret = 0;
@@ -538,26 +508,6 @@ static int jsonrpc_response_from_json(struct jsonrpc_response **_response, struc
 	response->impl = impl;
 
 	*_response = response;
-	return ret;
-}
-
-int jsonrpc_response_parse(struct jsonrpc_response **_response, const char *src)
-{
-	struct json_object *impl = json_from_string(src);
-	if (!impl) {
-		log_err("JSON-RPC: failed to parse response\n");
-		return -1;
-	}
-
-	int ret = jsonrpc_response_from_json(_response, impl);
-	if (ret < 0)
-		goto free_impl;
-
-	return ret;
-
-free_impl:
-	json_object_put(impl);
-
 	return ret;
 }
 
