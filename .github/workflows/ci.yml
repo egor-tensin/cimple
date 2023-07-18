@@ -55,7 +55,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo DEBIAN_FRONTEND=noninteractive apt-get install -yq --no-install-recommends gcovr libgit2-dev libjson-c-dev libsodium-dev libsqlite3-dev python3-pytest valgrind
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -yq --no-install-recommends gcovr libgit2-dev libjson-c-dev libsodium-dev libsqlite3-dev python3-pytest
       - name: Generate report
         run: make coverage
       - name: Upload report
@@ -63,6 +63,31 @@ jobs:
         with:
           name: coverage
           path: ./build/coverage/
+          if-no-files-found: error
+
+  flame_graphs:
+    runs-on: ubuntu-latest
+    name: Flame graphs
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -yq --no-install-recommends libgit2-dev libjson-c-dev libsodium-dev libsqlite3-dev python3-pytest
+      - name: Install FlameGraph
+        run: |
+          git clone --depth 1 https://github.com/brendangregg/FlameGraph.git ~/FlameGraph
+          echo ~/FlameGraph >> "$GITHUB_PATH"
+      - name: Build
+        run: make install
+      - name: Generate flame graphs
+        run: sudo --preserve-env=PATH make test/perf
+      - name: Upload graphs
+        uses: actions/upload-artifact@v3
+        with:
+          name: flame_graphs
+          path: ./build/flame_graphs/
           if-no-files-found: error
 
   publish:

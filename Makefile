@@ -5,6 +5,7 @@ build_dir := $(src_dir)/build
 cmake_dir := $(build_dir)/cmake
 install_dir := $(build_dir)/install
 coverage_dir := $(build_dir)/coverage
+flame_graphs_dir := $(build_dir)/flame_graphs
 
 COMPILER ?= clang
 CONFIGURATION ?= Debug
@@ -41,6 +42,7 @@ build:
 		-D 'DEFAULT_HOST=$(call escape,$(DEFAULT_HOST))' \
 		-D 'DEFAULT_PORT=$(call escape,$(DEFAULT_PORT))' \
 		-D 'COVERAGE=$(call escape,$(COVERAGE))' \
+		-D 'FLAME_GRAPHS_DIR=$(call escape,$(flame_graphs_dir))' \
 		-S '$(call escape,$(src_dir))' \
 		-B '$(call escape,$(cmake_dir))'
 	cmake --build '$(call escape,$(cmake_dir))' -- -j
@@ -90,6 +92,14 @@ test/stress:
 	@echo -----------------------------------------------------------------
 	ctest --test-dir '$(call escape,$(cmake_dir))' \
 		--verbose --tests-regex python_tests_stress
+
+.PHONY: test/perf
+test/perf:
+	@echo -----------------------------------------------------------------
+	@echo Collecting profiling data
+	@echo -----------------------------------------------------------------
+	ctest --test-dir '$(call escape,$(cmake_dir))' \
+		--verbose --tests-regex python_tests_perf
 
 .PHONY: test/docker
 test/docker: test/sanity

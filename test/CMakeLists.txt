@@ -29,3 +29,12 @@ add_python_tests(python_tests_stress
 add_python_tests(python_tests_valgrind
     Python3::Interpreter -m pytest ${python_test_args} -m "not stress"
         --valgrind-binary "${CMAKE_CURRENT_SOURCE_DIR}/../src/valgrind.sh")
+
+if(NOT DEFINED FLAME_GRAPHS_DIR)
+    set(FLAME_GRAPHS_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
+endif()
+
+add_python_tests(python_tests_perf
+    Python3::Interpreter -m pytest ${python_test_args} -m "flame_graph"
+        --flame-graph-binary "${CMAKE_CURRENT_SOURCE_DIR}/../scripts/flame_graph.sh"
+        --flame-graphs-dir "${FLAME_GRAPHS_DIR}")

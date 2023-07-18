@@ -14,8 +14,10 @@ def my_parametrize(names, values, ids=None, **kwargs):
         if len(_names) == 1:
             ids = [f'{names}={v}' for v in values]
         else:
+            _values = [combination.values if hasattr(combination, 'values') else combination
+                       for combination in values]
             ids = [
                 '-'.join(f'{k}={v}' for k, v in zip(_names, combination))
-                for combination in values
+                for combination in _values
             ]
     return pytest.mark.parametrize(names, values, ids=ids, **kwargs)

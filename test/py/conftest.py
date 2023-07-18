@@ -51,6 +51,9 @@ BINARY_PARAMS = [
 
 PARAM_VALGRIND = ParamBinary('valgrind', required=False)
 
+PARAM_FLAME_GRAPH = ParamBinary('flame_graph', required=False)
+PARAM_FLAME_GRAPHS_DIR = Param('flame_graphs_dir', 'directory to store flame graphs', required=False)
+
 
 class ParamVersion(Param):
     def __init__(self):
@@ -62,6 +65,8 @@ PARAM_VERSION = ParamVersion()
 PARAMS = list(BINARY_PARAMS)
 PARAMS += [
     PARAM_VALGRIND,
+    PARAM_FLAME_GRAPH,
+    PARAM_FLAME_GRAPHS_DIR,
     PARAM_VERSION,
 ]
 
@@ -94,14 +99,19 @@ def paths(pytestconfig):
     return Paths(pytestconfig)
 
 
+class CmdLineValgrind(CmdLine):
+    def __init__(self, binary):
+        # Signal to Valgrind that ci scripts should obviously be exempt from
+        # memory leak checking:
+        super().__init__(binary, '--trace-children-skip=*/ci', '--')
+
+
 @fixture(scope='session')
 def base_cmd_line(pytestconfig):
     cmd_line = CmdLine.unbuffered()
     valgrind = pytestconfig.getoption(PARAM_VALGRIND.codename)
     if valgrind is not None:
-        # Signal to Valgrind that ci scripts should obviously be exempt from
-        # memory leak checking:
-        cmd_line = CmdLine.wrap(CmdLine(valgrind, '--trace-children-skip=*/ci', '--'), cmd_line)
+        cmd_line = CmdLine.wrap(CmdLineValgrind(valgrind), cmd_line)
     return cmd_line
 
 
@@ -194,6 +204,29 @@ def repo_path(tmp_path):
     return os.path.join(tmp_path, 'repo')
 
 
+@fixture
+def flame_graph_path(pytestconfig, tmp_path):
+    dir = pytestconfig.getoption(PARAM_FLAME_GRAPHS_DIR.codename)
+    if dir is None:
+        return os.path.join(tmp_path, 'flame_graph.svg')
+    os.makedirs(dir, exist_ok=True)
+    return os.path.join(dir, 'flame_graph.svg')
+
+
+@fixture
+def profiler(pytestconfig, server, workers, flame_graph_path):
+    script = pytestconfig.getoption(PARAM_FLAME_GRAPH.codename)
+    if script is None:
+        yield
+        return
+    pids = [server.pid] + [worker.pid for worker in workers]
+    pids = map(str, pids)
+    cmd_line = CmdLine(script, flame_graph_path, *pids)
+    with cmd_line.run_async() as proc:
+        yield
+    assert proc.returncode == 0
+
+
 ALL_REPOS = [
     repo.TestRepoOutputSimple,
     repo.TestRepoOutputEmpty,
@@ -225,5 +258,5 @@ Env = namedtuple('Env', ['server', 'workers', 'client', 'db'])
 
 
 @fixture
-def env(server, workers, client, sqlite_db):
+def env(server, workers, profiler, client, sqlite_db):
     return Env(server, workers, client, sqlite_db)

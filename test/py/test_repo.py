@@ -79,7 +79,11 @@ def test_repo(env, test_repo, numof_clients, runs_per_client):
 
 
 @pytest.mark.stress
-@my_parametrize(('numof_clients', 'runs_per_client'),
-                [(10, 50), (1, 2000), (4, 500)])
+@my_parametrize('numof_clients,runs_per_client',
+                [
+                    (10, 50),
+                    (1, 2000),
+                    pytest.param(4, 500, marks=pytest.mark.flame_graph),
+                ])
 def test_repo_stress(env, stress_test_repo, numof_clients, runs_per_client):
     _test_repo_internal(env, stress_test_repo, numof_clients, runs_per_client)
