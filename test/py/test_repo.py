@@ -72,6 +72,7 @@ def _test_repo_internal(env, repo, numof_processes, runs_per_process):
         assert repo.run_output_matches(output), f"Output doesn't match: {output}"
 
 
+@pytest.mark.valgrind
 @my_parametrize('runs_per_client', [1, 5])
 @my_parametrize('numof_clients', [1, 5])
 def test_repo(env, test_repo, numof_clients, runs_per_client):

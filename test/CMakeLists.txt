@@ -27,7 +27,7 @@ add_python_tests(python_tests_stress
     Python3::Interpreter -m pytest ${python_test_args} -m "stress")
 
 add_python_tests(python_tests_valgrind
-    Python3::Interpreter -m pytest ${python_test_args} -m "not stress"
+    Python3::Interpreter -m pytest ${python_test_args} -m "valgrind"
         --valgrind-binary "${CMAKE_CURRENT_SOURCE_DIR}/../src/valgrind.sh")
 
 if(NOT DEFINED FLAME_GRAPHS_DIR)
