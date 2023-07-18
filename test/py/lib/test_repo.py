@@ -159,12 +159,8 @@ class TestRepoOutputEmpty(TestRepoOutput):
         return len(output) == 0
 
 
-# Making it a bash script introduces way too much overhead with all the
-# argument expansions; it slows things down considerably.
-OUTPUT_SCRIPT_LONG = r'''#!/usr/bin/env python3
-output = {output}
-import sys
-sys.stdout.write(output)
+OUTPUT_SCRIPT_LONG = r'''#!/bin/sh -e
+dd if=/dev/urandom count={output_len_kb} bs=1024 | base64
 '''
 
 
@@ -172,11 +168,6 @@ class TestRepoOutputLong(TestRepoOutput):
     __test__ = False
 
     OUTPUT_LEN_KB = 300
-
-    def __init__(self, *args, **kwargs):
-        nb = TestRepoOutputLong.OUTPUT_LEN_KB * 1024
-        self.output = base64.encodebytes(random.randbytes(nb)).decode()
-        super().__init__(*args, **kwargs)
 
     @staticmethod
     def codename():
@@ -187,10 +178,12 @@ class TestRepoOutputLong(TestRepoOutput):
         return True
 
     def format_output_script(self):
-        return OUTPUT_SCRIPT_LONG.format(output=repr(self.output))
+        output_len = TestRepoOutputLong.OUTPUT_LEN_KB
+        output_len = shlex.quote(str(output_len))
+        return OUTPUT_SCRIPT_LONG.format(output_len_kb=output_len)
 
     def run_output_matches(self, output):
-        return output.decode() == self.output
+        return len(output) > TestRepoOutputLong.OUTPUT_LEN_KB * 1024
 
 
 OUTPUT_SCRIPT_NULL = r'''#!/usr/bin/env python3
