@@ -64,6 +64,12 @@ jobs:
           name: coverage
           path: ./build/coverage/
           if-no-files-found: error
+      - name: Publish to GitHub Pages
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: ./build/coverage/
+          target-folder: coverage
+        if: github.ref == 'refs/heads/master'
 
   flame_graphs:
     runs-on: ubuntu-latest
@@ -81,7 +87,7 @@ jobs:
           echo ~/FlameGraph >> "$GITHUB_PATH"
       - name: Build
         run: make install
-      - name: Generate flame graphs
+      - name: Generate graphs
         run: sudo --preserve-env=PATH make test/perf
       - name: Upload graphs
         uses: actions/upload-artifact@v3
@@ -89,6 +95,12 @@ jobs:
           name: flame_graphs
           path: ./build/flame_graphs/
           if-no-files-found: error
+      - name: Publish to GitHub Pages
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: ./build/flame_graphs/
+          target-folder: flame_graphs
+        if: github.ref == 'refs/heads/master'
 
   publish:
     needs: [lint, build, coverage]
