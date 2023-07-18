@@ -49,18 +49,12 @@ BINARY_PARAMS = [
     ParamBinary(name) for name in ('server', 'worker', 'client', 'sigsegv')
 ]
 
+PARAM_VERSION = Param('project_version', 'project version')
+
 PARAM_VALGRIND = ParamBinary('valgrind', required=False)
 
 PARAM_FLAME_GRAPH = ParamBinary('flame_graph', required=False)
 PARAM_FLAME_GRAPHS_DIR = Param('flame_graphs_dir', 'directory to store flame graphs', required=False)
-
-
-class ParamVersion(Param):
-    def __init__(self):
-        super().__init__('project_version', 'project version')
-
-
-PARAM_VERSION = ParamVersion()
 
 PARAMS = list(BINARY_PARAMS)
 PARAMS += [
