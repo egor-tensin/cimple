@@ -47,8 +47,9 @@ jobs:
         run: make test/valgrind
 
   coverage:
+    needs: [build]
     runs-on: ubuntu-latest
-    name: Coverage report
+    name: 'Code coverage & flame graphs'
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -56,40 +57,37 @@ jobs:
         run: |
           sudo apt-get update
           sudo DEBIAN_FRONTEND=noninteractive apt-get install -yq --no-install-recommends gcovr libgit2-dev libjson-c-dev libsodium-dev libsqlite3-dev python3-pytest
-      - name: Generate report
-        run: make coverage
+      - name: Install FlameGraph
+        run: |
+          git clone --depth 1 https://github.com/brendangregg/FlameGraph.git ~/FlameGraph
+          echo ~/FlameGraph >> "$GITHUB_PATH"
+      - name: Enable profiling
+        run: |
+          echo -1 | sudo tee /proc/sys/kernel/perf_event_paranoid
+      - name: Generate coverage report
+        run: |
+          make coverage
+          mkdir -p /tmp/out/
+          cp -r ./build/coverage/ /tmp/out/
       - name: Upload report
         uses: actions/upload-artifact@v3
         with:
           name: coverage
           path: ./build/coverage/
           if-no-files-found: error
-      - name: Publish to GitHub Pages
-        uses: JamesIves/github-pages-deploy-action@v4
-        with:
-          folder: ./build/coverage/
-          target-folder: coverage
-        if: github.ref == 'refs/heads/master'
-
-  flame_graphs:
-    runs-on: ubuntu-latest
-    name: Flame graphs
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo DEBIAN_FRONTEND=noninteractive apt-get install -yq --no-install-recommends libgit2-dev libjson-c-dev libsodium-dev libsqlite3-dev python3-pytest
-      - name: Install FlameGraph
-        run: |
-          git clone --depth 1 https://github.com/brendangregg/FlameGraph.git ~/FlameGraph
-          echo ~/FlameGraph >> "$GITHUB_PATH"
+      - name: Clean up
+        run: make clean
       - name: Build
         run: make install
-      - name: Generate graphs
-        run: sudo --preserve-env=PATH make test/perf
-      - name: Upload graphs
+      - name: Make flame graphs
+        run: |
+          # sudo is used to resolve kernel symbols. Plus, it would be required
+          # if we didn't fix perf_event_paranoid. PATH needs to be preserved
+          # for FlameGraph.
+          sudo --preserve-env=PATH make test/perf
+          mkdir -p /tmp/out/
+          cp -r ./build/flame_graphs/ /tmp/out/
+      - name: Upload flame graphs
         uses: actions/upload-artifact@v3
         with:
           name: flame_graphs
@@ -98,12 +96,12 @@ jobs:
       - name: Publish to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4
         with:
-          folder: ./build/flame_graphs/
-          target-folder: flame_graphs
+          folder: /tmp/out/
+          single-commit: true
         if: github.ref == 'refs/heads/master'
 
   publish:
-    needs: [lint, build, coverage]
+    needs: [lint, build]
     runs-on: ubuntu-latest
     name: 'Docker: publish'
     steps:
