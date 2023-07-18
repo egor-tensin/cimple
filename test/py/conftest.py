@@ -53,13 +53,13 @@ PARAM_VERSION = Param('project_version', 'project version')
 
 PARAM_VALGRIND = ParamBinary('valgrind', required=False)
 
-PARAM_FLAME_GRAPH = ParamBinary('flame_graph', required=False)
+PARAM_FLAMEGRAPH = ParamBinary('flamegraph', required=False)
 PARAM_FLAME_GRAPHS_DIR = Param('flame_graphs_dir', 'directory to store flame graphs', required=False)
 
 PARAMS = list(BINARY_PARAMS)
 PARAMS += [
     PARAM_VALGRIND,
-    PARAM_FLAME_GRAPH,
+    PARAM_FLAMEGRAPH,
     PARAM_FLAME_GRAPHS_DIR,
     PARAM_VERSION,
 ]
@@ -199,7 +199,7 @@ def repo_path(tmp_path):
 
 
 @fixture
-def flame_graph_path(pytestconfig, tmp_path):
+def flame_graph_svg(pytestconfig, tmp_path):
     dir = pytestconfig.getoption(PARAM_FLAME_GRAPHS_DIR.codename)
     if dir is None:
         return os.path.join(tmp_path, 'flame_graph.svg')
@@ -208,14 +208,14 @@ def flame_graph_path(pytestconfig, tmp_path):
 
 
 @fixture
-def profiler(pytestconfig, server, workers, flame_graph_path):
-    script = pytestconfig.getoption(PARAM_FLAME_GRAPH.codename)
+def profiler(pytestconfig, server, workers, flame_graph_svg):
+    script = pytestconfig.getoption(PARAM_FLAMEGRAPH.codename)
     if script is None:
         yield
         return
     pids = [server.pid] + [worker.pid for worker in workers]
     pids = map(str, pids)
-    cmd_line = CmdLine(script, flame_graph_path, *pids)
+    cmd_line = CmdLine(script, flame_graph_svg, *pids)
     with cmd_line.run_async() as proc:
         yield
     assert proc.returncode == 0

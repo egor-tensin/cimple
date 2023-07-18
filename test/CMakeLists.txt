@@ -36,5 +36,5 @@ endif()
 
 add_python_tests(python_tests_perf
     Python3::Interpreter -m pytest ${python_test_args} -m "flame_graph"
-        --flame-graph-binary "${CMAKE_CURRENT_SOURCE_DIR}/../scripts/flame_graph.sh"
+        --flamegraph-binary "${CMAKE_CURRENT_SOURCE_DIR}/../scripts/flamegraph.sh"
         --flame-graphs-dir "${FLAME_GRAPHS_DIR}")
