@@ -72,7 +72,6 @@ def _test_repo_internal(env, repo, numof_processes, runs_per_process):
         assert repo.run_output_matches(output), f"Output doesn't match: {output}"
 
 
-@pytest.mark.valgrind
 @my_parametrize('runs_per_client', [1, 5])
 @my_parametrize('numof_clients', [1, 5])
 def test_repo(env, test_repo, numof_clients, runs_per_client):
@@ -84,7 +83,12 @@ def test_repo(env, test_repo, numof_clients, runs_per_client):
                 [
                     (10, 50),
                     (1, 2000),
-                    pytest.param(4, 500, marks=pytest.mark.flame_graph),
+                    (4, 500),
                 ])
 def test_repo_stress(env, stress_test_repo, numof_clients, runs_per_client):
     _test_repo_internal(env, stress_test_repo, numof_clients, runs_per_client)
+
+
+@pytest.mark.flame_graph
+def test_repo_flame_graph(env, profiler, flame_graph_repo):
+    _test_repo_internal(env, flame_graph_repo, 4, 500)

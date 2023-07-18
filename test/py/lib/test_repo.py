@@ -57,10 +57,6 @@ class TestRepo(Repo):
     def codename():
         pass
 
-    @staticmethod
-    def enabled_for_stress_testing():
-        return False
-
     @abc.abstractmethod
     def run_exit_code_matches(self, ec):
         pass
@@ -130,10 +126,6 @@ class TestRepoOutputSimple(TestRepoOutput):
     def codename():
         return 'output_simple'
 
-    @staticmethod
-    def enabled_for_stress_testing():
-        return True
-
     def format_output_script(self):
         return OUTPUT_SCRIPT_SIMPLE
 
@@ -172,10 +164,6 @@ class TestRepoOutputLong(TestRepoOutput):
     @staticmethod
     def codename():
         return 'output_long'
-
-    @staticmethod
-    def enabled_for_stress_testing():
-        return True
 
     def format_output_script(self):
         output_len = TestRepoOutputLong.OUTPUT_LEN_KB

@@ -194,25 +194,17 @@ def workers(worker_cmd):
 
 
 @fixture
-def repo_path(tmp_path):
-    return os.path.join(tmp_path, 'repo')
-
-
-@fixture
-def flame_graph_svg(pytestconfig, tmp_path):
+def flame_graph_svg(pytestconfig, tmp_path, flame_graph_repo):
     dir = pytestconfig.getoption(PARAM_FLAME_GRAPHS_DIR.codename)
     if dir is None:
         return os.path.join(tmp_path, 'flame_graph.svg')
     os.makedirs(dir, exist_ok=True)
-    return os.path.join(dir, 'flame_graph.svg')
+    return os.path.join(dir, f'flame_graph_{flame_graph_repo.codename()}.svg')
 
 
 @fixture
 def profiler(pytestconfig, server, workers, flame_graph_svg):
     script = pytestconfig.getoption(PARAM_FLAMEGRAPH.codename)
-    if script is None:
-        yield
-        return
     pids = [server.pid] + [worker.pid for worker in workers]
     pids = map(str, pids)
     cmd_line = CmdLine(script, flame_graph_svg, *pids)
@@ -221,12 +213,22 @@ def profiler(pytestconfig, server, workers, flame_graph_svg):
     assert proc.returncode == 0
 
 
-ALL_REPOS = [
+@fixture
+def repo_path(tmp_path):
+    return os.path.join(tmp_path, 'repo')
+
+
+TEST_REPOS = [
     repo.TestRepoOutputSimple,
     repo.TestRepoOutputEmpty,
     repo.TestRepoOutputLong,
     repo.TestRepoOutputNull,
     repo.TestRepoSegfault,
+]
+
+STRESS_TEST_REPOS = [
+    repo.TestRepoOutputSimple,
+    repo.TestRepoOutputLong,
 ]
 
 
@@ -237,20 +239,24 @@ def _make_repo(repo_path, paths, cls):
     return cls(*args)
 
 
-@fixture(params=ALL_REPOS, ids=[repo.codename() for repo in ALL_REPOS])
+@fixture(params=TEST_REPOS, ids=[repo.codename() for repo in TEST_REPOS])
 def test_repo(repo_path, paths, request):
     return _make_repo(repo_path, paths, request.param)
 
 
-@fixture(params=[repo for repo in ALL_REPOS if repo.enabled_for_stress_testing()],
-         ids=[repo.codename() for repo in ALL_REPOS if repo.enabled_for_stress_testing()])
+@fixture(params=STRESS_TEST_REPOS, ids=[repo.codename() for repo in STRESS_TEST_REPOS])
 def stress_test_repo(repo_path, paths, request):
     return _make_repo(repo_path, paths, request.param)
+
+
+@fixture
+def flame_graph_repo(stress_test_repo):
+    return stress_test_repo
 
 
 Env = namedtuple('Env', ['server', 'workers', 'client', 'db'])
 
 
 @fixture
-def env(server, workers, profiler, client, sqlite_db):
+def env(server, workers, client, sqlite_db):
     return Env(server, workers, client, sqlite_db)
