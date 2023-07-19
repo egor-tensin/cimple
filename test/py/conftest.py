@@ -29,39 +29,16 @@ class Param:
         parser.addoption(self.cmd_line, required=self.required, help=self.help_string)
 
 
-class ParamBinary(Param):
-    def __init__(self, name, **kwargs):
-        self.name = name
-        super().__init__(self.get_code_name(), self.get_help_string(), **kwargs)
-
-    def get_code_name(self):
-        return f'{self.name}_binary'
-
-    @property
-    def basename(self):
-        return f'cimple-{self.name}'
-
-    def get_help_string(self):
-        return f'{self.basename} binary path'
-
-
-BINARY_PARAMS = [
-    ParamBinary(name) for name in ('server', 'worker', 'client', 'sigsegv')
+PARAMS = [
+    Param(f'{name}', f'cimple-{name} binary path')
+    for name in ('server', 'worker', 'client')
 ]
-
-PARAM_VERSION = Param('project_version', 'project version')
-
-PARAM_VALGRIND = ParamBinary('valgrind', required=False)
-
-PARAM_FLAMEGRAPH = ParamBinary('flamegraph', required=False)
-PARAM_FLAME_GRAPHS_DIR = Param('flame_graphs_dir', 'directory to store flame graphs', required=False)
-
-PARAMS = list(BINARY_PARAMS)
 PARAMS += [
-    PARAM_VALGRIND,
-    PARAM_FLAMEGRAPH,
-    PARAM_FLAME_GRAPHS_DIR,
-    PARAM_VERSION,
+    Param('sigsegv', 'sigsegv binary path'),
+    Param('project_version', 'project version'),
+    Param('valgrind', 'path to valgrind.sh', required=False),
+    Param('flamegraph', 'path to flamegraph.sh', required=False),
+    Param('flame_graphs_dir', 'directory to store flame graphs', required=False),
 ]
 
 
@@ -70,27 +47,21 @@ def pytest_addoption(parser):
         opt.add_to_parser(parser)
 
 
-def pytest_generate_tests(metafunc):
-    for opt in PARAMS:
-        if opt.codename in metafunc.fixturenames:
-            metafunc.parametrize(opt.codename, metafunc.config.getoption(opt.codename))
-
-
-class Paths:
+class Params:
     def __init__(self, pytestconfig):
-        for opt in BINARY_PARAMS:
+        for opt in PARAMS:
             setattr(self, opt.codename, None)
-        for opt in BINARY_PARAMS:
+        for opt in PARAMS:
             path = pytestconfig.getoption(opt.codename)
             if path is None:
                 continue
-            logging.info('%s path: %s', opt.basename, path)
+            logging.info("'%s' parameter value: %s", opt.codename, path)
             setattr(self, opt.codename, path)
 
 
 @fixture(scope='session')
-def paths(pytestconfig):
-    return Paths(pytestconfig)
+def params(pytestconfig):
+    return Params(pytestconfig)
 
 
 class CmdLineValgrind(CmdLine):
@@ -101,17 +72,17 @@ class CmdLineValgrind(CmdLine):
 
 
 @fixture(scope='session')
-def base_cmd_line(pytestconfig):
+def base_cmd_line(params):
     cmd_line = CmdLine.unbuffered()
-    valgrind = pytestconfig.getoption(PARAM_VALGRIND.codename)
+    valgrind = params.valgrind
     if valgrind is not None:
         cmd_line = CmdLine.wrap(CmdLineValgrind(valgrind), cmd_line)
     return cmd_line
 
 
 @fixture(scope='session')
-def version(pytestconfig):
-    return pytestconfig.getoption(PARAM_VERSION.codename)
+def version(params):
+    return params.project_version
 
 
 @fixture(scope='session')
@@ -140,41 +111,41 @@ class CmdLineWorker(CmdLine):
 
 
 @fixture
-def server_exe(paths):
-    return CmdLineServer(paths.server_binary)
+def server_exe(params):
+    return CmdLineServer(params.server)
 
 
 @fixture
-def worker_exe(paths):
-    return CmdLineWorker(paths.worker_binary)
+def worker_exe(params):
+    return CmdLineWorker(params.worker)
 
 
 @fixture
-def client_exe(paths):
-    return CmdLine(paths.client_binary)
+def client_exe(params):
+    return CmdLine(params.client)
 
 
 @fixture
-def server_cmd(base_cmd_line, paths, server_port, sqlite_path):
+def server_cmd(base_cmd_line, params, server_port, sqlite_path):
     args = ['--port', server_port, '--sqlite', sqlite_path]
-    return CmdLineServer.wrap(base_cmd_line, CmdLine(paths.server_binary, *args))
+    return CmdLineServer.wrap(base_cmd_line, CmdLine(params.server, *args))
 
 
 @fixture
-def worker_cmd(base_cmd_line, paths, server_port):
+def worker_cmd(base_cmd_line, params, server_port):
     args = ['--host', '127.0.0.1', '--port', server_port]
-    return CmdLineWorker.wrap(base_cmd_line, CmdLine(paths.worker_binary, *args))
+    return CmdLineWorker.wrap(base_cmd_line, CmdLine(params.worker, *args))
 
 
 @fixture
-def client(base_cmd_line, paths, server_port):
+def client(base_cmd_line, params, server_port):
     args = ['--host', '127.0.0.1', '--port', server_port]
-    return CmdLine.wrap(base_cmd_line, CmdLine(paths.client_binary, *args))
+    return CmdLine.wrap(base_cmd_line, CmdLine(params.client, *args))
 
 
 @fixture
-def sigsegv(paths):
-    return CmdLine(paths.sigsegv_binary)
+def sigsegv(params):
+    return CmdLine(params.sigsegv)
 
 
 @fixture
@@ -194,8 +165,8 @@ def workers(worker_cmd):
 
 
 @fixture
-def flame_graph_svg(pytestconfig, tmp_path, flame_graph_repo):
-    dir = pytestconfig.getoption(PARAM_FLAME_GRAPHS_DIR.codename)
+def flame_graph_svg(params, tmp_path, flame_graph_repo):
+    dir = params.flame_graphs_dir
     if dir is None:
         return os.path.join(tmp_path, 'flame_graph.svg')
     os.makedirs(dir, exist_ok=True)
@@ -203,11 +174,10 @@ def flame_graph_svg(pytestconfig, tmp_path, flame_graph_repo):
 
 
 @fixture
-def profiler(pytestconfig, server, workers, flame_graph_svg):
-    script = pytestconfig.getoption(PARAM_FLAMEGRAPH.codename)
+def profiler(params, server, workers, flame_graph_svg):
     pids = [server.pid] + [worker.pid for worker in workers]
     pids = map(str, pids)
-    cmd_line = CmdLine(script, flame_graph_svg, *pids)
+    cmd_line = CmdLine(params.flamegraph, flame_graph_svg, *pids)
     with cmd_line.run_async() as proc:
         yield
     assert proc.returncode == 0
@@ -232,21 +202,21 @@ STRESS_TEST_REPOS = [
 ]
 
 
-def _make_repo(repo_path, paths, cls):
+def _make_repo(repo_path, params, cls):
     args = [repo_path]
     if cls is repo.TestRepoSegfault:
-        args += [paths.sigsegv_binary]
+        args += [params.sigsegv]
     return cls(*args)
 
 
 @fixture(params=TEST_REPOS, ids=[repo.codename() for repo in TEST_REPOS])
-def test_repo(repo_path, paths, request):
-    return _make_repo(repo_path, paths, request.param)
+def test_repo(repo_path, params, request):
+    return _make_repo(repo_path, params, request.param)
 
 
 @fixture(params=STRESS_TEST_REPOS, ids=[repo.codename() for repo in STRESS_TEST_REPOS])
-def stress_test_repo(repo_path, paths, request):
-    return _make_repo(repo_path, paths, request.param)
+def stress_test_repo(repo_path, params, request):
+    return _make_repo(repo_path, params, request.param)
 
 
 @fixture

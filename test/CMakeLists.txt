@@ -6,10 +6,10 @@ set(python_test_args
     --no-header -v
     --durations=0 --durations-min=1.0
     "${CMAKE_CURRENT_SOURCE_DIR}/py"
-    --server-binary "$<TARGET_FILE:server>"
-    --worker-binary "$<TARGET_FILE:worker>"
-    --client-binary "$<TARGET_FILE:client>"
-    --sigsegv-binary "$<TARGET_FILE:sigsegv>"
+    --server "$<TARGET_FILE:server>"
+    --worker "$<TARGET_FILE:worker>"
+    --client "$<TARGET_FILE:client>"
+    --sigsegv "$<TARGET_FILE:sigsegv>"
     --project-version "${PROJECT_VERSION}")
 
 function(add_python_tests name)
@@ -28,7 +28,7 @@ add_python_tests(python_tests_stress
 
 add_python_tests(python_tests_valgrind
     Python3::Interpreter -m pytest ${python_test_args} -m "not stress and not flame_graph"
-        --valgrind-binary "${CMAKE_CURRENT_SOURCE_DIR}/../src/valgrind.sh")
+        --valgrind "${CMAKE_CURRENT_SOURCE_DIR}/../src/valgrind.sh")
 
 if(NOT DEFINED FLAME_GRAPHS_DIR)
     set(FLAME_GRAPHS_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
@@ -36,5 +36,5 @@ endif()
 
 add_python_tests(python_tests_perf
     Python3::Interpreter -m pytest ${python_test_args} -m "flame_graph"
-        --flamegraph-binary "${CMAKE_CURRENT_SOURCE_DIR}/../scripts/flamegraph.sh"
+        --flamegraph "${CMAKE_CURRENT_SOURCE_DIR}/../scripts/flamegraph.sh"
         --flame-graphs-dir "${FLAME_GRAPHS_DIR}")
