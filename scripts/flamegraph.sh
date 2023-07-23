@@ -48,7 +48,7 @@ make_graph() {
     wait "$record_pid" || true
     perf script -i "$output_dir/perf.data" > "$output_dir/perf.out"
     stackcollapse-perf.pl "$output_dir/perf.out" > "$output_dir/perf.folded"
-    flamegraph.pl --width 1600 "$output_dir/perf.folded" > "$output_path"
+    flamegraph.pl --width 1400 --color mem "$output_dir/perf.folded" > "$output_path"
 }
 
 record_pid=''
