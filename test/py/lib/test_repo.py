@@ -217,9 +217,7 @@ class TestRepoSegfault(TestRepo):
         shutil.copy(self.prog_path, self.ci_script_path)
 
     def run_exit_code_matches(self, ec):
-        # If WIFSIGNALED(status) && WTERMSIG(status) == SIGSEGV, then the $?
-        # would be 139.
-        return ec == 139
+        return ec == -11
 
     def run_output_matches(self, output):
         return "Started the test program.\n" == output.decode()

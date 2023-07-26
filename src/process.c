@@ -40,12 +40,20 @@ static int wait_for_child(pid_t pid, int *ec)
 		return ret;
 	}
 
-	if (WIFEXITED(status))
+	/* The child process reports the lowest 8 bits of its exit code, which
+	 * are treated as an unsigned integer on Linux.
+	 *
+	 * If it was killed by a signal, indicate that by negating the signal
+	 * number. */
+
+	if (WIFEXITED(status)) {
 		*ec = WEXITSTATUS(status);
-	else if (WIFSIGNALED(status))
-		*ec = status; /* Same as $?. */
-	else
-		*ec = -1;
+	} else if (WIFSIGNALED(status)) {
+		*ec = -WTERMSIG(status);
+	} else {
+		log_err("This shouldn't happen: %d\n", status);
+		*ec = 1;
+	}
 
 	return 0;
 }
