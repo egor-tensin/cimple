@@ -28,7 +28,8 @@ class Repo:
         Process.run(*args, cwd=self.path, **kwargs)
 
 
-CI_SCRIPT = r'''#!/bin/sh -e
+CI_SCRIPT = r'''#!/usr/bin/env bash
+set -o errexit -o nounset -o pipefail
 readonly runs_dir={runs_dir}
 readonly run_output_template=run_XXXXXX
 run_output_path="$( mktemp --tmpdir="$runs_dir" "$run_output_template" )"
@@ -178,6 +179,7 @@ OUTPUT_SCRIPT_NULL = r'''#!/usr/bin/env python3
 output = {output}
 import sys
 sys.stdout.buffer.write(output)
+sys.exit(-2)
 '''
 
 
@@ -197,6 +199,9 @@ class TestRepoOutputNull(TestRepoOutput):
 
     def format_output_script(self):
         return OUTPUT_SCRIPT_NULL.format(output=repr(self.output))
+
+    def run_exit_code_matches(self, ec):
+        return ec == 254
 
     def run_output_matches(self, output):
         return output == self.output
