@@ -110,4 +110,4 @@ add_my_executable(worker worker_main.c worker.c
     run_queue.c
     signal.c
     string.c)
-target_link_libraries(worker PRIVATE git2 json-c pthread sodium)
+target_link_libraries(worker PRIVATE git2 json-c sodium)
