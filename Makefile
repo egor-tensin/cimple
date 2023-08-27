@@ -104,11 +104,5 @@ flame_graphs:
 .PHONY: test/docker
 test/docker: test/sanity
 
-.PHONY: test/local
-test/local: test/sanity test/stress
-
 .PHONY: test
-test: test/local
-
-.PHONY: test/all
-test/all: test/sanity test/stress test/valgrind
+test: test/sanity test/stress
