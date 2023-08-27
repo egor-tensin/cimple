@@ -4,7 +4,7 @@ find_package(Python3 REQUIRED COMPONENTS Interpreter)
 
 set(python_test_args
     --no-header -v
-    --durations=0 --durations-min=1.0
+    --durations 0 --durations-min 1.0
     "${CMAKE_CURRENT_SOURCE_DIR}/py"
     --server "$<TARGET_FILE:server>"
     --worker "$<TARGET_FILE:worker>"
@@ -22,6 +22,15 @@ endfunction()
 
 add_python_tests(python_tests_default
     Python3::Interpreter -m pytest ${python_test_args} -m "not flame_graph")
+
+# Use pytest-html to generate an HTML report.
+if(NOT DEFINED TEST_REPORT_DIR)
+    set(TEST_REPORT_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
+endif()
+
+add_python_tests(python_tests_report
+    Python3::Interpreter -m pytest ${python_test_args} -m "not flame_graph"
+        --html "${TEST_REPORT_DIR}/index.html")
 
 # A subset of tests, excluding long-running stress tests.
 add_python_tests(python_tests_sanity

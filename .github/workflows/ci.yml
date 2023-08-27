@@ -32,10 +32,17 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+          cache: pip
+          cache-dependency-path: ./test/py/requirements.txt
       - name: Install dependencies
         run: |
           sudo apt-get update
           sudo DEBIAN_FRONTEND=noninteractive apt-get install -yq --no-install-recommends $DEPS valgrind
+          pip install -q -r ./test/py/requirements.txt
       - name: Build
         run: make install
       - name: Upload binaries
@@ -45,7 +52,14 @@ jobs:
           path: './build/install/'
           if-no-files-found: error
       - name: Run tests
-        run: make test
+        run: make test/report
+      - name: Upload test report
+        uses: actions/upload-artifact@v3
+        with:
+          name: 'test-report-${{ matrix.compiler }}-${{ matrix.configuration }}'
+          path: './build/test_report/'
+          if-no-files-found: error
+        if: always()
       - name: Run Valgrind tests
         run: make test/valgrind
 
@@ -72,7 +86,7 @@ jobs:
           make coverage
           mkdir -p /tmp/out/
           cp -r ./build/coverage/ /tmp/out/
-      - name: Upload report
+      - name: Upload coverage report
         uses: actions/upload-artifact@v3
         with:
           name: coverage
@@ -96,6 +110,11 @@ jobs:
           name: flame_graphs
           path: ./build/flame_graphs/
           if-no-files-found: error
+      - name: Download test report
+        uses: actions/download-artifact@v3
+        with:
+          name: test-report-gcc-Release
+          path: /tmp/out/test_report/
       - name: Publish to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4
         with:

@@ -4,6 +4,7 @@ src_dir := $(abspath .)
 build_dir := $(src_dir)/build
 cmake_dir := $(build_dir)/cmake
 install_dir := $(build_dir)/install
+test_report_dir := $(build_dir)/test_report
 coverage_dir := $(build_dir)/coverage
 flame_graphs_dir := $(build_dir)/flame_graphs
 
@@ -41,6 +42,7 @@ build:
 		-D 'CMAKE_INSTALL_PREFIX=$(call escape,$(INSTALL_PREFIX))' \
 		-D 'DEFAULT_HOST=$(call escape,$(DEFAULT_HOST))' \
 		-D 'DEFAULT_PORT=$(call escape,$(DEFAULT_PORT))' \
+		-D 'TEST_REPORT_DIR=$(call escape,$(test_report_dir))' \
 		-D 'COVERAGE=$(call escape,$(COVERAGE))' \
 		-D 'FLAME_GRAPHS_DIR=$(call escape,$(flame_graphs_dir))' \
 		-S '$(call escape,$(src_dir))' \
@@ -62,6 +64,14 @@ test:
 	@echo -----------------------------------------------------------------
 	ctest --test-dir '$(call escape,$(cmake_dir))' \
 		--verbose --tests-regex python_tests_default
+
+.PHONY: test/report
+test/report:
+	@echo -----------------------------------------------------------------
+	@echo Running HTML test report
+	@echo -----------------------------------------------------------------
+	ctest --test-dir '$(call escape,$(cmake_dir))' \
+		--verbose --tests-regex python_tests_report
 
 # A subset of tests, excluding long-running stress tests.
 .PHONY: test/sanity
