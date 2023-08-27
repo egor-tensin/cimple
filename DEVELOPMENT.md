@@ -17,6 +17,10 @@ After building, you can run the "test suite" (depends on Pytest).
 
     make test
 
+To only run a subset of basic sanity tests:
+
+    make test/sanity
+
 ### Valgrind
 
 You can run a suite of basic sanity tests under Valgrind:

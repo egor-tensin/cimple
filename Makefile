@@ -55,6 +55,15 @@ release: build
 install: build
 	cmake --install '$(call escape,$(cmake_dir))'
 
+.PHONY: test
+test:
+	@echo -----------------------------------------------------------------
+	@echo Running tests
+	@echo -----------------------------------------------------------------
+	ctest --test-dir '$(call escape,$(cmake_dir))' \
+		--verbose --tests-regex python_tests_default
+
+# A subset of tests, excluding long-running stress tests.
 .PHONY: test/sanity
 test/sanity:
 	@echo -----------------------------------------------------------------
@@ -63,23 +72,7 @@ test/sanity:
 	ctest --test-dir '$(call escape,$(cmake_dir))' \
 		--verbose --tests-regex python_tests_sanity
 
-.PHONY: test/stress
-test/stress:
-	@echo -----------------------------------------------------------------
-	@echo Running stress tests
-	@echo -----------------------------------------------------------------
-	ctest --test-dir '$(call escape,$(cmake_dir))' \
-		--verbose --tests-regex python_tests_stress
-
-# Run the basic "sanity" tests & the stress tests by default.
-.PHONY: test
-test: test/sanity test/stress
-
-# When building for a Docker image for a different platform, exclude stress
-# tests: they simply take way too long.
-.PHONY: test/docker
-test/docker: test/sanity
-
+# Same, but run under Valgrind.
 .PHONY: test/valgrind
 test/valgrind:
 	@echo -----------------------------------------------------------------
@@ -88,11 +81,16 @@ test/valgrind:
 	ctest --test-dir '$(call escape,$(cmake_dir))' \
 		--verbose --tests-regex python_tests_valgrind
 
+# When building a Docker image for a different platform, exclude stress tests:
+# they simply take way too long.
+.PHONY: test/docker
+test/docker: test/sanity
+
+# Force a rebuild for a coverage report, since it depends on GCC debug data.
 .PHONY: coverage
 coverage: COMPILER := gcc
 coverage: CONFIGURATION := Debug
 coverage: COVERAGE := 1
-# Force a rebuild for a coverage report, since it depends on the GCC debug data.
 coverage: clean build test
 	@echo -----------------------------------------------------------------
 	@echo Generating code coverage report

@@ -20,14 +20,16 @@ function(add_python_tests name)
     set_tests_properties("${name}" PROPERTIES TIMEOUT 600)
 endfunction()
 
+add_python_tests(python_tests_default
+    Python3::Interpreter -m pytest ${python_test_args} -m "not flame_graph")
+
+# A subset of tests, excluding long-running stress tests.
 add_python_tests(python_tests_sanity
-    Python3::Interpreter -m pytest ${python_test_args} -m "not stress and not flame_graph")
+    Python3::Interpreter -m pytest ${python_test_args} -m "not flame_graph and not stress")
 
-add_python_tests(python_tests_stress
-    Python3::Interpreter -m pytest ${python_test_args} -m "stress")
-
+# Same, but run under Valgrind.
 add_python_tests(python_tests_valgrind
-    Python3::Interpreter -m pytest ${python_test_args} -m "not stress and not flame_graph"
+    Python3::Interpreter -m pytest ${python_test_args} -m "not flame_graph and not stress"
         --valgrind "${CMAKE_CURRENT_SOURCE_DIR}/../scripts/valgrind.sh")
 
 if(NOT DEFINED FLAME_GRAPHS_DIR)
