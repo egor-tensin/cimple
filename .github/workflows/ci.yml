@@ -64,9 +64,8 @@ jobs:
         run: make test/valgrind
 
   coverage:
-    needs: [build]
     runs-on: ubuntu-latest
-    name: 'Code coverage & flame graphs'
+    name: 'Code coverage'
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -74,6 +73,25 @@ jobs:
         run: |
           sudo apt-get update
           sudo DEBIAN_FRONTEND=noninteractive apt-get install -yq --no-install-recommends $DEPS gcovr
+      - name: Generate coverage report
+        run: make coverage
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage
+          path: ./build/coverage/
+          if-no-files-found: error
+
+  flame_graphs:
+    runs-on: ubuntu-latest
+    name: 'Flame graphs'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -yq --no-install-recommends $DEPS
       - name: Install FlameGraph
         run: |
           git clone --depth 1 https://github.com/brendangregg/FlameGraph.git ~/FlameGraph
@@ -81,19 +99,6 @@ jobs:
       - name: Enable profiling
         run: |
           echo -1 | sudo tee /proc/sys/kernel/perf_event_paranoid
-      - name: Generate coverage report
-        run: |
-          make coverage
-          mkdir -p /tmp/out/
-          cp -r ./build/coverage/ /tmp/out/
-      - name: Upload coverage report
-        uses: actions/upload-artifact@v3
-        with:
-          name: coverage
-          path: ./build/coverage/
-          if-no-files-found: error
-      - name: Clean up
-        run: make clean
       - name: Build
         run: make install
       - name: Make flame graphs
@@ -102,30 +107,51 @@ jobs:
           # if we didn't fix perf_event_paranoid. PATH needs to be preserved
           # for FlameGraph.
           sudo --preserve-env=PATH make flame_graphs
-          mkdir -p /tmp/out/
-          cp -r ./build/flame_graphs/ /tmp/out/
       - name: Upload flame graphs
         uses: actions/upload-artifact@v3
         with:
           name: flame_graphs
           path: ./build/flame_graphs/
           if-no-files-found: error
-      - name: Download test report
+
+  publish_reports:
+    needs: [build, coverage, flame_graphs]
+    runs-on: ubuntu-latest
+    name: 'Publish: reports'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Download test report - Clang/Debug
         uses: actions/download-artifact@v3
         with:
-          name: test-report-gcc-Release
-          path: /tmp/out/test_report/
+          name: test-report-clang-Debug
+          path: /tmp/reports/test_report_clang_debug/
+      - name: Download test report - Clang/Release
+        uses: actions/download-artifact@v3
+        with:
+          name: test-report-clang-Release
+          path: /tmp/reports/test_report_clang_release/
+      - name: Download coverage report
+        uses: actions/download-artifact@v3
+        with:
+          name: coverage
+          path: /tmp/reports/coverage
+      - name: Download flame graphs
+        uses: actions/download-artifact@v3
+        with:
+          name: flame_graphs
+          path: /tmp/reports/flame_graphs
       - name: Publish to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4
         with:
-          folder: /tmp/out/
+          folder: /tmp/reports/
           single-commit: true
         if: github.ref == 'refs/heads/master'
 
-  publish:
+  publish_docker:
     needs: [lint, build]
     runs-on: ubuntu-latest
-    name: 'Docker: publish'
+    name: 'Publish: Docker Hub'
     steps:
       - name: Checkout
         uses: actions/checkout@v3
