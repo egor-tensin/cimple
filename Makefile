@@ -68,7 +68,7 @@ test:
 .PHONY: test/report
 test/report:
 	@echo -----------------------------------------------------------------
-	@echo Running HTML test report
+	@echo Generating test report
 	@echo -----------------------------------------------------------------
 	ctest --test-dir '$(call escape,$(cmake_dir))' \
 		--verbose --tests-regex python_tests_report
@@ -114,7 +114,7 @@ endif
 .PHONY: flame_graphs
 flame_graphs:
 	@echo -----------------------------------------------------------------
-	@echo Collecting profiling data
+	@echo Generating flame graphs
 	@echo -----------------------------------------------------------------
 	ctest --test-dir '$(call escape,$(cmake_dir))' \
 		--verbose --tests-regex python_tests_flame_graphs
