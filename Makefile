@@ -51,20 +51,6 @@ build:
 release: CONFIGURATION := Release
 release: build
 
-.PHONY: coverage
-coverage: COMPILER := gcc
-coverage: CONFIGURATION := Debug
-coverage: COVERAGE := 1
-coverage: clean build test
-	@echo -----------------------------------------------------------------
-	@echo Generating code coverage report
-	@echo -----------------------------------------------------------------
-	@mkdir -p -- '$(call escape,$(coverage_dir))'
-	gcovr --html-details '$(call escape,$(coverage_dir))/index.html' --print-summary
-ifndef CI
-	xdg-open '$(call escape,$(coverage_dir))/index.html' &> /dev/null
-endif
-
 .PHONY: install
 install: build
 	cmake --install '$(call escape,$(cmake_dir))'
@@ -85,6 +71,15 @@ test/stress:
 	ctest --test-dir '$(call escape,$(cmake_dir))' \
 		--verbose --tests-regex python_tests_stress
 
+# Run the basic "sanity" tests & the stress tests by default.
+.PHONY: test
+test: test/sanity test/stress
+
+# When building for a Docker image for a different platform, exclude stress
+# tests: they simply take way too long.
+.PHONY: test/docker
+test/docker: test/sanity
+
 .PHONY: test/valgrind
 test/valgrind:
 	@echo -----------------------------------------------------------------
@@ -93,6 +88,21 @@ test/valgrind:
 	ctest --test-dir '$(call escape,$(cmake_dir))' \
 		--verbose --tests-regex python_tests_valgrind
 
+.PHONY: coverage
+coverage: COMPILER := gcc
+coverage: CONFIGURATION := Debug
+coverage: COVERAGE := 1
+# Force a rebuild for a coverage report, since it depends on the GCC debug data.
+coverage: clean build test
+	@echo -----------------------------------------------------------------
+	@echo Generating code coverage report
+	@echo -----------------------------------------------------------------
+	@mkdir -p -- '$(call escape,$(coverage_dir))'
+	gcovr --html-details '$(call escape,$(coverage_dir))/index.html' --print-summary
+ifndef CI
+	xdg-open '$(call escape,$(coverage_dir))/index.html' &> /dev/null
+endif
+
 .PHONY: flame_graphs
 flame_graphs:
 	@echo -----------------------------------------------------------------
@@ -100,9 +110,3 @@ flame_graphs:
 	@echo -----------------------------------------------------------------
 	ctest --test-dir '$(call escape,$(cmake_dir))' \
 		--verbose --tests-regex python_tests_flame_graphs
-
-.PHONY: test/docker
-test/docker: test/sanity
-
-.PHONY: test
-test: test/sanity test/stress
