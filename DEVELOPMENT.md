@@ -32,7 +32,7 @@ https://egor-tensin.github.io/cimple/coverage/.
 Some performance analysis can be done by looking at flame graphs.
 Generate them after building the project (depends on `perf` & [FlameGraph]):
 
-    make test/perf
+    make flame_graphs
 
 [FlameGraph]: https://github.com/brendangregg/FlameGraph
 

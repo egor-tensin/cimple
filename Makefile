@@ -77,14 +77,6 @@ test/sanity:
 	ctest --test-dir '$(call escape,$(cmake_dir))' \
 		--verbose --tests-regex python_tests_sanity
 
-.PHONY: test/valgrind
-test/valgrind:
-	@echo -----------------------------------------------------------------
-	@echo Running sanity tests w/ Valgrind
-	@echo -----------------------------------------------------------------
-	ctest --test-dir '$(call escape,$(cmake_dir))' \
-		--verbose --tests-regex python_tests_valgrind
-
 .PHONY: test/stress
 test/stress:
 	@echo -----------------------------------------------------------------
@@ -93,13 +85,21 @@ test/stress:
 	ctest --test-dir '$(call escape,$(cmake_dir))' \
 		--verbose --tests-regex python_tests_stress
 
-.PHONY: test/perf
-test/perf:
+.PHONY: test/valgrind
+test/valgrind:
+	@echo -----------------------------------------------------------------
+	@echo Running sanity tests w/ Valgrind
+	@echo -----------------------------------------------------------------
+	ctest --test-dir '$(call escape,$(cmake_dir))' \
+		--verbose --tests-regex python_tests_valgrind
+
+.PHONY: flame_graphs
+flame_graphs:
 	@echo -----------------------------------------------------------------
 	@echo Collecting profiling data
 	@echo -----------------------------------------------------------------
 	ctest --test-dir '$(call escape,$(cmake_dir))' \
-		--verbose --tests-regex python_tests_perf
+		--verbose --tests-regex python_tests_flame_graphs
 
 .PHONY: test/docker
 test/docker: test/sanity

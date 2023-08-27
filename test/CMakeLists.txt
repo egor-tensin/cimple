@@ -34,7 +34,7 @@ if(NOT DEFINED FLAME_GRAPHS_DIR)
     set(FLAME_GRAPHS_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
 endif()
 
-add_python_tests(python_tests_perf
+add_python_tests(python_tests_flame_graphs
     Python3::Interpreter -m pytest ${python_test_args} -m "flame_graph"
         --flamegraph "${CMAKE_CURRENT_SOURCE_DIR}/../scripts/flamegraph.sh"
         --flame-graphs-dir "${FLAME_GRAPHS_DIR}")
