@@ -17,6 +17,12 @@ After building, you can run the "test suite" (depends on Pytest).
 
     make test
 
+### Valgrind
+
+You can run a suite of basic sanity tests under Valgrind:
+
+    make test/valgrind
+
 ### Code coverage
 
 You can generate a code coverage report (depends on `gcovr`) in
