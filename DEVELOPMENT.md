@@ -21,6 +21,18 @@ To only run a subset of basic sanity tests:
 
     make test/sanity
 
+To generate an HTML report in build/test_report/, run (requires pytest-html):
+
+    make test/report
+
+Reports for the latest successful Clang builds can be found below:
+
+* [Debug],
+* [Release].
+
+[Debug]: https://egor-tensin.github.io/cimple/test_report_clang_debug/
+[Release]: https://egor-tensin.github.io/cimple/test_report_clang_release/
+
 ### Valgrind
 
 You can run a suite of basic sanity tests under Valgrind:
