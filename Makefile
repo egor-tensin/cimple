@@ -1,19 +1,20 @@
 include prelude.mk
 
-src_dir := $(abspath .)
-build_dir := $(src_dir)/build
-cmake_dir := $(build_dir)/cmake
+src_dir     := $(abspath .)
+build_dir   := $(src_dir)/build
+cmake_dir   := $(build_dir)/cmake
 install_dir := $(build_dir)/install
-test_report_dir := $(build_dir)/test_report
-coverage_dir := $(build_dir)/coverage
+
+test_report_dir  := $(build_dir)/test_report
+coverage_dir     := $(build_dir)/coverage
 flame_graphs_dir := $(build_dir)/flame_graphs
 
-COMPILER ?= clang
-CONFIGURATION ?= Debug
-DEFAULT_HOST ?= 127.0.0.1
-DEFAULT_PORT ?= 5556
+COMPILER       ?= clang
+CONFIGURATION  ?= Debug
+DEFAULT_HOST   ?= 127.0.0.1
+DEFAULT_PORT   ?= 5556
 INSTALL_PREFIX ?= $(install_dir)
-COVERAGE ?=
+COVERAGE       ?=
 
 $(eval $(call noexpand,COMPILER))
 $(eval $(call noexpand,CONFIGURATION))
@@ -98,9 +99,9 @@ test/docker: test/sanity
 
 # Force a rebuild for a coverage report, since it depends on GCC debug data.
 .PHONY: coverage
-coverage: COMPILER := gcc
+coverage: COMPILER      := gcc
 coverage: CONFIGURATION := Debug
-coverage: COVERAGE := 1
+coverage: COVERAGE      := 1
 coverage: clean build test
 	@echo -----------------------------------------------------------------
 	@echo Generating code coverage report
