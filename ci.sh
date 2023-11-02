@@ -4,7 +4,7 @@ set -o errexit -o nounset -o pipefail
 shopt -s inherit_errexit lastpipe
 
 test_build() {
-	docker-compose build --progress plain --pull "$@"
+	docker-compose --progress plain build --pull "$@"
 }
 
 test_build_clang() {
