@@ -57,9 +57,9 @@ def _test_repo_internal(env, repo, numof_processes, runs_per_process):
 
         for proc in processes:
             proc.start()
-        event.wait()
         for proc in processes:
             proc.join()
+        event.wait()
 
     repo.run_files_are_present(numof_runs)
 
