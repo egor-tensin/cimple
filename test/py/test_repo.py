@@ -40,7 +40,7 @@ def client_runner_process(log_queue, client, runs_per_process, repo):
     with configure_logging_in_child(log_queue):
         logging.info('Executing %s clients', runs_per_process)
         for i in range(runs_per_process):
-            client.run('run', repo.path, 'HEAD')
+            client.run('queue-run', repo.path, 'HEAD')
 
 
 def _test_repo_internal(env, repo, numof_processes, runs_per_process):

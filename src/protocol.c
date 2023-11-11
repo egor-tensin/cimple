@@ -21,11 +21,11 @@ static const char *const run_key_id = "id";
 static const char *const run_key_url = "url";
 static const char *const run_key_rev = "rev";
 
-int run_request_create(struct jsonrpc_request **request, const struct run *run)
+int request_create_queue_run(struct jsonrpc_request **request, const struct run *run)
 {
 	int ret = 0;
 
-	ret = jsonrpc_request_create(request, 1, CMD_RUN, NULL);
+	ret = jsonrpc_request_create(request, 1, CMD_QUEUE_RUN, NULL);
 	if (ret < 0)
 		return ret;
 	ret = jsonrpc_request_set_param_string(*request, run_key_url, run_get_url(run));
@@ -43,7 +43,7 @@ free_request:
 	return ret;
 }
 
-int run_request_parse(const struct jsonrpc_request *request, struct run **run)
+int request_parse_queue_run(const struct jsonrpc_request *request, struct run **run)
 {
 	int ret = 0;
 
@@ -59,21 +59,21 @@ int run_request_parse(const struct jsonrpc_request *request, struct run **run)
 	return run_create(run, 0, url, rev);
 }
 
-int new_worker_request_create(struct jsonrpc_request **request)
+int request_create_new_worker(struct jsonrpc_request **request)
 {
 	return jsonrpc_notification_create(request, CMD_NEW_WORKER, NULL);
 }
 
-int new_worker_request_parse(UNUSED const struct jsonrpc_request *request)
+int request_parse_new_worker(UNUSED const struct jsonrpc_request *request)
 {
 	return 0;
 }
 
-int start_request_create(struct jsonrpc_request **request, const struct run *run)
+int request_create_start_run(struct jsonrpc_request **request, const struct run *run)
 {
 	int ret = 0;
 
-	ret = jsonrpc_notification_create(request, CMD_START, NULL);
+	ret = jsonrpc_notification_create(request, CMD_START_RUN, NULL);
 	if (ret < 0)
 		return ret;
 	ret = jsonrpc_request_set_param_int(*request, run_key_id, run_get_id(run));
@@ -94,7 +94,7 @@ free_request:
 	return ret;
 }
 
-int start_request_parse(const struct jsonrpc_request *request, struct run **run)
+int request_parse_start_run(const struct jsonrpc_request *request, struct run **run)
 {
 	int ret = 0;
 
@@ -118,12 +118,12 @@ static const char *const finished_key_run_id = "run_id";
 static const char *const finished_key_ec = "exit_code";
 static const char *const finished_key_data = "output";
 
-int finished_request_create(struct jsonrpc_request **request, int run_id,
-                            const struct proc_output *output)
+int request_create_finished_run(struct jsonrpc_request **request, int run_id,
+                                const struct proc_output *output)
 {
 	int ret = 0;
 
-	ret = jsonrpc_notification_create(request, CMD_FINISHED, NULL);
+	ret = jsonrpc_notification_create(request, CMD_FINISHED_RUN, NULL);
 	if (ret < 0)
 		return ret;
 	ret = jsonrpc_request_set_param_int(*request, finished_key_run_id, run_id);
@@ -151,8 +151,8 @@ free_request:
 	return ret;
 }
 
-int finished_request_parse(const struct jsonrpc_request *request, int *_run_id,
-                           struct proc_output **_output)
+int request_parse_finished_run(const struct jsonrpc_request *request, int *_run_id,
+                               struct proc_output **_output)
 {
 	int ret = 0;
 

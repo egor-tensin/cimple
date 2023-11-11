@@ -82,14 +82,14 @@ static int worker_set_stopping(UNUSED struct event_loop *loop, UNUSED int fd, UN
 	return 0;
 }
 
-static int worker_handle_cmd_start(const struct jsonrpc_request *request,
-                                   UNUSED struct jsonrpc_response **response, void *_ctx)
+static int worker_handle_cmd_start_run(const struct jsonrpc_request *request,
+                                       UNUSED struct jsonrpc_response **response, void *_ctx)
 {
 	struct cmd_conn_ctx *ctx = (struct cmd_conn_ctx *)_ctx;
 	struct worker *worker = (struct worker *)ctx->arg;
 	int ret = 0;
 
-	ret = start_request_parse(request, &worker->run);
+	ret = request_parse_start_run(request, &worker->run);
 	if (ret < 0)
 		return ret;
 
@@ -97,7 +97,7 @@ static int worker_handle_cmd_start(const struct jsonrpc_request *request,
 }
 
 static struct cmd_desc commands[] = {
-    {CMD_START, worker_handle_cmd_start},
+    {CMD_START_RUN, worker_handle_cmd_start_run},
 };
 
 static const size_t numof_commands = sizeof(commands) / sizeof(commands[0]);
@@ -194,7 +194,7 @@ static int worker_do_run(struct worker *worker)
 
 	struct jsonrpc_request *finished_request = NULL;
 
-	ret = finished_request_create(&finished_request, run_get_id(worker->run), result);
+	ret = request_create_finished_run(&finished_request, run_get_id(worker->run), result);
 	if (ret < 0)
 		goto free_output;
 
@@ -231,7 +231,7 @@ static int worker_get_run(struct worker *worker)
 	fd = ret;
 
 	struct jsonrpc_request *new_worker_request = NULL;
-	ret = new_worker_request_create(&new_worker_request);
+	ret = request_create_new_worker(&new_worker_request);
 	if (ret < 0)
 		goto close;
 

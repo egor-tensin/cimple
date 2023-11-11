@@ -172,7 +172,7 @@ static void server_assign_run(struct server *server)
 	struct jsonrpc_request *start_request = NULL;
 	int ret = 0;
 
-	ret = start_request_create(&start_request, run);
+	ret = request_create_start_run(&start_request, run);
 	if (ret < 0)
 		goto exit;
 
@@ -255,8 +255,8 @@ close:
 	return ret;
 }
 
-static int server_handle_cmd_run(const struct jsonrpc_request *request,
-                                 struct jsonrpc_response **response, void *_ctx)
+static int server_handle_cmd_queue_run(const struct jsonrpc_request *request,
+                                       struct jsonrpc_response **response, void *_ctx)
 {
 	struct cmd_conn_ctx *ctx = (struct cmd_conn_ctx *)_ctx;
 	struct server *server = (struct server *)ctx->arg;
@@ -264,7 +264,7 @@ static int server_handle_cmd_run(const struct jsonrpc_request *request,
 
 	struct run *run = NULL;
 
-	ret = run_request_parse(request, &run);
+	ret = request_parse_queue_run(request, &run);
 	if (ret < 0)
 		return ret;
 
@@ -288,8 +288,8 @@ destroy_run:
 	return ret;
 }
 
-static int server_handle_cmd_finished(const struct jsonrpc_request *request,
-                                      UNUSED struct jsonrpc_response **response, void *_ctx)
+static int server_handle_cmd_finished_run(const struct jsonrpc_request *request,
+                                          UNUSED struct jsonrpc_response **response, void *_ctx)
 {
 	struct cmd_conn_ctx *ctx = (struct cmd_conn_ctx *)_ctx;
 	struct server *server = (struct server *)ctx->arg;
@@ -298,7 +298,7 @@ static int server_handle_cmd_finished(const struct jsonrpc_request *request,
 	int run_id = 0;
 	struct proc_output *output;
 
-	ret = finished_request_parse(request, &run_id, &output);
+	ret = request_parse_finished_run(request, &run_id, &output);
 	if (ret < 0)
 		return ret;
 
@@ -318,8 +318,8 @@ free_output:
 
 static struct cmd_desc commands[] = {
     {CMD_NEW_WORKER, server_handle_cmd_new_worker},
-    {CMD_RUN, server_handle_cmd_run},
-    {CMD_FINISHED, server_handle_cmd_finished},
+    {CMD_QUEUE_RUN, server_handle_cmd_queue_run},
+    {CMD_FINISHED_RUN, server_handle_cmd_finished_run},
 };
 
 static const size_t numof_commands = sizeof(commands) / sizeof(commands[0]);

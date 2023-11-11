@@ -48,7 +48,7 @@ static int make_request(struct jsonrpc_request **request, int argc, const char *
 		return -1;
 	}
 
-	if (!strcmp(argv[0], CMD_RUN)) {
+	if (!strcmp(argv[0], CMD_QUEUE_RUN)) {
 		if (argc != 3)
 			return -1;
 
@@ -57,7 +57,7 @@ static int make_request(struct jsonrpc_request **request, int argc, const char *
 		if (ret < 0)
 			return ret;
 
-		ret = run_request_create(request, run);
+		ret = request_create_queue_run(request, run);
 		run_destroy(run);
 		return ret;
 	}

@@ -12,16 +12,16 @@
 #include "process.h"
 #include "run_queue.h"
 
-int run_request_create(struct jsonrpc_request **, const struct run *);
-int run_request_parse(const struct jsonrpc_request *, struct run **);
+int request_create_queue_run(struct jsonrpc_request **, const struct run *);
+int request_parse_queue_run(const struct jsonrpc_request *, struct run **);
 
-int new_worker_request_create(struct jsonrpc_request **);
-int new_worker_request_parse(const struct jsonrpc_request *);
+int request_create_new_worker(struct jsonrpc_request **);
+int request_parse_new_worker(const struct jsonrpc_request *);
 
-int start_request_create(struct jsonrpc_request **, const struct run *);
-int start_request_parse(const struct jsonrpc_request *, struct run **);
+int request_create_start_run(struct jsonrpc_request **, const struct run *);
+int request_parse_start_run(const struct jsonrpc_request *, struct run **);
 
-int finished_request_create(struct jsonrpc_request **, int run_id, const struct proc_output *);
-int finished_request_parse(const struct jsonrpc_request *, int *run_id, struct proc_output **);
+int request_create_finished_run(struct jsonrpc_request **, int run_id, const struct proc_output *);
+int request_parse_finished_run(const struct jsonrpc_request *, int *run_id, struct proc_output **);
 
 #endif

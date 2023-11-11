@@ -15,9 +15,9 @@ extern const char *default_host;
 extern const char *default_port;
 extern const char *default_sqlite_path;
 
-#define CMD_RUN        "run"
-#define CMD_NEW_WORKER "new-worker"
-#define CMD_START      "start"
-#define CMD_FINISHED   "finished"
+#define CMD_QUEUE_RUN    "queue-run"
+#define CMD_NEW_WORKER   "new-worker"
+#define CMD_START_RUN    "start-run"
+#define CMD_FINISHED_RUN "finished-run"
 
 #endif

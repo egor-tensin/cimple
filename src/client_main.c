@@ -27,7 +27,7 @@ const char *get_usage_string(void)
 	return "[-h|--help] [-V|--version] [-v|--verbose] [-H|--host HOST] [-p|--port PORT] ACTION [ARG...]\n\
 \n\
 available actions:\n\
-\t" CMD_RUN " URL REV - schedule a CI run of repository at URL, revision REV";
+\t" CMD_QUEUE_RUN " URL REV - schedule a CI run of repository at URL, revision REV";
 }
 
 static int parse_settings(struct settings *settings, int argc, char *argv[])
