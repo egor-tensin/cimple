@@ -25,7 +25,7 @@ int request_create_queue_run(struct jsonrpc_request **request, const struct run 
 {
 	int ret = 0;
 
-	ret = jsonrpc_request_create(request, 1, CMD_QUEUE_RUN, NULL);
+	ret = jsonrpc_request_create(request, jsonrpc_generate_request_id(), CMD_QUEUE_RUN, NULL);
 	if (ret < 0)
 		return ret;
 	ret = jsonrpc_request_set_param_string(*request, run_key_url, run_get_url(run));

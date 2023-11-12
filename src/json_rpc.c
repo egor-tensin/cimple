@@ -11,6 +11,7 @@
 
 #include <json-c/json_object.h>
 
+#include <stdatomic.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -50,6 +51,13 @@ static int jsonrpc_check_version(struct json_object *obj)
 static int jsonrpc_set_version(struct json_object *obj)
 {
 	return json_set_string_const_key(obj, jsonrpc_key_version, jsonrpc_value_version);
+}
+
+static _Atomic int jsonrpc_id_counter = 1;
+
+int jsonrpc_generate_request_id(void)
+{
+	return jsonrpc_id_counter++;
 }
 
 static int jsonrpc_check_id_type(struct json_object *id)

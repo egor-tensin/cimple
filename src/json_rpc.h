@@ -16,6 +16,8 @@
 
 struct jsonrpc_request;
 
+int jsonrpc_generate_request_id(void);
+
 int jsonrpc_request_create(struct jsonrpc_request **, int id, const char *method,
                            struct json_object *params);
 void jsonrpc_request_destroy(struct jsonrpc_request *);
