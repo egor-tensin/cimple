@@ -39,6 +39,8 @@ int jsonrpc_request_set_param_int(struct jsonrpc_request *, const char *name, in
 
 struct jsonrpc_response;
 
+const char *jsonrpc_response_to_string(const struct jsonrpc_response *);
+
 int jsonrpc_response_create(struct jsonrpc_response **, const struct jsonrpc_request *,
                             struct json_object *result);
 void jsonrpc_response_destroy(struct jsonrpc_response *);

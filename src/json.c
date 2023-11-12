@@ -17,14 +17,24 @@
 #include <stdlib.h>
 #include <string.h>
 
-const char *json_to_string(struct json_object *obj)
+static const char *json_to_string_internal(struct json_object *obj, int flags)
 {
-	const char *result = json_object_to_json_string(obj);
+	const char *result = json_object_to_json_string_ext(obj, flags);
 	if (!result) {
 		json_errno("json_object_to_json_string");
 		return NULL;
 	}
 	return result;
+}
+
+const char *json_to_string(struct json_object *obj)
+{
+	return json_to_string_internal(obj, JSON_C_TO_STRING_SPACED);
+}
+
+const char *json_to_string_pretty(struct json_object *obj)
+{
+	return json_to_string_internal(obj, JSON_C_TO_STRING_SPACED | JSON_C_TO_STRING_PRETTY);
 }
 
 struct json_object *json_from_string(const char *src)

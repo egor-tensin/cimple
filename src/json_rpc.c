@@ -391,6 +391,11 @@ int jsonrpc_request_set_param_int(struct jsonrpc_request *request, const char *n
 	return json_set_int(params, name, value);
 }
 
+const char *jsonrpc_response_to_string(const struct jsonrpc_response *response)
+{
+	return json_to_string_pretty(response->impl);
+}
+
 int jsonrpc_response_create_internal(struct jsonrpc_response **_response,
                                      const struct jsonrpc_request *request,
                                      struct json_object *result, struct json_object *error)

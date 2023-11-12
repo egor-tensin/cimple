@@ -91,11 +91,15 @@ int client_main(UNUSED const struct client *client, const struct settings *setti
 	if (ret < 0)
 		goto close;
 
-	if (jsonrpc_response_is_error(response)) {
-		log_err("server failed to process the request\n");
-		ret = -1;
-		goto free_response;
+	const char *response_str = jsonrpc_response_to_string(response);
+	if (response_str) {
+		if (jsonrpc_response_is_error(response))
+			ret = -1;
+		printf("%s", response_str);
+	} else {
+		log_err("no response\n");
 	}
+	goto free_response;
 
 free_response:
 	jsonrpc_response_destroy(response);
