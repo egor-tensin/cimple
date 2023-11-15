@@ -19,5 +19,6 @@ extern const char *default_sqlite_path;
 #define CMD_NEW_WORKER   "new-worker"
 #define CMD_START_RUN    "start-run"
 #define CMD_FINISHED_RUN "finished-run"
+#define CMD_GET_RUNS     "get-runs"
 
 #endif

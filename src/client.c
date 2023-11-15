@@ -53,13 +53,17 @@ static int make_request(struct jsonrpc_request **request, int argc, const char *
 			return -1;
 
 		struct run *run = NULL;
-		int ret = run_create(&run, 0, argv[1], argv[2]);
+		int ret = run_queued(&run, argv[1], argv[2]);
 		if (ret < 0)
 			return ret;
 
 		ret = request_create_queue_run(request, run);
 		run_destroy(run);
 		return ret;
+	} else if (!strcmp(argv[0], CMD_GET_RUNS)) {
+		if (argc != 1)
+			return -1;
+		return request_create_get_runs(request);
 	}
 
 	return -1;

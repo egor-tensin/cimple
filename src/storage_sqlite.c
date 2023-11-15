@@ -54,11 +54,6 @@ void storage_sqlite_settings_destroy(const struct storage_settings *settings)
 	free(settings->sqlite);
 }
 
-enum run_status {
-	RUN_STATUS_CREATED = 1,
-	RUN_STATUS_FINISHED = 2,
-};
-
 struct prepared_stmt {
 	pthread_mutex_t mtx;
 	sqlite3_stmt *impl;
@@ -114,6 +109,8 @@ struct storage_sqlite {
 	struct prepared_stmt stmt_repo_insert;
 	struct prepared_stmt stmt_run_insert;
 	struct prepared_stmt stmt_run_finished;
+	struct prepared_stmt stmt_get_runs;
+	struct prepared_stmt stmt_get_run_queue;
 };
 
 static int storage_sqlite_upgrade_to(struct storage_sqlite *storage, size_t version)
@@ -209,6 +206,10 @@ static int storage_sqlite_prepare_statements(struct storage_sqlite *storage)
 	    "INSERT INTO cimple_runs(status, exit_code, output, repo_id, repo_rev) VALUES (?, -1, x'', ?, ?) RETURNING id;";
 	static const char *const fmt_run_finished =
 	    "UPDATE cimple_runs SET status = ?, exit_code = ?, output = ? WHERE id = ?;";
+	static const char *const fmt_get_runs =
+	    "SELECT id, status, exit_code, repo_url, repo_rev FROM cimple_runs_view ORDER BY id DESC";
+	static const char *const fmt_get_run_queue =
+	    "SELECT id, status, exit_code, repo_url, repo_rev FROM cimple_runs_view WHERE status = ? ORDER BY id;";
 
 	int ret = 0;
 
@@ -224,9 +225,19 @@ static int storage_sqlite_prepare_statements(struct storage_sqlite *storage)
 	ret = prepared_stmt_init(&storage->stmt_run_finished, storage->db, fmt_run_finished);
 	if (ret < 0)
 		goto finalize_run_insert;
+	ret = prepared_stmt_init(&storage->stmt_get_runs, storage->db, fmt_get_runs);
+	if (ret < 0)
+		goto finalize_run_finished;
+	ret = prepared_stmt_init(&storage->stmt_get_run_queue, storage->db, fmt_get_run_queue);
+	if (ret < 0)
+		goto finalize_get_runs;
 
 	return ret;
 
+finalize_get_runs:
+	prepared_stmt_destroy(&storage->stmt_get_runs);
+finalize_run_finished:
+	prepared_stmt_destroy(&storage->stmt_run_finished);
 finalize_run_insert:
 	prepared_stmt_destroy(&storage->stmt_run_insert);
 finalize_repo_insert:
@@ -239,6 +250,8 @@ finalize_repo_find:
 
 static void storage_sqlite_finalize_statements(struct storage_sqlite *storage)
 {
+	prepared_stmt_destroy(&storage->stmt_get_run_queue);
+	prepared_stmt_destroy(&storage->stmt_get_runs);
 	prepared_stmt_destroy(&storage->stmt_run_finished);
 	prepared_stmt_destroy(&storage->stmt_run_insert);
 	prepared_stmt_destroy(&storage->stmt_repo_insert);
@@ -433,18 +446,20 @@ static int storage_sqlite_row_to_run(struct sqlite3_stmt *stmt, struct run **run
 	int ret = 0;
 
 	int id = sqlite_column_int(stmt, 0);
+	int status = sqlite_column_int(stmt, 1);
+	int exit_code = sqlite_column_int(stmt, 2);
 
 	char *url = NULL;
-	ret = sqlite_column_text(stmt, 1, &url);
+	ret = sqlite_column_text(stmt, 3, &url);
 	if (ret < 0)
 		return ret;
 
 	char *rev = NULL;
-	ret = sqlite_column_text(stmt, 2, &rev);
+	ret = sqlite_column_text(stmt, 4, &rev);
 	if (ret < 0)
 		goto free_url;
 
-	ret = run_create(run, id, url, rev);
+	ret = run_new(run, id, url, rev, status, exit_code);
 	if (ret < 0)
 		goto free_rev;
 
@@ -459,20 +474,9 @@ free_url:
 	return ret;
 }
 
-int storage_sqlite_get_run_queue(struct storage *storage, struct run_queue *queue)
+static int storage_sqlite_rows_to_runs(struct sqlite3_stmt *stmt, struct run_queue *queue)
 {
-	static const char *const fmt =
-	    "SELECT id, repo_url, repo_rev FROM cimple_runs_view WHERE status = ?;";
-
-	sqlite3_stmt *stmt;
 	int ret = 0;
-
-	ret = sqlite_prepare(storage->sqlite->db, fmt, &stmt);
-	if (ret < 0)
-		return ret;
-	ret = sqlite_bind_int(stmt, 1, RUN_STATUS_CREATED);
-	if (ret < 0)
-		goto finalize;
 
 	run_queue_create(queue);
 
@@ -492,13 +496,51 @@ int storage_sqlite_get_run_queue(struct storage *storage, struct run_queue *queu
 		run_queue_add_last(queue, run);
 	}
 
-	goto finalize;
+	return ret;
 
 run_queue_destroy:
 	run_queue_destroy(queue);
 
-finalize:
-	sqlite_finalize(stmt);
+	return ret;
+}
+
+int storage_sqlite_get_runs(struct storage *storage, struct run_queue *queue)
+{
+	struct prepared_stmt *stmt = &storage->sqlite->stmt_get_runs;
+	int ret = 0;
+
+	ret = prepared_stmt_lock(stmt);
+	if (ret < 0)
+		return ret;
+	ret = storage_sqlite_rows_to_runs(stmt->impl, queue);
+	if (ret < 0)
+		goto reset;
+
+reset:
+	sqlite_reset(stmt->impl);
+	prepared_stmt_unlock(stmt);
+
+	return ret;
+}
+
+int storage_sqlite_get_run_queue(struct storage *storage, struct run_queue *queue)
+{
+	struct prepared_stmt *stmt = &storage->sqlite->stmt_get_run_queue;
+	int ret = 0;
+
+	ret = prepared_stmt_lock(stmt);
+	if (ret < 0)
+		return ret;
+	ret = sqlite_bind_int(stmt->impl, 1, RUN_STATUS_CREATED);
+	if (ret < 0)
+		goto reset;
+	ret = storage_sqlite_rows_to_runs(stmt->impl, queue);
+	if (ret < 0)
+		goto reset;
+
+reset:
+	sqlite_reset(stmt->impl);
+	prepared_stmt_unlock(stmt);
 
 	return ret;
 }

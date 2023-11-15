@@ -28,10 +28,10 @@ int request_create_queue_run(struct jsonrpc_request **request, const struct run 
 	ret = jsonrpc_request_create(request, jsonrpc_generate_request_id(), CMD_QUEUE_RUN, NULL);
 	if (ret < 0)
 		return ret;
-	ret = jsonrpc_request_set_param_string(*request, run_key_url, run_get_url(run));
+	ret = jsonrpc_request_set_param_string(*request, run_key_url, run_get_repo_url(run));
 	if (ret < 0)
 		goto free_request;
-	ret = jsonrpc_request_set_param_string(*request, run_key_rev, run_get_rev(run));
+	ret = jsonrpc_request_set_param_string(*request, run_key_rev, run_get_repo_rev(run));
 	if (ret < 0)
 		goto free_request;
 
@@ -56,7 +56,7 @@ int request_parse_queue_run(const struct jsonrpc_request *request, struct run **
 	if (ret < 0)
 		return ret;
 
-	return run_create(run, 0, url, rev);
+	return run_queued(run, url, rev);
 }
 
 int request_create_new_worker(struct jsonrpc_request **request)
@@ -79,10 +79,10 @@ int request_create_start_run(struct jsonrpc_request **request, const struct run 
 	ret = jsonrpc_request_set_param_int(*request, run_key_id, run_get_id(run));
 	if (ret < 0)
 		goto free_request;
-	ret = jsonrpc_request_set_param_string(*request, run_key_url, run_get_url(run));
+	ret = jsonrpc_request_set_param_string(*request, run_key_url, run_get_repo_url(run));
 	if (ret < 0)
 		goto free_request;
-	ret = jsonrpc_request_set_param_string(*request, run_key_rev, run_get_rev(run));
+	ret = jsonrpc_request_set_param_string(*request, run_key_rev, run_get_repo_rev(run));
 	if (ret < 0)
 		goto free_request;
 
@@ -111,7 +111,7 @@ int request_parse_start_run(const struct jsonrpc_request *request, struct run **
 	if (ret < 0)
 		return ret;
 
-	return run_create(run, (int)id, url, rev);
+	return run_created(run, (int)id, url, rev);
 }
 
 static const char *const finished_key_run_id = "run_id";
@@ -187,6 +187,38 @@ int request_parse_finished_run(const struct jsonrpc_request *request, int *_run_
 
 free_output:
 	proc_output_destroy(output);
+
+	return ret;
+}
+
+int request_create_get_runs(struct jsonrpc_request **request)
+{
+	return jsonrpc_request_create(request, jsonrpc_generate_request_id(), CMD_GET_RUNS, NULL);
+}
+
+int request_parse_get_runs(UNUSED const struct jsonrpc_request *request)
+{
+	return 0;
+}
+
+int response_create_get_runs(struct jsonrpc_response **response,
+                             const struct jsonrpc_request *request, const struct run_queue *runs)
+{
+	struct json_object *runs_json = NULL;
+	int ret = 0;
+
+	ret = run_queue_to_json(runs, &runs_json);
+	if (ret < 0)
+		return ret;
+
+	ret = jsonrpc_response_create(response, request, runs_json);
+	if (ret < 0)
+		goto free_json;
+
+	return ret;
+
+free_json:
+	json_object_put(runs_json);
 
 	return ret;
 }

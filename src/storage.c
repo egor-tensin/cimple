@@ -19,7 +19,9 @@ typedef void (*storage_destroy_t)(struct storage *);
 
 typedef int (*storage_run_create_t)(struct storage *, const char *repo_url, const char *rev);
 typedef int (*storage_run_finished_t)(struct storage *, int repo_id, const struct proc_output *);
-typedef int (*storage_get_run_queue_t)(struct storage *, struct run_queue *);
+
+typedef int (*storage_get_runs_t)(struct storage *, struct run_queue *);
+typedef storage_get_runs_t storage_get_run_queue_t;
 
 struct storage_api {
 	storage_settings_destroy_t destroy_settings;
@@ -28,6 +30,8 @@ struct storage_api {
 
 	storage_run_create_t run_create;
 	storage_run_finished_t run_finished;
+
+	storage_get_runs_t get_runs;
 	storage_get_run_queue_t get_run_queue;
 };
 
@@ -39,6 +43,8 @@ static const struct storage_api apis[] = {
 
 	storage_sqlite_run_create,
 	storage_sqlite_run_finished,
+
+	storage_sqlite_get_runs,
 	storage_sqlite_get_run_queue,
     },
 };
@@ -105,6 +111,14 @@ int storage_run_finished(struct storage *storage, int run_id, const struct proc_
 	if (!api)
 		return -1;
 	return api->run_finished(storage, run_id, output);
+}
+
+int storage_get_runs(struct storage *storage, struct run_queue *queue)
+{
+	const struct storage_api *api = get_api(storage->type);
+	if (!api)
+		return -1;
+	return api->get_runs(storage, queue);
 }
 
 int storage_get_run_queue(struct storage *storage, struct run_queue *queue)

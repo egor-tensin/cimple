@@ -3,6 +3,7 @@
 # For details, see https://github.com/egor-tensin/cimple.
 # Distributed under the MIT License.
 
+import json
 import logging
 import multiprocessing as mp
 import re
@@ -70,6 +71,19 @@ def _test_repo_internal(env, repo, numof_processes, runs_per_process):
         assert status == 'finished', f'Invalid status for run {id}: {status}'
         assert repo.run_exit_code_matches(ec), f"Exit code doesn't match: {ec}"
         assert repo.run_output_matches(output), f"Output doesn't match: {output}"
+
+    runs = env.client.run('get-runs')
+    runs = json.loads(runs)['result']
+    assert len(runs) == numof_runs
+
+    for run in runs:
+        id = run['id']
+        ec = run['exit_code']
+
+        assert repo.run_exit_code_matches(ec), f"Exit code doesn't match: {ec}"
+        # Not implemented yet:
+        assert 'status' not in run
+        assert 'output' not in run
 
 
 @my_parametrize('runs_per_client', [1, 5])

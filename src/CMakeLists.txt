@@ -55,6 +55,7 @@ endfunction()
 
 add_my_executable(server server_main.c server.c
     base64.c
+    buf.c
     cmd_line.c
     command.c
     const.c
@@ -80,6 +81,7 @@ target_include_directories(server PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
 
 add_my_executable(client client_main.c client.c
     base64.c
+    buf.c
     cmd_line.c
     const.c
     file.c
@@ -94,6 +96,7 @@ target_link_libraries(client PRIVATE json-c sodium)
 
 add_my_executable(worker worker_main.c worker.c
     base64.c
+    buf.c
     ci.c
     cmd_line.c
     command.c

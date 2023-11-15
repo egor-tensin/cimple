@@ -24,4 +24,10 @@ int request_parse_start_run(const struct jsonrpc_request *, struct run **);
 int request_create_finished_run(struct jsonrpc_request **, int run_id, const struct proc_output *);
 int request_parse_finished_run(const struct jsonrpc_request *, int *run_id, struct proc_output **);
 
+int request_create_get_runs(struct jsonrpc_request **);
+int request_parse_get_runs(const struct jsonrpc_request *);
+
+int response_create_get_runs(struct jsonrpc_response **, const struct jsonrpc_request *,
+                             const struct run_queue *);
+
 #endif

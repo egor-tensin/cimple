@@ -125,7 +125,7 @@ static int server_enqueue_run(struct server *server, struct run *run)
 {
 	int ret = 0;
 
-	ret = storage_run_create(&server->storage, run_get_url(run), run_get_rev(run));
+	ret = storage_run_create(&server->storage, run_get_repo_url(run), run_get_repo_rev(run));
 	if (ret < 0)
 		return ret;
 	run_set_id(run, ret);
@@ -136,7 +136,7 @@ static int server_enqueue_run(struct server *server, struct run *run)
 
 	run_queue_add_last(&server->run_queue, run);
 	log("Added a new run %d for repository %s to the queue\n", run_get_id(run),
-	    run_get_url(run));
+	    run_get_repo_url(run));
 
 	server_notify(server);
 	server_unlock(server);
@@ -164,7 +164,8 @@ static int server_wait_for_action(struct server *server)
 static void server_assign_run(struct server *server)
 {
 	struct run *run = run_queue_remove_first(&server->run_queue);
-	log("Removed run %d for repository %s from the queue\n", run_get_id(run), run_get_url(run));
+	log("Removed run %d for repository %s from the queue\n", run_get_id(run),
+	    run_get_repo_url(run));
 
 	struct worker *worker = worker_queue_remove_first(&server->worker_queue);
 	log("Removed worker %d from the queue\n", worker_get_fd(worker));
@@ -184,11 +185,11 @@ static void server_assign_run(struct server *server)
 exit:
 	if (ret < 0) {
 		log("Failed to assign run for repository %s to worker %d, requeueing\n",
-		    run_get_url(run), worker_get_fd(worker));
+		    run_get_repo_url(run), worker_get_fd(worker));
 		run_queue_add_first(&server->run_queue, run);
 	} else {
 		log("Assigned run %d for repository %s to worker %d\n", run_get_id(run),
-		    run_get_url(run), worker_get_fd(worker));
+		    run_get_repo_url(run), worker_get_fd(worker));
 		run_destroy(run);
 	}
 
@@ -316,10 +317,40 @@ free_output:
 	return ret;
 }
 
+static int server_handle_cmd_get_runs(const struct jsonrpc_request *request,
+                                      struct jsonrpc_response **response, void *_ctx)
+{
+	struct cmd_conn_ctx *ctx = (struct cmd_conn_ctx *)_ctx;
+	struct server *server = (struct server *)ctx->arg;
+	int ret = 0;
+
+	ret = request_parse_get_runs(request);
+	if (ret < 0)
+		return ret;
+
+	struct run_queue runs;
+
+	ret = storage_get_runs(&server->storage, &runs);
+	if (ret < 0) {
+		log_err("Failed to fetch runs\n");
+		return ret;
+	}
+
+	ret = response_create_get_runs(response, request, &runs);
+	if (ret < 0)
+		goto destroy_runs;
+
+destroy_runs:
+	run_queue_destroy(&runs);
+
+	return ret;
+}
+
 static struct cmd_desc commands[] = {
     {CMD_NEW_WORKER, server_handle_cmd_new_worker},
     {CMD_QUEUE_RUN, server_handle_cmd_queue_run},
     {CMD_FINISHED_RUN, server_handle_cmd_finished_run},
+    {CMD_GET_RUNS, server_handle_cmd_get_runs},
 };
 
 static const size_t numof_commands = sizeof(commands) / sizeof(commands[0]);

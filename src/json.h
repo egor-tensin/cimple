@@ -28,6 +28,9 @@ int json_clone(const struct json_object *, const char *key, struct json_object *
 int json_send(struct json_object *, int fd);
 struct json_object *json_recv(int fd);
 
+int json_new_object(struct json_object **);
+int json_new_array(struct json_object **);
+
 int json_has(const struct json_object *, const char *key);
 
 int json_get(const struct json_object *, const char *key, struct json_object **value);
@@ -41,5 +44,7 @@ int json_set_int(struct json_object *, const char *key, int64_t value);
 int json_set_const_key(struct json_object *, const char *, struct json_object *value);
 int json_set_string_const_key(struct json_object *, const char *, const char *value);
 int json_set_int_const_key(struct json_object *, const char *, int64_t value);
+
+int json_append(struct json_object *arr, struct json_object *elem);
 
 #endif

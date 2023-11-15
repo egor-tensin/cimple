@@ -8,16 +8,29 @@
 #ifndef __RUN_QUEUE_H__
 #define __RUN_QUEUE_H__
 
+#include <json-c/json_object.h>
+
 #include <sys/queue.h>
+
+enum run_status {
+	RUN_STATUS_CREATED = 1,
+	RUN_STATUS_FINISHED = 2,
+};
 
 struct run;
 
-int run_create(struct run **, int id, const char *url, const char *rev);
+int run_new(struct run **, int id, const char *repo_url, const char *repo_rev, enum run_status,
+            int exit_code);
 void run_destroy(struct run *);
 
+int run_queued(struct run **, const char *repo_url, const char *repo_rev);
+int run_created(struct run **, int id, const char *repo_url, const char *repo_rev);
+
+int run_to_json(const struct run *, struct json_object **);
+
 int run_get_id(const struct run *);
-const char *run_get_url(const struct run *);
-const char *run_get_rev(const struct run *);
+const char *run_get_repo_url(const struct run *);
+const char *run_get_repo_rev(const struct run *);
 
 void run_set_id(struct run *, int id);
 
@@ -25,6 +38,8 @@ SIMPLEQ_HEAD(run_queue, run);
 
 void run_queue_create(struct run_queue *);
 void run_queue_destroy(struct run_queue *);
+
+int run_queue_to_json(const struct run_queue *, struct json_object **);
 
 int run_queue_is_empty(const struct run_queue *);
 

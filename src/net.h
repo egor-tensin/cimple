@@ -8,6 +8,8 @@
 #ifndef __NET_H__
 #define __NET_H__
 
+#include "buf.h"
+
 #include <stddef.h>
 #include <stdint.h>
 

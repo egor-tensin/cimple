@@ -6,6 +6,7 @@
  */
 
 #include "net.h"
+#include "buf.h"
 #include "file.h"
 #include "log.h"
 
@@ -208,56 +209,16 @@ int net_recv(int fd, void *buf, size_t size)
 	return 0;
 }
 
-struct buf {
-	uint32_t size;
-	const void *data;
-};
-
-int buf_create(struct buf **_buf, const void *data, uint32_t size)
-{
-	struct buf *buf = malloc(sizeof(struct buf));
-	if (!buf) {
-		log_errno("malloc");
-		return -1;
-	}
-
-	buf->data = data;
-	buf->size = size;
-
-	*_buf = buf;
-	return 0;
-}
-
-int buf_create_from_string(struct buf **buf, const char *str)
-{
-	return buf_create(buf, str, strlen(str) + 1);
-}
-
-void buf_destroy(struct buf *buf)
-{
-	free(buf);
-}
-
-uint32_t buf_get_size(const struct buf *buf)
-{
-	return buf->size;
-}
-
-const void *buf_get_data(const struct buf *buf)
-{
-	return buf->data;
-}
-
 int net_send_buf(int fd, const struct buf *buf)
 {
 	int ret = 0;
 
-	uint32_t size = htonl(buf->size);
+	uint32_t size = htonl(buf_get_size(buf));
 	ret = net_send(fd, &size, sizeof(size));
 	if (ret < 0)
 		return ret;
 
-	ret = net_send(fd, buf->data, buf->size);
+	ret = net_send(fd, buf_get_data(buf), buf_get_size(buf));
 	if (ret < 0)
 		return ret;
 

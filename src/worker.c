@@ -184,7 +184,7 @@ static int worker_do_run(struct worker *worker)
 	if (ret < 0)
 		return ret;
 
-	ret = ci_run_git_repo(run_get_url(worker->run), run_get_rev(worker->run), result);
+	ret = ci_run_git_repo(run_get_repo_url(worker->run), run_get_repo_rev(worker->run), result);
 	if (ret < 0) {
 		log_err("Run failed with an error\n");
 		goto free_output;

@@ -6,6 +6,7 @@
  */
 
 #include "json.h"
+#include "buf.h"
 #include "log.h"
 #include "net.h"
 
@@ -106,6 +107,28 @@ destroy_buf:
 	buf_destroy(buf);
 
 	return result;
+}
+
+int json_new_object(struct json_object **_obj)
+{
+	struct json_object *obj = json_object_new_object();
+	if (!obj) {
+		json_errno("json_object_new_object");
+		return -1;
+	}
+	*_obj = obj;
+	return 0;
+}
+
+int json_new_array(struct json_object **_arr)
+{
+	struct json_object *arr = json_object_new_array();
+	if (!arr) {
+		json_errno("json_object_new_array");
+		return -1;
+	}
+	*_arr = arr;
+	return 0;
 }
 
 int json_has(const struct json_object *obj, const char *key)
@@ -253,4 +276,14 @@ int json_set_string_const_key(struct json_object *obj, const char *key, const ch
 int json_set_int_const_key(struct json_object *obj, const char *key, int64_t value)
 {
 	return json_set_int_internal(obj, key, value, json_const_key_flags);
+}
+
+int json_append(struct json_object *arr, struct json_object *elem)
+{
+	int ret = json_object_array_add(arr, elem);
+	if (ret < 0) {
+		json_errno("json_object_array_add");
+		return ret;
+	}
+	return ret;
 }
