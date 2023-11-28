@@ -1,6 +1,11 @@
 Rationale
 =========
 
+*A word of warning*: this was written in August 2022, when I was especially
+mean-spirited and upset with the existing solutions.
+The opinions here might come as unnecessarily harsh, and might be sometimes
+factually wrong.
+
 I started this project because the existing solutions sucked.
 I wanted a CI system that adheres to the following criteria.
 
