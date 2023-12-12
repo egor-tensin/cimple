@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Egor Tensin <Egor.Tensin@gmail.com>
+ * Copyright (c) 2022 Egor Tensin <egor@tensin.name>
  * This file is part of the "cimple" project.
  * For details, see https://github.com/egor-tensin/cimple.
  * Distributed under the MIT License.

@@ -29,7 +29,7 @@ RUN cd -- "$src_dir" && \
 
 FROM base
 
-LABEL maintainer="Egor Tensin <Egor.Tensin@gmail.com>"
+LABEL maintainer="Egor Tensin <egor@tensin.name>"
 
 RUN runtime_deps='json-c libgit2 libsodium sqlite tini' && \
     apk add -q --no-cache $runtime_deps
