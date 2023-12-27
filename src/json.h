@@ -19,6 +19,8 @@
 		log_err("JSON: %s failed\n", fn);                                                  \
 	} while (0)
 
+void json_free(struct json_object *);
+
 const char *json_to_string(struct json_object *);
 const char *json_to_string_pretty(struct json_object *);
 struct json_object *json_from_string(const char *);

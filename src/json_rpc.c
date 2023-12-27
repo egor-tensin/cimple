@@ -204,12 +204,9 @@ static int jsonrpc_request_create_internal(struct jsonrpc_request **_request, in
 		goto exit;
 	}
 
-	request->impl = json_object_new_object();
-	if (!request->impl) {
-		json_errno("json_object_new_object");
-		ret = -1;
+	ret = json_new_object(&request->impl);
+	if (ret < 0)
 		goto free;
-	}
 
 	ret = jsonrpc_set_version(request->impl);
 	if (ret < 0)
@@ -235,7 +232,7 @@ static int jsonrpc_request_create_internal(struct jsonrpc_request **_request, in
 	goto exit;
 
 free_impl:
-	json_object_put(request->impl);
+	json_free(request->impl);
 free:
 	free(request);
 exit:
@@ -250,7 +247,7 @@ int jsonrpc_request_create(struct jsonrpc_request **_request, int id, const char
 
 void jsonrpc_request_destroy(struct jsonrpc_request *request)
 {
-	json_object_put(request->impl);
+	json_free(request->impl);
 	free(request);
 }
 
@@ -313,7 +310,7 @@ int jsonrpc_request_recv(struct jsonrpc_request **request, int fd)
 	return ret;
 
 free_impl:
-	json_object_put(impl);
+	json_free(impl);
 
 	return ret;
 }
@@ -331,24 +328,26 @@ const char *jsonrpc_request_get_method(const struct jsonrpc_request *request)
 
 static struct json_object *jsonrpc_request_create_params(struct jsonrpc_request *request)
 {
+	int ret = 0;
 	const char *const key = jsonrpc_key_params;
 
 	if (!json_has(request->impl, key)) {
-		struct json_object *params = json_object_new_object();
-		if (!params) {
-			json_errno("json_object_new_object");
+		struct json_object *params = NULL;
+
+		ret = json_new_object(&params);
+		if (ret < 0)
 			return NULL;
-		}
-		int ret = json_set(request->impl, key, params);
+
+		ret = json_set(request->impl, key, params);
 		if (ret < 0) {
-			json_object_put(params);
+			json_free(params);
 			return NULL;
 		}
 		return params;
 	}
 
 	struct json_object *params = NULL;
-	int ret = json_get(request->impl, key, &params);
+	ret = json_get(request->impl, key, &params);
 	if (ret < 0)
 		return NULL;
 	return params;
@@ -409,12 +408,9 @@ int jsonrpc_response_create_internal(struct jsonrpc_response **_response,
 		goto exit;
 	}
 
-	response->impl = json_object_new_object();
-	if (!response->impl) {
-		json_errno("json_object_new_object");
-		ret = -1;
+	ret = json_new_object(&response->impl);
+	if (ret < 0)
 		goto free;
-	}
 
 	ret = jsonrpc_set_version(response->impl);
 	if (ret < 0)
@@ -427,7 +423,7 @@ int jsonrpc_response_create_internal(struct jsonrpc_response **_response,
 
 	ret = json_set(response->impl, jsonrpc_key_id, id);
 	if (ret < 0) {
-		json_object_put(id);
+		json_free(id);
 		goto free_impl;
 	}
 
@@ -445,7 +441,7 @@ int jsonrpc_response_create_internal(struct jsonrpc_response **_response,
 	goto exit;
 
 free_impl:
-	json_object_put(response->impl);
+	json_free(response->impl);
 free:
 	free(response);
 exit:
@@ -460,20 +456,19 @@ int jsonrpc_response_create(struct jsonrpc_response **response,
 
 void jsonrpc_response_destroy(struct jsonrpc_response *response)
 {
-	json_object_put(response->impl);
+	json_free(response->impl);
 	free(response);
 }
 
 int jsonrpc_error_create(struct jsonrpc_response **response, struct jsonrpc_request *request,
                          int code, const char *message)
 {
-	struct json_object *error = json_object_new_object();
-	if (!error) {
-		json_errno("json_object_new_object");
-		return -1;
-	}
-
 	int ret = 0;
+	struct json_object *error = NULL;
+
+	ret = json_new_object(&error);
+	if (ret < 0)
+		return ret;
 
 	ret = json_set_int_const_key(error, jsonrpc_key_code, code);
 	if (ret < 0)
@@ -489,7 +484,7 @@ int jsonrpc_error_create(struct jsonrpc_response **response, struct jsonrpc_requ
 	return ret;
 
 free:
-	json_object_put(error);
+	json_free(error);
 
 	return ret;
 }
@@ -544,7 +539,7 @@ int jsonrpc_response_recv(struct jsonrpc_response **response, int fd)
 	return ret;
 
 free_impl:
-	json_object_put(impl);
+	json_free(impl);
 
 	return ret;
 }

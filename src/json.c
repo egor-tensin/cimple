@@ -18,6 +18,11 @@
 #include <stdlib.h>
 #include <string.h>
 
+void json_free(struct json_object *obj)
+{
+	json_object_put(obj);
+}
+
 static const char *json_to_string_internal(struct json_object *obj, int flags)
 {
 	const char *result = json_object_to_json_string_ext(obj, flags);

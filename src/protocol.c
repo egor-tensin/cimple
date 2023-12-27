@@ -9,6 +9,7 @@
 #include "base64.h"
 #include "compiler.h"
 #include "const.h"
+#include "json.h"
 #include "json_rpc.h"
 #include "process.h"
 #include "run_queue.h"
@@ -218,7 +219,7 @@ int response_create_get_runs(struct jsonrpc_response **response,
 	return ret;
 
 free_json:
-	json_object_put(runs_json);
+	json_free(runs_json);
 
 	return ret;
 }

@@ -107,7 +107,7 @@ int run_to_json(const struct run *entry, struct json_object **_json)
 	return ret;
 
 free:
-	json_object_put(json);
+	json_free(json);
 
 	return ret;
 }
@@ -167,7 +167,7 @@ int run_queue_to_json(const struct run_queue *queue, struct json_object **_json)
 
 		ret = json_append(json, entry_json);
 		if (ret < 0) {
-			json_object_put(entry_json);
+			json_free(entry_json);
 			goto free;
 		}
 	}
@@ -176,7 +176,7 @@ int run_queue_to_json(const struct run_queue *queue, struct json_object **_json)
 	return ret;
 
 free:
-	json_object_put(json);
+	json_free(json);
 
 	return ret;
 }
