@@ -103,6 +103,8 @@ def test_repo_stress(env, stress_test_repo, numof_clients, runs_per_client):
     _test_repo_internal(env, stress_test_repo, numof_clients, runs_per_client)
 
 
+# Nice workaround to skip tests by default: https://stackoverflow.com/a/43938191
+@pytest.mark.skipif("not config.getoption('flamegraph')")
 @pytest.mark.flame_graph
 def test_repo_flame_graph(env, profiler, flame_graph_repo):
     _test_repo_internal(env, flame_graph_repo, 4, 500)

@@ -2,6 +2,14 @@ add_subdirectory(sigsegv)
 
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
 
+if(NOT DEFINED TEST_REPORT_DIR)
+    set(TEST_REPORT_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
+endif()
+
+if(NOT DEFINED FLAME_GRAPHS_DIR)
+    set(FLAME_GRAPHS_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
+endif()
+
 set(python_test_args
     --no-header -v
     --durations 0 --durations-min 1.0
@@ -20,31 +28,27 @@ function(add_python_tests name)
     set_tests_properties("${name}" PROPERTIES TIMEOUT 600)
 endfunction()
 
+# Fast sanity tests & longer-running stress tests.
 add_python_tests(python_tests_default
-    Python3::Interpreter -m pytest ${python_test_args} -m "not flame_graph")
+    Python3::Interpreter -m pytest ${python_test_args})
 
-# Use pytest-html to generate an HTML report.
-if(NOT DEFINED TEST_REPORT_DIR)
-    set(TEST_REPORT_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
-endif()
-
+# Same, but use pytest-html to generate an HTML report.
 add_python_tests(python_tests_report
-    Python3::Interpreter -m pytest ${python_test_args} -m "not flame_graph"
+    Python3::Interpreter -m pytest ${python_test_args}
         --html "${TEST_REPORT_DIR}/index.html")
 
-# A subset of tests, excluding long-running stress tests.
+# Fast sanity tests only.
 add_python_tests(python_tests_sanity
-    Python3::Interpreter -m pytest ${python_test_args} -m "not flame_graph and not stress")
+    Python3::Interpreter -m pytest ${python_test_args} -m "not stress")
 
-# Same, but run under Valgrind.
+# Same, but run under Valgrind. Longer-running stress tests are not run under
+# Valgrind, because they take too long.
 add_python_tests(python_tests_valgrind
-    Python3::Interpreter -m pytest ${python_test_args} -m "not flame_graph and not stress"
+    Python3::Interpreter -m pytest ${python_test_args} -m "not stress"
         --valgrind "${CMAKE_CURRENT_SOURCE_DIR}/../scripts/valgrind.sh")
 
-if(NOT DEFINED FLAME_GRAPHS_DIR)
-    set(FLAME_GRAPHS_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
-endif()
-
+# A couple of tests that are profiled using the flame graph tool. These are
+# excluded by default.
 add_python_tests(python_tests_flame_graphs
     Python3::Interpreter -m pytest ${python_test_args} -m "flame_graph"
         --flamegraph "${CMAKE_CURRENT_SOURCE_DIR}/../scripts/flamegraph.sh"
