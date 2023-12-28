@@ -13,7 +13,7 @@ endif()
 set(python_test_args
     --no-header -v
     --durations 0 --durations-min 1.0
-    "${CMAKE_CURRENT_SOURCE_DIR}/py"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src"
     --server "$<TARGET_FILE:server>"
     --worker "$<TARGET_FILE:worker>"
     --client "$<TARGET_FILE:client>"
@@ -23,7 +23,7 @@ set(python_test_args
 function(add_python_tests name)
     list(POP_FRONT ARGV)
     add_test(NAME "${name}"
-        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/py"
+        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/src"
         COMMAND ${ARGV})
     set_tests_properties("${name}" PROPERTIES TIMEOUT 600)
 endfunction()

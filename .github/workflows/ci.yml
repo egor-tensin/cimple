@@ -38,12 +38,12 @@ jobs:
           # Unpin when this is fixed: https://github.com/python/cpython/issues/111615
           python-version: '3.11'
           cache: pip
-          cache-dependency-path: ./test/py/requirements.txt
+          cache-dependency-path: ./test/requirements.txt
       - name: Install dependencies
         run: |
           sudo apt-get update
           sudo DEBIAN_FRONTEND=noninteractive apt-get install -yq --no-install-recommends $DEPS valgrind
-          pip install -q -r ./test/py/requirements.txt
+          pip install -q -r ./test/requirements.txt
       - name: Build
         run: make install
       - name: Upload binaries
