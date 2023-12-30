@@ -12,9 +12,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-/* This is not provided by glibc; however, it does provide a possible
- * implementation in string_copying(7), which I copied from. */
-char *stpecpy(char *dst, char *end, const char *src)
+/* glibc calls this stpecpy; it's not provided by glibc; however, it does
+ * provide a possible implementation in string_copying(7), which I copied from. */
+char *string_append(char *dst, char *end, const char *src)
 {
 	if (!dst)
 		return NULL;

@@ -132,8 +132,8 @@ static void event_loop_remove(struct event_loop *loop, struct event_fd *entry)
 static char *append_event(char *buf, size_t sz, char *ptr, const char *event)
 {
 	if (ptr > buf)
-		ptr = stpecpy(ptr, buf + sz, ",");
-	return stpecpy(ptr, buf + sz, event);
+		ptr = string_append(ptr, buf + sz, ",");
+	return string_append(ptr, buf + sz, event);
 }
 
 static char *events_to_string(short events)
