@@ -219,7 +219,7 @@ int response_create_get_runs(struct jsonrpc_response **response,
 	return ret;
 
 free_json:
-	json_free(runs_json);
+	libjson_free(runs_json);
 
 	return ret;
 }

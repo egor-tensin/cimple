@@ -87,19 +87,19 @@ int run_to_json(const struct run *entry, struct json_object **_json)
 	struct json_object *json = NULL;
 	int ret = 0;
 
-	ret = json_new_object(&json);
+	ret = libjson_new_object(&json);
 	if (ret < 0)
 		return -1;
-	ret = json_set_int_const_key(json, "id", entry->id);
+	ret = libjson_set_int_const_key(json, "id", entry->id);
 	if (ret < 0)
 		goto free;
-	ret = json_set_int_const_key(json, "exit_code", entry->exit_code);
+	ret = libjson_set_int_const_key(json, "exit_code", entry->exit_code);
 	if (ret < 0)
 		goto free;
-	ret = json_set_string_const_key(json, "repo_url", entry->repo_url);
+	ret = libjson_set_string_const_key(json, "repo_url", entry->repo_url);
 	if (ret < 0)
 		goto free;
-	ret = json_set_string_const_key(json, "repo_rev", entry->repo_rev);
+	ret = libjson_set_string_const_key(json, "repo_rev", entry->repo_rev);
 	if (ret < 0)
 		goto free;
 
@@ -107,7 +107,7 @@ int run_to_json(const struct run *entry, struct json_object **_json)
 	return ret;
 
 free:
-	json_free(json);
+	libjson_free(json);
 
 	return ret;
 }
@@ -153,7 +153,7 @@ int run_queue_to_json(const struct run_queue *queue, struct json_object **_json)
 	struct json_object *json = NULL;
 	int ret = 0;
 
-	ret = json_new_array(&json);
+	ret = libjson_new_array(&json);
 	if (ret < 0)
 		return ret;
 
@@ -165,9 +165,9 @@ int run_queue_to_json(const struct run_queue *queue, struct json_object **_json)
 		if (ret < 0)
 			goto free;
 
-		ret = json_append(json, entry_json);
+		ret = libjson_append(json, entry_json);
 		if (ret < 0) {
-			json_free(entry_json);
+			libjson_free(entry_json);
 			goto free;
 		}
 	}
@@ -176,7 +176,7 @@ int run_queue_to_json(const struct run_queue *queue, struct json_object **_json)
 	return ret;
 
 free:
-	json_free(json);
+	libjson_free(json);
 
 	return ret;
 }
