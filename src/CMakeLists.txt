@@ -9,6 +9,11 @@ if(COVERAGE)
     add_link_options(--coverage)
 endif()
 
+option(STATIC_ANALYZER "Enable static analysis")
+if(STATIC_ANALYZER)
+    add_compile_options(-fanalyzer)
+endif()
+
 # Valgrind on Ubuntu Focal doesn't like DWARF version 5 debug info generated
 # by Clang 14.
 if("${CMAKE_C_COMPILER_ID}" STREQUAL "Clang")

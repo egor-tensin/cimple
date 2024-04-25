@@ -55,6 +55,12 @@ build/coverage/html:
 The latest code coverage report for the `master` branch can be found at
 https://egor-tensin.github.io/cimple/coverage/.
 
+### Static analysis
+
+Build w/ GCC's `-fanalyzer`:
+
+    make analyzer
+
 ### Flame graphs
 
 Some performance analysis can be done by looking at flame graphs.

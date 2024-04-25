@@ -1,16 +1,18 @@
 include prelude.mk
 
-COMPILER      ?= clang
-CONFIGURATION ?= debug
-DEFAULT_HOST  ?= 127.0.0.1
-DEFAULT_PORT  ?= 5556
-COVERAGE      ?=
+COMPILER        ?= clang
+CONFIGURATION   ?= debug
+DEFAULT_HOST    ?= 127.0.0.1
+DEFAULT_PORT    ?= 5556
+COVERAGE        ?=
+STATIC_ANALYZER ?=
 
 $(eval $(call noexpand,COMPILER))
 $(eval $(call noexpand,CONFIGURATION))
 $(eval $(call noexpand,DEFAULT_HOST))
 $(eval $(call noexpand,DEFAULT_PORT))
 $(eval $(call noexpand,COVERAGE))
+$(eval $(call noexpand,STATIC_ANALYZER))
 
 src_dir   := $(abspath .)
 build_dir := $(src_dir)/build
@@ -40,6 +42,7 @@ build:
 		-D 'DEFAULT_PORT=$(call escape,$(DEFAULT_PORT))' \
 		-D 'TEST_REPORT_DIR=$(call escape,$(build_dir)/test_report)' \
 		-D 'COVERAGE=$(call escape,$(COVERAGE))' \
+		-D 'STATIC_ANALYZER=$(call escape,$(STATIC_ANALYZER))' \
 		-D 'FLAME_GRAPHS_DIR=$(call escape,$(build_dir)/flame_graphs)' \
 		-S '$(call escape,$(src_dir))' \
 		-B '$(call escape,$(build_dir)/cmake)'
@@ -70,6 +73,16 @@ coverage: build coverage/test
 ifndef CI
 	xdg-open '$(call escape,$(build_dir))/html/index.html' &> /dev/null
 endif
+
+# This a separate target, because CMake is kinda dumb; if you run `make debug`
+# and then `make debug COMPILER=gcc STATIC_ANALYZER=1`, it'll run a rebuild,
+# but won't include the -fanalyzer option for some reason.
+.PHONY: analyzer
+analyzer analyzer/%: CONFIGURATION   := debug
+analyzer analyzer/%: COMPILER        := gcc
+analyzer analyzer/%: STATIC_ANALYZER := 1
+analyzer analyzer/%: build_dir       := $(build_dir)/analyzer
+analyzer: build
 
 %/install: % DO
 	cmake --install '$(call escape,$(build_dir))/cmake'
