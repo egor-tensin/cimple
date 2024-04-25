@@ -23,7 +23,7 @@ jobs:
     strategy:
       matrix:
         compiler: [gcc, clang]
-        configuration: [Debug, Release]
+        configuration: [debug, release]
     runs-on: ubuntu-latest
     name: 'Build: ${{ matrix.compiler }} / ${{ matrix.configuration }}'
     env:
@@ -45,24 +45,24 @@ jobs:
           sudo DEBIAN_FRONTEND=noninteractive apt-get install -yq --no-install-recommends $DEPS valgrind
           pip install -q -r ./test/requirements.txt
       - name: Build
-        run: make install
+        run: make '${{ matrix.configuration }}/install'
       - name: Upload binaries
         uses: actions/upload-artifact@v4
         with:
           name: 'cimple-${{ matrix.compiler }}-${{ matrix.configuration }}'
-          path: './build/install/'
+          path: './build/${{ matrix.configuration }}/install/'
           if-no-files-found: error
       - name: Run tests
-        run: make test/report
+        run: make '${{ matrix.configuration }}/report'
       - name: Upload test report
         uses: actions/upload-artifact@v4
         with:
           name: 'test-report-${{ matrix.compiler }}-${{ matrix.configuration }}'
-          path: './build/test_report/'
+          path: './build/${{ matrix.configuration }}/test_report/'
           if-no-files-found: error
         if: always()
       - name: Run Valgrind tests
-        run: make test/valgrind
+        run: make '${{ matrix.configuration }}/valgrind'
 
   coverage:
     runs-on: ubuntu-latest
@@ -80,7 +80,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: coverage
-          path: ./build/coverage/
+          path: ./build/coverage/html/
           if-no-files-found: error
 
   flame_graphs:
@@ -101,18 +101,18 @@ jobs:
         run: |
           echo -1 | sudo tee /proc/sys/kernel/perf_event_paranoid
       - name: Build
-        run: make install
+        run: make debug/install
       - name: Make flame graphs
         run: |
           # sudo is used to resolve kernel symbols. Plus, it would be required
           # if we didn't fix perf_event_paranoid. PATH needs to be preserved
           # for FlameGraph.
-          sudo --preserve-env=PATH make flame_graphs
+          sudo --preserve-env=PATH make debug/flame_graphs
       - name: Upload flame graphs
         uses: actions/upload-artifact@v4
         with:
           name: flame_graphs
-          path: ./build/flame_graphs/
+          path: ./build/debug/flame_graphs/
           if-no-files-found: error
 
   publish_reports:
@@ -122,15 +122,15 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Download test report - Clang/Debug
+      - name: Download test report - clang/debug
         uses: actions/download-artifact@v4
         with:
-          name: test-report-clang-Debug
+          name: test-report-clang-debug
           path: /tmp/reports/test_report_clang_debug/
-      - name: Download test report - Clang/Release
+      - name: Download test report - clang/release
         uses: actions/download-artifact@v4
         with:
-          name: test-report-clang-Release
+          name: test-report-clang-release
           path: /tmp/reports/test_report_clang_release/
       - name: Download coverage report
         uses: actions/download-artifact@v4

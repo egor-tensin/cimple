@@ -1,48 +1,54 @@
 There's a Makefile with useful shortcuts to build the project in the "build/"
 directory:
 
-    make build
+    make debug   # Debug build in build/debug/cmake
+    make release # Release build in build/release/cmake
 
-This command makes a CMake build directory in build/cmake/ and executes `make`
-there.
+This command makes a CMake build directory in build/{debug,release}/cmake/ and
+executes `make` there.
 
-The default is to build using clang in `Debug` configuration.
-You can choose a different compiler and configuration like so:
+The default is to build using Clang.
+You can choose a different compiler like so:
 
-    make build COMPILER=gcc CONFIGURATION=Release
+    make {debug,release} COMPILER=gcc
 
 ### Testing
 
 After building, you can run the "test suite" (depends on Pytest).
 
-    make test
+    make debug/test
+    make release/test
 
 To only run a subset of basic sanity tests:
 
-    make test/sanity
+    make debug/sanity
+    make release/sanity
 
-To generate an HTML report in build/test_report/, run (requires pytest-html):
+To generate an HTML report in build/{debug,release}/test_report/, run (requires
+pytest-html):
 
-    make test/report
+    make debug/report
+    make release/report
 
 Reports for the latest successful Clang builds can be found below:
 
-* [Debug],
-* [Release].
+* [debug],
+* [release].
 
-[Debug]: https://egor-tensin.github.io/cimple/test_report_clang_debug/
-[Release]: https://egor-tensin.github.io/cimple/test_report_clang_release/
+[debug]: https://egor-tensin.github.io/cimple/test_report_clang_debug/
+[release]: https://egor-tensin.github.io/cimple/test_report_clang_release/
 
 ### Valgrind
 
 You can run a suite of basic sanity tests under Valgrind:
 
-    make test/valgrind
+    make debug/valgrind
+    make release/valgrind
 
 ### Code coverage
 
 You can generate a code coverage report (depends on `gcovr`) in
-build/coverage/:
+build/coverage/html:
 
     make coverage
 
@@ -54,11 +60,11 @@ https://egor-tensin.github.io/cimple/coverage/.
 Some performance analysis can be done by looking at flame graphs.
 Generate them after building the project (depends on `perf` & [FlameGraph]):
 
-    make flame_graphs
+    make debug/flame_graphs
 
 [FlameGraph]: https://github.com/brendangregg/FlameGraph
 
-This will generate two flame graphs in build/flame_graphs/; they stress
+This will generate two flame graphs in build/debug/flame_graphs/; they stress
 slightly different parts of the system:
 
 * [flame_graph_output_simple.svg] for a CI script with short output,
