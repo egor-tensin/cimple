@@ -107,7 +107,7 @@ jobs:
           # sudo is used to resolve kernel symbols. Plus, it would be required
           # if we didn't fix perf_event_paranoid. PATH needs to be preserved
           # for FlameGraph.
-          sudo --preserve-env=PATH make debug/flame_graphs
+          sudo --preserve-env=PATH DEBUGINFOD_URLS='https://debuginfod.ubuntu.com' make debug/flame_graphs
       - name: Upload flame graphs
         uses: actions/upload-artifact@v4
         with:

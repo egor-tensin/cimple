@@ -101,6 +101,7 @@ main() {
 		--freq=99 \
 		--call-graph dwarf,65528 \
 		--pid="$pids" \
+		${DEBUGINFOD_URLS:+--debuginfod} \
 		--no-inherit &
 
 	record_pid="$!"
