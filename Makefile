@@ -120,9 +120,6 @@ endif
 	ctest --test-dir '$(call escape,$(build_dir))/cmake' \
 		--verbose --tests-regex python_tests_valgrind
 
-# When building a Docker image for a different platform, exclude stress tests:
-# they simply take way too long.
-
 %/flame_graphs: DO
 	@echo -----------------------------------------------------------------
 	@echo Generating flame graphs
