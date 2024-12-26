@@ -1,3 +1,11 @@
+### Setting up
+
+Set up git hooks by running
+
+    ./scripts/setup-hooks.sh
+
+### Building
+
 There's a Makefile with useful shortcuts to build the project in the "build/"
 directory:
 
