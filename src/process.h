@@ -10,24 +10,25 @@
 
 #include <stddef.h>
 
-struct proc_output {
+struct process_output {
 	int ec;
 	unsigned char *data;
 	size_t data_size;
 };
 
 /* The exit code is only valid if the functions returns a non-negative number. */
-int proc_spawn(const char *args[], const char *envp[], int *ec);
+int process_execute(const char *args[], const char *envp[], int *ec);
 
-/* Similarly, the contents of the proc_output structure is only valid if the function returns a
+/* Similarly, the contents of the process_output structure is only valid if the function returns a
  * non-negative number.
  *
  * In that case, you'll need to free the output. */
-int proc_capture(const char *args[], const char *envp[], struct proc_output *result);
+int process_execute_and_capture(const char *args[], const char *envp[],
+                                struct process_output *result);
 
-int proc_output_create(struct proc_output **);
-void proc_output_destroy(struct proc_output *);
+int process_output_create(struct process_output **);
+void process_output_destroy(struct process_output *);
 
-void proc_output_dump(const struct proc_output *);
+void process_output_dump(const struct process_output *);
 
 #endif

@@ -120,7 +120,7 @@ static const char *const finished_key_ec = "exit_code";
 static const char *const finished_key_data = "output";
 
 int request_create_finished_run(struct jsonrpc_request **request, int run_id,
-                                const struct proc_output *output)
+                                const struct process_output *output)
 {
 	int ret = 0;
 
@@ -153,12 +153,12 @@ free_request:
 }
 
 int request_parse_finished_run(const struct jsonrpc_request *request, int *_run_id,
-                               struct proc_output **_output)
+                               struct process_output **_output)
 {
 	int ret = 0;
 
-	struct proc_output *output = NULL;
-	ret = proc_output_create(&output);
+	struct process_output *output = NULL;
+	ret = process_output_create(&output);
 	if (ret < 0)
 		return ret;
 
@@ -187,7 +187,7 @@ int request_parse_finished_run(const struct jsonrpc_request *request, int *_run_
 	return ret;
 
 free_output:
-	proc_output_destroy(output);
+	process_output_destroy(output);
 
 	return ret;
 }

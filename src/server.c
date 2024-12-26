@@ -297,7 +297,7 @@ static int server_handle_cmd_finished_run(const struct jsonrpc_request *request,
 	int ret = 0;
 
 	int run_id = 0;
-	struct proc_output *output;
+	struct process_output *output;
 
 	ret = request_parse_finished_run(request, &run_id, &output);
 	if (ret < 0)
@@ -312,7 +312,7 @@ static int server_handle_cmd_finished_run(const struct jsonrpc_request *request,
 	log("Marked run %d as finished\n", run_id);
 
 free_output:
-	proc_output_destroy(output);
+	process_output_destroy(output);
 
 	return ret;
 }

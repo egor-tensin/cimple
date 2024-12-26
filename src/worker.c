@@ -179,8 +179,8 @@ static int worker_do_run(struct worker *worker)
 {
 	int ret = 0;
 
-	struct proc_output *result = NULL;
-	ret = proc_output_create(&result);
+	struct process_output *result = NULL;
+	ret = process_output_create(&result);
 	if (ret < 0)
 		return ret;
 
@@ -190,7 +190,7 @@ static int worker_do_run(struct worker *worker)
 		goto free_output;
 	}
 
-	proc_output_dump(result);
+	process_output_dump(result);
 
 	struct jsonrpc_request *finished_request = NULL;
 
@@ -214,7 +214,7 @@ free_request:
 	jsonrpc_request_destroy(finished_request);
 
 free_output:
-	proc_output_destroy(result);
+	process_output_destroy(result);
 
 	run_destroy(worker->run);
 

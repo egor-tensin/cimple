@@ -31,13 +31,13 @@ static const char *ci_env[] = {
 };
 /* clang-format on */
 
-static int ci_run_script(const char *script, struct proc_output *result)
+static int ci_run_script(const char *script, struct process_output *result)
 {
 	const char *args[] = {script, NULL};
-	return proc_capture(args, ci_env, result);
+	return process_execute_and_capture(args, ci_env, result);
 }
 
-int ci_run(struct proc_output *result)
+int ci_run(struct process_output *result)
 {
 	for (const char **script = ci_scripts; *script; ++script) {
 		if (!file_exists(*script))
@@ -76,7 +76,7 @@ cleanup_repo:
 	return ret;
 }
 
-int ci_run_git_repo(const char *url, const char *rev, struct proc_output *output)
+int ci_run_git_repo(const char *url, const char *rev, struct process_output *output)
 {
 	char *oldpwd = NULL;
 	git_repository *repo = NULL;

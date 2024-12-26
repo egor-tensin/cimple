@@ -58,7 +58,7 @@ static int wait_for_child(pid_t pid, int *ec)
 	return 0;
 }
 
-int proc_spawn(const char *args[], const char *envp[], int *ec)
+int process_execute(const char *args[], const char *envp[], int *ec)
 {
 	pid_t child_pid = fork();
 	if (child_pid < 0) {
@@ -93,7 +93,8 @@ static int redirect_and_exec_child(int pipe_fds[2], const char *args[], const ch
 	return exec_child(args, envp);
 }
 
-int proc_capture(const char *args[], const char *envp[], struct proc_output *result)
+int process_execute_and_capture(const char *args[], const char *envp[],
+                                struct process_output *result)
 {
 	static const int flags = O_CLOEXEC;
 	int pipe_fds[2];
@@ -137,9 +138,9 @@ close_pipe:
 	return ret;
 }
 
-int proc_output_create(struct proc_output **_output)
+int process_output_create(struct process_output **_output)
 {
-	struct proc_output *output = calloc(1, sizeof(struct proc_output));
+	struct process_output *output = calloc(1, sizeof(struct process_output));
 	if (!output) {
 		log_errno("calloc");
 		return -1;
@@ -153,13 +154,13 @@ int proc_output_create(struct proc_output **_output)
 	return 0;
 }
 
-void proc_output_destroy(struct proc_output *output)
+void process_output_destroy(struct process_output *output)
 {
 	free(output->data);
 	free(output);
 }
 
-void proc_output_dump(const struct proc_output *output)
+void process_output_dump(const struct process_output *output)
 {
 	log("Process exit code: %d\n", output->ec);
 	log("Process output: %zu bytes\n", output->data_size);

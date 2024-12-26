@@ -24,7 +24,7 @@ int storage_sqlite_create(struct storage *, const struct storage_settings *);
 void storage_sqlite_destroy(struct storage *);
 
 int storage_sqlite_run_create(struct storage *, const char *repo_url, const char *rev);
-int storage_sqlite_run_finished(struct storage *, int id, const struct proc_output *);
+int storage_sqlite_run_finished(struct storage *, int id, const struct process_output *);
 
 int storage_sqlite_get_runs(struct storage *, struct run_queue *runs);
 int storage_sqlite_get_run_queue(struct storage *, struct run_queue *runs);

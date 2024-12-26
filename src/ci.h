@@ -10,7 +10,7 @@
 
 #include "process.h"
 
-int ci_run(struct proc_output *);
+int ci_run(struct process_output *);
 
 /*
  * This is a high-level function. It's basically equivalent to the following
@@ -25,6 +25,6 @@ int ci_run(struct proc_output *);
  *     rm -rf "$dir"
  *
  */
-int ci_run_git_repo(const char *url, const char *rev, struct proc_output *);
+int ci_run_git_repo(const char *url, const char *rev, struct process_output *);
 
 #endif
