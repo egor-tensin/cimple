@@ -11,7 +11,6 @@
 #include "buf.h"
 
 #include <stddef.h>
-#include <stdint.h>
 
 int net_bind(const char *port);
 int net_accept(int fd);
@@ -20,15 +19,6 @@ void net_close(int fd);
 
 int net_send(int fd, const void *, size_t);
 int net_recv(int fd, void *, size_t);
-
-struct buf;
-
-int buf_create(struct buf **, const void *, uint32_t);
-int buf_create_from_string(struct buf **, const char *);
-void buf_destroy(struct buf *);
-
-uint32_t buf_get_size(const struct buf *);
-const void *buf_get_data(const struct buf *);
 
 int net_send_buf(int fd, const struct buf *);
 int net_recv_buf(int fd, struct buf **);
