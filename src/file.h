@@ -12,8 +12,12 @@
 
 int rm_rf(const char *dir);
 
-int my_chdir(const char *dir, char **old);
-char *my_readlink(const char *path);
+/* This chdir(2) wrapper optionally saves the previous working directory in the
+ * `old` pointer, allowing the user to switch back to it if necessary. */
+int chdir_wrapper(const char *dir, char **old);
+
+/* This readlink(2) wrapper allocates enough memory dynamically. */
+char *readlink_wrapper(const char *path);
 
 int file_dup(int fd);
 void file_close(int fd);

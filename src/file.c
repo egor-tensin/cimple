@@ -36,7 +36,7 @@ int rm_rf(const char *dir)
 	return nftw(dir, unlink_cb, 64, FTW_DEPTH | FTW_PHYS);
 }
 
-int my_chdir(const char *dir, char **old)
+int chdir_wrapper(const char *dir, char **old)
 {
 	int ret = 0;
 
@@ -63,7 +63,7 @@ free_old:
 	return ret;
 }
 
-char *my_readlink(const char *path)
+char *readlink_wrapper(const char *path)
 {
 	size_t current_size = 256;
 	char *buf = NULL;

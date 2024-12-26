@@ -86,7 +86,7 @@ int ci_run_git_repo(const char *url, const char *rev, struct proc_output *output
 	if (ret < 0)
 		goto exit;
 
-	ret = my_chdir(git_repository_workdir(repo), &oldpwd);
+	ret = chdir_wrapper(git_repository_workdir(repo), &oldpwd);
 	if (ret < 0)
 		goto free_repo;
 
@@ -95,7 +95,7 @@ int ci_run_git_repo(const char *url, const char *rev, struct proc_output *output
 		goto oldpwd;
 
 oldpwd:
-	my_chdir(oldpwd, NULL);
+	chdir_wrapper(oldpwd, NULL);
 	free(oldpwd);
 
 free_repo:

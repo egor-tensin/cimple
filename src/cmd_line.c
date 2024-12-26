@@ -16,7 +16,7 @@
 
 static char *get_current_binary_path(void)
 {
-	return my_readlink("/proc/self/exe");
+	return readlink_wrapper("/proc/self/exe");
 }
 
 static char *get_current_binary_name(void)
