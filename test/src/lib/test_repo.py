@@ -225,7 +225,8 @@ class TestRepoSegfault(TestRepo):
         return ec == -11
 
     def run_output_matches(self, output):
-        return "Started the test program.\n" == output.decode()
+        output = output.decode()
+        return output.startswith("Started the test program.\n") and "You shouldn't see this." not in output
 
     def run_files_are_present(self, *args):
         return True

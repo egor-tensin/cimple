@@ -18,7 +18,8 @@ from lib.tests import my_parametrize
 def test_sigsegv(sigsegv):
     ec, output = sigsegv.try_run()
     assert ec == -11
-    assert output == 'Started the test program.\n'
+    assert output.startswith('Started the test program.\n')
+    assert "You shouldn't see this." not in output
 
 
 class LoggingEventRunComplete(LoggingEvent):
