@@ -15,7 +15,7 @@ jobs:
     continue-on-error: ${{ github.ref != 'refs/heads/master' }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Run clang-format
         uses: egor-tensin/clang-format@v1
 
@@ -31,9 +31,9 @@ jobs:
       CONFIGURATION: '${{ matrix.configuration }}'
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           # Unpin when this is fixed: https://github.com/python/cpython/issues/111615
           python-version: '3.11'
@@ -47,7 +47,7 @@ jobs:
       - name: Build
         run: make '${{ matrix.configuration }}/install'
       - name: Upload binaries
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: 'cimple-${{ matrix.compiler }}-${{ matrix.configuration }}'
           path: './build/${{ matrix.configuration }}/install/'
@@ -55,7 +55,7 @@ jobs:
       - name: Run tests
         run: make '${{ matrix.configuration }}/report'
       - name: Upload test report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: 'test-report-${{ matrix.compiler }}-${{ matrix.configuration }}'
           path: './build/${{ matrix.configuration }}/test_report/'
@@ -69,7 +69,7 @@ jobs:
     name: 'Code coverage'
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Install dependencies
         run: |
           sudo apt-get update
@@ -77,7 +77,7 @@ jobs:
       - name: Generate coverage report
         run: make coverage
       - name: Upload coverage report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: coverage
           path: ./build/coverage/html/
@@ -88,7 +88,7 @@ jobs:
     name: 'Flame graphs'
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Install dependencies
         run: |
           sudo apt-get update
@@ -109,7 +109,7 @@ jobs:
           # for FlameGraph.
           sudo --preserve-env=PATH DEBUGINFOD_URLS='https://debuginfod.ubuntu.com' make debug/flame_graphs
       - name: Upload flame graphs
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: flame_graphs
           path: ./build/debug/flame_graphs/
@@ -121,24 +121,24 @@ jobs:
     name: 'Publish: reports'
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Download test report - clang/debug
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           name: test-report-clang-debug
           path: /tmp/reports/test_report_clang_debug/
       - name: Download test report - clang/release
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           name: test-report-clang-release
           path: /tmp/reports/test_report_clang_release/
       - name: Download coverage report
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           name: coverage
           path: /tmp/reports/coverage
       - name: Download flame graphs
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           name: flame_graphs
           path: /tmp/reports/flame_graphs
@@ -155,7 +155,7 @@ jobs:
     name: 'Publish: Docker Hub'
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
       - name: Set up Docker Buildx
@@ -175,7 +175,7 @@ jobs:
               echo 'platforms=amd64' >> "$GITHUB_OUTPUT"
           fi
       - name: Publish
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           # Without context, .dockerignore is not respected?
           # https://stackoverflow.com/a/74552407/514684
