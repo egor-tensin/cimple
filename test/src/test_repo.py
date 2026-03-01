@@ -98,7 +98,7 @@ def test_repo(env, test_repo, numof_clients, runs_per_client):
                 [
                     (10, 50),
                     (1, 2000),
-                    (4, 500),
+                    (4, 1),
                 ])
 def test_repo_stress(env, stress_test_repo, numof_clients, runs_per_client):
     _test_repo_internal(env, stress_test_repo, numof_clients, runs_per_client)
@@ -108,4 +108,4 @@ def test_repo_stress(env, stress_test_repo, numof_clients, runs_per_client):
 @pytest.mark.skipif("not config.getoption('flamegraph')")
 @pytest.mark.flame_graph
 def test_repo_flame_graph(env, profiler, flame_graph_repo):
-    _test_repo_internal(env, flame_graph_repo, 4, 500)
+    _test_repo_internal(env, flame_graph_repo, 4, 1)

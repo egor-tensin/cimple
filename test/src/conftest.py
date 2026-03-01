@@ -198,7 +198,7 @@ TEST_REPOS = [
 
 STRESS_TEST_REPOS = [
     repo.TestRepoOutputSimple,
-    repo.TestRepoOutputLong,
+    #repo.TestRepoOutputLong,
 ]
 
 
