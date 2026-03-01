@@ -61,7 +61,7 @@ class CmdLine:
             return os.path.abspath(binary)
         path = shutil.which(binary)
         if path is None:
-            raise RuntimeError("couldn't find a binary: " + binary)
+            raise RuntimeError("couldn't find binary: " + binary)
         return path
 
     @staticmethod

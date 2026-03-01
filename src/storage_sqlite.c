@@ -463,7 +463,7 @@ static int storage_sqlite_row_to_run(struct sqlite3_stmt *stmt, struct run **run
 	if (ret < 0)
 		goto free_rev;
 
-	log("Adding a run %d for repository %s to the queue\n", id, url);
+	log("Adding run %d for repository %s to the queue\n", id, url);
 
 free_rev:
 	free(rev);

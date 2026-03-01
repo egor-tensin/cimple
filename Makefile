@@ -74,9 +74,9 @@ ifndef CI
 	xdg-open '$(call escape,$(build_dir))/html/index.html' &> /dev/null
 endif
 
-# This a separate target, because CMake is kinda dumb; if you run `make debug`
-# and then `make debug COMPILER=gcc STATIC_ANALYZER=1`, it'll run a rebuild,
-# but won't include the -fanalyzer option for some reason.
+# This is a separate target, because CMake is kinda dumb; if you run `make
+# debug` and then `make debug COMPILER=gcc STATIC_ANALYZER=1`, it'll run a
+# rebuild, but won't include the -fanalyzer option for some reason.
 .PHONY: analyzer
 analyzer analyzer/%: CONFIGURATION   := debug
 analyzer analyzer/%: COMPILER        := gcc
