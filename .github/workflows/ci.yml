@@ -18,69 +18,69 @@ jobs:
       - name: Run clang-format
         uses: egor-tensin/clang-format@v1
 
-  build:
-    strategy:
-      matrix:
-        compiler: [gcc, clang]
-        configuration: [debug, release]
-    runs-on: ubuntu-latest
-    name: 'Build: ${{ matrix.compiler }} / ${{ matrix.configuration }}'
-    env:
-      COMPILER: '${{ matrix.compiler }}'
-      CONFIGURATION: '${{ matrix.configuration }}'
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-      - name: Set up Python
-        uses: actions/setup-python@v6
-        with:
-          # Unpin when this is fixed: https://github.com/python/cpython/issues/111615
-          python-version: '3.11'
-          cache: pip
-          cache-dependency-path: ./test/requirements.txt
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo DEBIAN_FRONTEND=noninteractive apt-get install -yq --no-install-recommends $DEPS valgrind
-          pip install -q -r ./test/requirements.txt
-      - name: Build
-        run: make '${{ matrix.configuration }}/install'
-      - name: Upload binaries
-        uses: actions/upload-artifact@v6
-        with:
-          name: 'cimple-${{ matrix.compiler }}-${{ matrix.configuration }}'
-          path: './build/${{ matrix.configuration }}/install/'
-          if-no-files-found: error
-      - name: Run tests
-        run: make '${{ matrix.configuration }}/report'
-      - name: Upload test report
-        uses: actions/upload-artifact@v6
-        with:
-          name: 'test-report-${{ matrix.compiler }}-${{ matrix.configuration }}'
-          path: './build/${{ matrix.configuration }}/test_report/'
-          if-no-files-found: error
-        if: always()
-      - name: Run Valgrind tests
-        run: make '${{ matrix.configuration }}/valgrind'
+  #build:
+  #  strategy:
+  #    matrix:
+  #      compiler: [gcc, clang]
+  #      configuration: [debug, release]
+  #  runs-on: ubuntu-latest
+  #  name: 'Build: ${{ matrix.compiler }} / ${{ matrix.configuration }}'
+  #  env:
+  #    COMPILER: '${{ matrix.compiler }}'
+  #    CONFIGURATION: '${{ matrix.configuration }}'
+  #  steps:
+  #    - name: Checkout
+  #      uses: actions/checkout@v6
+  #    - name: Set up Python
+  #      uses: actions/setup-python@v6
+  #      with:
+  #        # Unpin when this is fixed: https://github.com/python/cpython/issues/111615
+  #        python-version: '3.11'
+  #        cache: pip
+  #        cache-dependency-path: ./test/requirements.txt
+  #    - name: Install dependencies
+  #      run: |
+  #        sudo apt-get update
+  #        sudo DEBIAN_FRONTEND=noninteractive apt-get install -yq --no-install-recommends $DEPS valgrind
+  #        pip install -q -r ./test/requirements.txt
+  #    - name: Build
+  #      run: make '${{ matrix.configuration }}/install'
+  #    - name: Upload binaries
+  #      uses: actions/upload-artifact@v6
+  #      with:
+  #        name: 'cimple-${{ matrix.compiler }}-${{ matrix.configuration }}'
+  #        path: './build/${{ matrix.configuration }}/install/'
+  #        if-no-files-found: error
+  #    - name: Run tests
+  #      run: make '${{ matrix.configuration }}/report'
+  #    - name: Upload test report
+  #      uses: actions/upload-artifact@v6
+  #      with:
+  #        name: 'test-report-${{ matrix.compiler }}-${{ matrix.configuration }}'
+  #        path: './build/${{ matrix.configuration }}/test_report/'
+  #        if-no-files-found: error
+  #      if: always()
+  #    - name: Run Valgrind tests
+  #      run: make '${{ matrix.configuration }}/valgrind'
 
-  coverage:
-    runs-on: ubuntu-latest
-    name: 'Code coverage'
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo DEBIAN_FRONTEND=noninteractive apt-get install -yq --no-install-recommends $DEPS gcovr
-      - name: Generate coverage report
-        run: make coverage
-      - name: Upload coverage report
-        uses: actions/upload-artifact@v6
-        with:
-          name: coverage
-          path: ./build/coverage/html/
-          if-no-files-found: error
+  #coverage:
+  #  runs-on: ubuntu-latest
+  #  name: 'Code coverage'
+  #  steps:
+  #    - name: Checkout
+  #      uses: actions/checkout@v6
+  #    - name: Install dependencies
+  #      run: |
+  #        sudo apt-get update
+  #        sudo DEBIAN_FRONTEND=noninteractive apt-get install -yq --no-install-recommends $DEPS gcovr
+  #    - name: Generate coverage report
+  #      run: make coverage
+  #    - name: Upload coverage report
+  #      uses: actions/upload-artifact@v6
+  #      with:
+  #        name: coverage
+  #        path: ./build/coverage/html/
+  #        if-no-files-found: error
 
   flame_graphs:
     runs-on: ubuntu-latest
@@ -88,10 +88,41 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+      - run: |
+          lsmod
+      - run: |
+          which -a perf
+      - run: |
+          cat "$( which perf )"
+      - run: |
+          ls -Alh1 /usr/lib/linux-tools/$( uname -r )/ || true
+      - run: |
+          ls -Alh1 /usr/lib/linux-tools/$( uname -r )/perf/ || true
+      - run: |
+          ( dpkg -l | grep linux | grep tools ; ) || true
+      - run: |
+          dpkg -L linux-tools-$( uname -r ) || true
+      - run: |
+          dpkg -L linux-cloud-tools-$( uname -r ) || true
+      - run: |
+          dpkg -L linux-headers-$( uname -r ) || true
+      - run: |
+          dpkg -L linux-azure-6.14-tools-6.14.0-1017 || true
+      - run: |
+          dpkg -L linux-azure-6.14-cloud-tools-6.14.0-1017 || true
+      - run: |
+          dpkg -L linux-azure-6.14-headers-6.14.0-1017 || true
+      - run: |
+          perf -v || true
+      - run: |
+          sudo apt-get install apt-file
+          sudo apt-file update
+      - run: |
+          apt-file search perf | grep -P '/perf$'
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo DEBIAN_FRONTEND=noninteractive apt-get install -yq --no-install-recommends $DEPS
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -yq --no-install-recommends $DEPS "linux-tools-$( uname -r )" "linux-cloud-tools-$( uname -r )" "linux-headers-$( uname -r )"
       - name: Install FlameGraph
         run: |
           git clone --depth 1 https://github.com/brendangregg/FlameGraph.git ~/FlameGraph
@@ -114,71 +145,71 @@ jobs:
           path: ./build/debug/flame_graphs/
           if-no-files-found: error
 
-  publish_reports:
-    needs: [build, coverage, flame_graphs]
-    runs-on: ubuntu-latest
-    name: 'Publish: reports'
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-      - name: Download test report - clang/debug
-        uses: actions/download-artifact@v7
-        with:
-          name: test-report-clang-debug
-          path: /tmp/reports/test_report_clang_debug/
-      - name: Download test report - clang/release
-        uses: actions/download-artifact@v7
-        with:
-          name: test-report-clang-release
-          path: /tmp/reports/test_report_clang_release/
-      - name: Download coverage report
-        uses: actions/download-artifact@v7
-        with:
-          name: coverage
-          path: /tmp/reports/coverage
-      - name: Download flame graphs
-        uses: actions/download-artifact@v7
-        with:
-          name: flame_graphs
-          path: /tmp/reports/flame_graphs
-      - name: Publish to GitHub Pages
-        uses: JamesIves/github-pages-deploy-action@v4
-        with:
-          folder: /tmp/reports/
-          single-commit: true
-        if: github.ref == 'refs/heads/master'
+  #publish_reports:
+  #  needs: [build, coverage, flame_graphs]
+  #  runs-on: ubuntu-latest
+  #  name: 'Publish: reports'
+  #  steps:
+  #    - name: Checkout
+  #      uses: actions/checkout@v6
+  #    - name: Download test report - clang/debug
+  #      uses: actions/download-artifact@v7
+  #      with:
+  #        name: test-report-clang-debug
+  #        path: /tmp/reports/test_report_clang_debug/
+  #    - name: Download test report - clang/release
+  #      uses: actions/download-artifact@v7
+  #      with:
+  #        name: test-report-clang-release
+  #        path: /tmp/reports/test_report_clang_release/
+  #    - name: Download coverage report
+  #      uses: actions/download-artifact@v7
+  #      with:
+  #        name: coverage
+  #        path: /tmp/reports/coverage
+  #    - name: Download flame graphs
+  #      uses: actions/download-artifact@v7
+  #      with:
+  #        name: flame_graphs
+  #        path: /tmp/reports/flame_graphs
+  #    - name: Publish to GitHub Pages
+  #      uses: JamesIves/github-pages-deploy-action@v4
+  #      with:
+  #        folder: /tmp/reports/
+  #        single-commit: true
+  #      if: github.ref == 'refs/heads/master'
 
-  publish_docker:
-    needs: [lint, build]
-    runs-on: ubuntu-latest
-    name: 'Publish: Docker Hub'
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: '${{ secrets.DOCKERHUB_USERNAME }}'
-          password: '${{ secrets.DOCKERHUB_TOKEN }}'
-      - id: platforms
-        name: Which platforms?
-        # Building for ARM for every commit not in master is too time-consuming.
-        run: |
-          if [ '${{ github.ref }}' = 'refs/heads/master' ]; then
-              echo 'platforms=amd64,armhf,arm64' >> "$GITHUB_OUTPUT"
-          else
-              echo 'platforms=amd64' >> "$GITHUB_OUTPUT"
-          fi
-      - name: Publish
-        uses: docker/build-push-action@v6
-        with:
-          # Without context, .dockerignore is not respected?
-          # https://stackoverflow.com/a/74552407/514684
-          context: .
-          platforms: '${{ steps.platforms.outputs.platforms }}'
-          push: ${{ github.ref == 'refs/heads/master' }}
-          tags: '${{ secrets.DOCKERHUB_USERNAME }}/cimple:latest'
+  #publish_docker:
+  #  needs: [lint, build]
+  #  runs-on: ubuntu-latest
+  #  name: 'Publish: Docker Hub'
+  #  steps:
+  #    - name: Checkout
+  #      uses: actions/checkout@v6
+  #    - name: Set up QEMU
+  #      uses: docker/setup-qemu-action@v3
+  #    - name: Set up Docker Buildx
+  #      uses: docker/setup-buildx-action@v3
+  #    - name: Login to Docker Hub
+  #      uses: docker/login-action@v3
+  #      with:
+  #        username: '${{ secrets.DOCKERHUB_USERNAME }}'
+  #        password: '${{ secrets.DOCKERHUB_TOKEN }}'
+  #    - id: platforms
+  #      name: Which platforms?
+  #      # Building for ARM for every commit not in master is too time-consuming.
+  #      run: |
+  #        if [ '${{ github.ref }}' = 'refs/heads/master' ]; then
+  #            echo 'platforms=amd64,armhf,arm64' >> "$GITHUB_OUTPUT"
+  #        else
+  #            echo 'platforms=amd64' >> "$GITHUB_OUTPUT"
+  #        fi
+  #    - name: Publish
+  #      uses: docker/build-push-action@v6
+  #      with:
+  #        # Without context, .dockerignore is not respected?
+  #        # https://stackoverflow.com/a/74552407/514684
+  #        context: .
+  #        platforms: '${{ steps.platforms.outputs.platforms }}'
+  #        push: ${{ github.ref == 'refs/heads/master' }}
+  #        tags: '${{ secrets.DOCKERHUB_USERNAME }}/cimple:latest'
