@@ -83,7 +83,10 @@ jobs:
           if-no-files-found: error
 
   flame_graphs:
-    runs-on: ubuntu-latest
+    # I don't fucking know why, but perf is no longer available for the kernel
+    # latest (Noble) image. There's no linux-tools-6.14.0-1017-azure kernel or
+    # whatever.
+    runs-on: ubuntu-22.04
     name: 'Flame graphs'
     steps:
       - name: Checkout
