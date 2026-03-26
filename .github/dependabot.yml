@@ -5,10 +5,12 @@ updates:
     schedule:
       interval: weekly
   - package-ecosystem: docker
-    directory: /
+    directores:
+      - '**/*'
     schedule:
       interval: weekly
   - package-ecosystem: docker-compose
-    directory: /
+    directories:
+      - '**/*'
     schedule:
       interval: weekly
