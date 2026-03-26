@@ -34,8 +34,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
-          # Unpin when this is fixed: https://github.com/python/cpython/issues/111615
-          python-version: '3.11'
+          python-version: 3.x
           cache: pip
           cache-dependency-path: ./test/requirements.txt
       - name: Install dependencies
