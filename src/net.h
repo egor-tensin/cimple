@@ -12,15 +12,15 @@
 
 #include <stddef.h>
 
-int net_bind(const char *port);
+int net_bind(const char* port);
 int net_accept(int fd);
-int net_connect(const char *host, const char *port);
+int net_connect(const char* host, const char* port);
 void net_close(int fd);
 
-int net_send(int fd, const void *, size_t);
-int net_recv(int fd, void *, size_t);
+int net_send(int fd, const void*, size_t);
+int net_recv(int fd, void*, size_t);
 
-int net_send_buf(int fd, const struct buf *);
-int net_recv_buf(int fd, struct buf **);
+int net_send_buf(int fd, const struct buf*);
+int net_recv_buf(int fd, struct buf**);
 
 #endif

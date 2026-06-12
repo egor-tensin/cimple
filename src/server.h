@@ -9,16 +9,16 @@
 #define __SERVER_H__
 
 struct settings {
-	const char *port;
+	const char* port;
 
-	const char *sqlite_path;
+	const char* sqlite_path;
 };
 
 struct server;
 
-int server_create(struct server **, const struct settings *);
-void server_destroy(struct server *);
+int server_create(struct server**, const struct settings*);
+void server_destroy(struct server*);
 
-int server_main(struct server *);
+int server_main(struct server*);
 
 #endif

@@ -6,6 +6,7 @@
  */
 
 #include "buf.h"
+
 #include "log.h"
 
 #include <stdint.h>
@@ -14,12 +15,11 @@
 
 struct buf {
 	uint32_t size;
-	const void *data;
+	const void* data;
 };
 
-int buf_create(struct buf **_buf, const void *data, uint32_t size)
-{
-	struct buf *buf = malloc(sizeof(struct buf));
+int buf_create(struct buf** _buf, const void* data, uint32_t size) {
+	struct buf* buf = malloc(sizeof(struct buf));
 	if (!buf) {
 		log_errno("malloc");
 		return -1;
@@ -32,22 +32,18 @@ int buf_create(struct buf **_buf, const void *data, uint32_t size)
 	return 0;
 }
 
-int buf_create_from_string(struct buf **buf, const char *str)
-{
+int buf_create_from_string(struct buf** buf, const char* str) {
 	return buf_create(buf, str, strlen(str) + 1);
 }
 
-void buf_destroy(struct buf *buf)
-{
+void buf_destroy(struct buf* buf) {
 	free(buf);
 }
 
-uint32_t buf_get_size(const struct buf *buf)
-{
+uint32_t buf_get_size(const struct buf* buf) {
 	return buf->size;
 }
 
-const void *buf_get_data(const struct buf *buf)
-{
+const void* buf_get_data(const struct buf* buf) {
 	return buf->data;
 }

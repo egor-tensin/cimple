@@ -6,6 +6,7 @@
  */
 
 #include "command.h"
+
 #include "compiler.h"
 #include "event_loop.h"
 #include "json_rpc.h"
@@ -16,13 +17,12 @@
 #include <string.h>
 
 struct cmd_dispatcher {
-	struct cmd_desc *cmds;
+	struct cmd_desc* cmds;
 	size_t numof_cmds;
-	void *ctx;
+	void* ctx;
 };
 
-static int copy_cmd(struct cmd_desc *dest, const struct cmd_desc *src)
-{
+static int copy_cmd(struct cmd_desc* dest, const struct cmd_desc* src) {
 	dest->name = strdup(src->name);
 	if (!dest->name) {
 		log_errno("strdup");
@@ -32,13 +32,11 @@ static int copy_cmd(struct cmd_desc *dest, const struct cmd_desc *src)
 	return 0;
 }
 
-static void free_cmd(struct cmd_desc *desc)
-{
+static void free_cmd(struct cmd_desc* desc) {
 	free(desc->name);
 }
 
-static int copy_cmds(struct cmd_desc *dest, const struct cmd_desc *src, size_t numof_cmds)
-{
+static int copy_cmds(struct cmd_desc* dest, const struct cmd_desc* src, size_t numof_cmds) {
 	size_t numof_copied = 0;
 	int ret = 0;
 
@@ -57,18 +55,18 @@ free:
 	return -1;
 }
 
-static void free_cmds(struct cmd_desc *cmds, size_t numof_cmds)
-{
+static void free_cmds(struct cmd_desc* cmds, size_t numof_cmds) {
 	for (size_t i = 0; i < numof_cmds; ++i)
 		free_cmd(&cmds[i]);
 }
 
-int cmd_dispatcher_create(struct cmd_dispatcher **_dispatcher, struct cmd_desc *cmds,
-                          size_t numof_cmds, void *ctx)
-{
+int cmd_dispatcher_create(struct cmd_dispatcher** _dispatcher,
+                          struct cmd_desc* cmds,
+                          size_t numof_cmds,
+                          void* ctx) {
 	int ret = 0;
 
-	struct cmd_dispatcher *dispatcher = malloc(sizeof(struct cmd_dispatcher));
+	struct cmd_dispatcher* dispatcher = malloc(sizeof(struct cmd_dispatcher));
 	if (!dispatcher) {
 		log_errno("malloc");
 		return -1;
@@ -99,21 +97,20 @@ free:
 	return -1;
 }
 
-void cmd_dispatcher_destroy(struct cmd_dispatcher *dispatcher)
-{
+void cmd_dispatcher_destroy(struct cmd_dispatcher* dispatcher) {
 	free_cmds(dispatcher->cmds, dispatcher->numof_cmds);
 	free(dispatcher->cmds);
 	free(dispatcher);
 }
 
-static int cmd_dispatcher_handle_internal(const struct cmd_dispatcher *dispatcher,
-                                          const struct jsonrpc_request *request,
-                                          struct jsonrpc_response **result, void *arg)
-{
-	const char *actual_cmd = jsonrpc_request_get_method(request);
+static int cmd_dispatcher_handle_internal(const struct cmd_dispatcher* dispatcher,
+                                          const struct jsonrpc_request* request,
+                                          struct jsonrpc_response** result,
+                                          void* arg) {
+	const char* actual_cmd = jsonrpc_request_get_method(request);
 
 	for (size_t i = 0; i < dispatcher->numof_cmds; ++i) {
-		struct cmd_desc *cmd = &dispatcher->cmds[i];
+		struct cmd_desc* cmd = &dispatcher->cmds[i];
 
 		if (strcmp(cmd->name, actual_cmd))
 			continue;
@@ -125,15 +122,14 @@ static int cmd_dispatcher_handle_internal(const struct cmd_dispatcher *dispatche
 	return -1;
 }
 
-int cmd_dispatcher_handle(const struct cmd_dispatcher *dispatcher,
-                          const struct jsonrpc_request *command, struct jsonrpc_response **result)
-{
+int cmd_dispatcher_handle(const struct cmd_dispatcher* dispatcher,
+                          const struct jsonrpc_request* command,
+                          struct jsonrpc_response** result) {
 	return cmd_dispatcher_handle_internal(dispatcher, command, result, dispatcher->ctx);
 }
 
-static struct cmd_conn_ctx *make_conn_ctx(int fd, void *arg)
-{
-	struct cmd_conn_ctx *ctx = malloc(sizeof(struct cmd_conn_ctx));
+static struct cmd_conn_ctx* make_conn_ctx(int fd, void* arg) {
+	struct cmd_conn_ctx* ctx = malloc(sizeof(struct cmd_conn_ctx));
 	if (!ctx) {
 		log_errno("malloc");
 		return NULL;
@@ -145,40 +141,39 @@ static struct cmd_conn_ctx *make_conn_ctx(int fd, void *arg)
 	return ctx;
 }
 
-static int cmd_dispatcher_handle_conn_internal(int conn_fd, struct cmd_dispatcher *dispatcher)
-{
+static int cmd_dispatcher_handle_conn_internal(int conn_fd, struct cmd_dispatcher* dispatcher) {
 	int ret = 0;
 
-	struct cmd_conn_ctx *new_ctx = make_conn_ctx(conn_fd, dispatcher->ctx);
+	struct cmd_conn_ctx* new_ctx = make_conn_ctx(conn_fd, dispatcher->ctx);
 	if (!new_ctx)
 		return -1;
 
-	struct jsonrpc_request *request = NULL;
+	struct jsonrpc_request* request = NULL;
 	ret = jsonrpc_request_recv(&request, conn_fd);
 	if (ret < 0)
 		goto free_ctx;
 
 	const int requires_response = !jsonrpc_request_is_notification(request);
 
-	struct jsonrpc_response *default_response = NULL;
+	struct jsonrpc_response* default_response = NULL;
 	if (requires_response) {
 		ret = jsonrpc_response_create(&default_response, request, NULL);
 		if (ret < 0)
 			goto free_request;
 	}
 
-	struct jsonrpc_response *default_error = NULL;
+	struct jsonrpc_response* default_error = NULL;
 	if (requires_response) {
 		ret = jsonrpc_error_create(&default_error, request, -1, "An error occured");
 		if (ret < 0)
 			goto free_default_response;
 	}
 
-	struct jsonrpc_response *response = NULL;
+	struct jsonrpc_response* response = NULL;
 	ret = cmd_dispatcher_handle_internal(dispatcher, request, &response, new_ctx);
 
 	if (requires_response) {
-		struct jsonrpc_response *actual_response = response;
+		struct jsonrpc_response* actual_response = response;
 		if (!actual_response) {
 			actual_response = ret < 0 ? default_error : default_response;
 		}
@@ -207,18 +202,18 @@ free_ctx:
 	return ret;
 }
 
-int cmd_dispatcher_handle_conn(int conn_fd, void *_dispatcher)
-{
-	return cmd_dispatcher_handle_conn_internal(conn_fd, (struct cmd_dispatcher *)_dispatcher);
+int cmd_dispatcher_handle_conn(int conn_fd, void* _dispatcher) {
+	return cmd_dispatcher_handle_conn_internal(conn_fd, (struct cmd_dispatcher*)_dispatcher);
 }
 
-int cmd_dispatcher_handle_event(UNUSED struct event_loop *loop, int fd, short revents,
-                                void *_dispatcher)
-{
+int cmd_dispatcher_handle_event(UNUSED struct event_loop* loop,
+                                int fd,
+                                short revents,
+                                void* _dispatcher) {
 	if (!(revents & POLLIN)) {
 		log_err("Descriptor %d is not readable\n", fd);
 		return -1;
 	}
 
-	return cmd_dispatcher_handle_conn_internal(fd, (struct cmd_dispatcher *)_dispatcher);
+	return cmd_dispatcher_handle_conn_internal(fd, (struct cmd_dispatcher*)_dispatcher);
 }

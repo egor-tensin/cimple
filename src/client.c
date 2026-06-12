@@ -6,6 +6,7 @@
  */
 
 #include "client.h"
+
 #include "cmd_line.h"
 #include "compiler.h"
 #include "const.h"
@@ -22,11 +23,10 @@ struct client {
 	int dummy;
 };
 
-int client_create(struct client **_client)
-{
+int client_create(struct client** _client) {
 	int ret = 0;
 
-	struct client *client = malloc(sizeof(struct client));
+	struct client* client = malloc(sizeof(struct client));
 	if (!client) {
 		log_errno("malloc");
 		return -1;
@@ -36,13 +36,11 @@ int client_create(struct client **_client)
 	return ret;
 }
 
-void client_destroy(struct client *client)
-{
+void client_destroy(struct client* client) {
 	free(client);
 }
 
-static int make_request(struct jsonrpc_request **request, int argc, const char **argv)
-{
+static int make_request(struct jsonrpc_request** request, int argc, const char** argv) {
 	if (argc < 1) {
 		exit_with_usage_err("no action specified");
 		return -1;
@@ -52,7 +50,7 @@ static int make_request(struct jsonrpc_request **request, int argc, const char *
 		if (argc != 3)
 			return -1;
 
-		struct run *run = NULL;
+		struct run* run = NULL;
 		int ret = run_queued(&run, argv[1], argv[2]);
 		if (ret < 0)
 			return ret;
@@ -69,12 +67,13 @@ static int make_request(struct jsonrpc_request **request, int argc, const char *
 	return -1;
 }
 
-int client_main(UNUSED const struct client *client, const struct settings *settings, int argc,
-                const char **argv)
-{
+int client_main(UNUSED const struct client* client,
+                const struct settings* settings,
+                int argc,
+                const char** argv) {
 	int ret = 0;
 
-	struct jsonrpc_request *request = NULL;
+	struct jsonrpc_request* request = NULL;
 	ret = make_request(&request, argc, argv);
 	if (ret < 0) {
 		exit_with_usage_err("invalid request");
@@ -90,12 +89,12 @@ int client_main(UNUSED const struct client *client, const struct settings *setti
 	if (ret < 0)
 		goto close;
 
-	struct jsonrpc_response *response = NULL;
+	struct jsonrpc_response* response = NULL;
 	ret = jsonrpc_response_recv(&response, fd);
 	if (ret < 0)
 		goto close;
 
-	const char *response_str = jsonrpc_response_to_string(response);
+	const char* response_str = jsonrpc_response_to_string(response);
 	if (response_str) {
 		if (jsonrpc_response_is_error(response))
 			ret = -1;

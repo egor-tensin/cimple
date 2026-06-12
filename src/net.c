@@ -6,6 +6,7 @@
  */
 
 #include "net.h"
+
 #include "buf.h"
 #include "file.h"
 #include "log.h"
@@ -20,8 +21,7 @@
 
 #define gai_log_errno(ec) log_err("getaddrinfo: %s\n", gai_strerror(ec))
 
-int net_bind(const char *port)
-{
+int net_bind(const char* port) {
 	static const int flags = SOCK_CLOEXEC;
 	struct addrinfo *result = NULL, *it = NULL;
 	struct addrinfo hints;
@@ -92,8 +92,7 @@ fail:
 	return ret;
 }
 
-int net_accept(int fd)
-{
+int net_accept(int fd) {
 	static const int flags = SOCK_CLOEXEC;
 	int ret = 0;
 
@@ -106,8 +105,7 @@ int net_accept(int fd)
 	return ret;
 }
 
-int net_connect(const char *host, const char *port)
-{
+int net_connect(const char* host, const char* port) {
 	static const int flags = SOCK_CLOEXEC;
 	struct addrinfo *result = NULL, *it = NULL;
 	struct addrinfo hints;
@@ -151,13 +149,11 @@ int net_connect(const char *host, const char *port)
 	return socket_fd;
 }
 
-void net_close(int fd)
-{
+void net_close(int fd) {
 	file_close(fd);
 }
 
-static ssize_t net_send_part(int fd, const void *buf, size_t size)
-{
+static ssize_t net_send_part(int fd, const void* buf, size_t size) {
 	static const int flags = MSG_NOSIGNAL;
 
 	ssize_t ret = send(fd, buf, size, flags);
@@ -169,13 +165,12 @@ static ssize_t net_send_part(int fd, const void *buf, size_t size)
 	return ret;
 }
 
-int net_send(int fd, const void *buf, size_t size)
-{
+int net_send(int fd, const void* buf, size_t size) {
 	size_t sent_total = 0;
 
 	while (sent_total < size) {
 		ssize_t sent_now =
-		    net_send_part(fd, (const char *)buf + sent_total, size - sent_total);
+		    net_send_part(fd, (const char*)buf + sent_total, size - sent_total);
 		if (sent_now < 0)
 			return -1;
 		sent_total += sent_now;
@@ -184,12 +179,11 @@ int net_send(int fd, const void *buf, size_t size)
 	return 0;
 }
 
-int net_recv(int fd, void *buf, size_t size)
-{
+int net_recv(int fd, void* buf, size_t size) {
 	ssize_t read_total = 0;
 
 	while ((size_t)read_total < size) {
-		ssize_t read_now = read(fd, (unsigned char *)buf + read_total, size - read_total);
+		ssize_t read_now = read(fd, (unsigned char*)buf + read_total, size - read_total);
 		if (!read_now)
 			break;
 
@@ -209,8 +203,7 @@ int net_recv(int fd, void *buf, size_t size)
 	return 0;
 }
 
-int net_send_buf(int fd, const struct buf *buf)
-{
+int net_send_buf(int fd, const struct buf* buf) {
 	int ret = 0;
 
 	uint32_t size = htonl(buf_get_size(buf));
@@ -225,8 +218,7 @@ int net_send_buf(int fd, const struct buf *buf)
 	return ret;
 }
 
-int net_recv_buf(int fd, struct buf **buf)
-{
+int net_recv_buf(int fd, struct buf** buf) {
 	uint32_t size = 0;
 	int ret = 0;
 
@@ -237,7 +229,7 @@ int net_recv_buf(int fd, struct buf **buf)
 	}
 	size = ntohl(size);
 
-	void *data = malloc(size);
+	void* data = malloc(size);
 	if (!data) {
 		log_errno("malloc");
 		goto fail;

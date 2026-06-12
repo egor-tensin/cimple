@@ -21,8 +21,8 @@
  * ptr = string_append(ptr, buf + 128, "strings");
  * ptr = string_append(ptr, buf + 128, "can be appended safely");
  */
-char *string_append(char *dst, char *end, const char *src);
+char* string_append(char* dst, char* end, const char* src);
 
-int string_to_int(const char *src, int *result);
+int string_to_int(const char* src, int* result);
 
 #endif

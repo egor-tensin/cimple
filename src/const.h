@@ -8,12 +8,12 @@
 #ifndef __CONST_H__
 #define __CONST_H__
 
-extern const char *project_version;
-extern const char *project_rev;
+extern const char* project_version;
+extern const char* project_rev;
 
-extern const char *default_host;
-extern const char *default_port;
-extern const char *default_sqlite_path;
+extern const char* default_host;
+extern const char* default_port;
+extern const char* default_sqlite_path;
 
 #define CMD_QUEUE_RUN    "queue-run"
 #define CMD_NEW_WORKER   "new-worker"

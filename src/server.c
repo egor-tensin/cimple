@@ -6,6 +6,7 @@
  */
 
 #include "server.h"
+
 #include "command.h"
 #include "compiler.h"
 #include "const.h"
@@ -33,9 +34,9 @@ struct server {
 
 	int stopping;
 
-	struct cmd_dispatcher *cmd_dispatcher;
+	struct cmd_dispatcher* cmd_dispatcher;
 
-	struct event_loop *event_loop;
+	struct event_loop* event_loop;
 	int signalfd;
 
 	struct worker_queue worker_queue;
@@ -45,11 +46,10 @@ struct server {
 
 	pthread_t main_thread;
 
-	struct tcp_server *tcp_server;
+	struct tcp_server* tcp_server;
 };
 
-static int server_lock(struct server *server)
-{
+static int server_lock(struct server* server) {
 	int ret = pthread_mutex_lock(&server->server_mtx);
 	if (ret) {
 		pthread_errno(ret, "pthread_mutex_lock");
@@ -58,13 +58,11 @@ static int server_lock(struct server *server)
 	return ret;
 }
 
-static void server_unlock(struct server *server)
-{
+static void server_unlock(struct server* server) {
 	pthread_errno_if(pthread_mutex_unlock(&server->server_mtx), "pthread_mutex_unlock");
 }
 
-static int server_wait(struct server *server)
-{
+static int server_wait(struct server* server) {
 	int ret = pthread_cond_wait(&server->server_cv, &server->server_mtx);
 	if (ret) {
 		pthread_errno(ret, "pthread_cond_wait");
@@ -73,15 +71,15 @@ static int server_wait(struct server *server)
 	return ret;
 }
 
-static void server_notify(struct server *server)
-{
+static void server_notify(struct server* server) {
 	pthread_errno_if(pthread_cond_signal(&server->server_cv), "pthread_cond_signal");
 }
 
-static int server_set_stopping(UNUSED struct event_loop *loop, UNUSED int fd, UNUSED short revents,
-                               void *_server)
-{
-	struct server *server = (struct server *)_server;
+static int server_set_stopping(UNUSED struct event_loop* loop,
+                               UNUSED int fd,
+                               UNUSED short revents,
+                               void* _server) {
+	struct server* server = (struct server*)_server;
 	int ret = 0;
 
 	ret = server_lock(server);
@@ -95,13 +93,11 @@ static int server_set_stopping(UNUSED struct event_loop *loop, UNUSED int fd, UN
 	return ret;
 }
 
-static int server_has_workers(const struct server *server)
-{
+static int server_has_workers(const struct server* server) {
 	return !worker_queue_is_empty(&server->worker_queue);
 }
 
-static int server_enqueue_worker(struct server *server, struct worker *worker)
-{
+static int server_enqueue_worker(struct server* server, struct worker* worker) {
 	int ret = 0;
 
 	ret = server_lock(server);
@@ -116,13 +112,11 @@ static int server_enqueue_worker(struct server *server, struct worker *worker)
 	return ret;
 }
 
-static int server_has_runs(const struct server *server)
-{
+static int server_has_runs(const struct server* server) {
 	return !run_queue_is_empty(&server->run_queue);
 }
 
-static int server_enqueue_run(struct server *server, struct run *run)
-{
+static int server_enqueue_run(struct server* server, struct run* run) {
 	int ret = 0;
 
 	ret = storage_run_create(&server->storage, run_get_repo_url(run), run_get_repo_rev(run));
@@ -135,7 +129,8 @@ static int server_enqueue_run(struct server *server, struct run *run)
 		return ret;
 
 	run_queue_add_last(&server->run_queue, run);
-	log("Added a new run %d for repository %s to the queue\n", run_get_id(run),
+	log("Added a new run %d for repository %s to the queue\n",
+	    run_get_id(run),
 	    run_get_repo_url(run));
 
 	server_notify(server);
@@ -143,13 +138,11 @@ static int server_enqueue_run(struct server *server, struct run *run)
 	return ret;
 }
 
-static int server_ready_for_action(const struct server *server)
-{
+static int server_ready_for_action(const struct server* server) {
 	return server->stopping || (server_has_runs(server) && server_has_workers(server));
 }
 
-static int server_wait_for_action(struct server *server)
-{
+static int server_wait_for_action(struct server* server) {
 	int ret = 0;
 
 	while (!server_ready_for_action(server)) {
@@ -161,16 +154,16 @@ static int server_wait_for_action(struct server *server)
 	return ret;
 }
 
-static void server_assign_run(struct server *server)
-{
-	struct run *run = run_queue_remove_first(&server->run_queue);
-	log("Removed run %d for repository %s from the queue\n", run_get_id(run),
+static void server_assign_run(struct server* server) {
+	struct run* run = run_queue_remove_first(&server->run_queue);
+	log("Removed run %d for repository %s from the queue\n",
+	    run_get_id(run),
 	    run_get_repo_url(run));
 
-	struct worker *worker = worker_queue_remove_first(&server->worker_queue);
+	struct worker* worker = worker_queue_remove_first(&server->worker_queue);
 	log("Removed worker %d from the queue\n", worker_get_fd(worker));
 
-	struct jsonrpc_request *start_request = NULL;
+	struct jsonrpc_request* start_request = NULL;
 	int ret = 0;
 
 	ret = request_create_start_run(&start_request, run);
@@ -185,20 +178,22 @@ static void server_assign_run(struct server *server)
 exit:
 	if (ret < 0) {
 		log("Failed to assign run for repository %s to worker %d, requeueing\n",
-		    run_get_repo_url(run), worker_get_fd(worker));
+		    run_get_repo_url(run),
+		    worker_get_fd(worker));
 		run_queue_add_first(&server->run_queue, run);
 	} else {
-		log("Assigned run %d for repository %s to worker %d\n", run_get_id(run),
-		    run_get_repo_url(run), worker_get_fd(worker));
+		log("Assigned run %d for repository %s to worker %d\n",
+		    run_get_id(run),
+		    run_get_repo_url(run),
+		    worker_get_fd(worker));
 		run_destroy(run);
 	}
 
 	worker_destroy(worker);
 }
 
-static void *server_main_thread(void *_server)
-{
-	struct server *server = (struct server *)_server;
+static void* server_main_thread(void* _server) {
+	struct server* server = (struct server*)_server;
 	int ret = 0;
 
 	ret = server_lock(server);
@@ -223,11 +218,11 @@ exit:
 	return NULL;
 }
 
-static int server_handle_cmd_new_worker(UNUSED const struct jsonrpc_request *request,
-                                        UNUSED struct jsonrpc_response **response, void *_ctx)
-{
-	struct cmd_conn_ctx *ctx = (struct cmd_conn_ctx *)_ctx;
-	struct server *server = (struct server *)ctx->arg;
+static int server_handle_cmd_new_worker(UNUSED const struct jsonrpc_request* request,
+                                        UNUSED struct jsonrpc_response** response,
+                                        void* _ctx) {
+	struct cmd_conn_ctx* ctx = (struct cmd_conn_ctx*)_ctx;
+	struct server* server = (struct server*)ctx->arg;
 	int ret = 0;
 
 	ret = file_dup(ctx->fd);
@@ -235,7 +230,7 @@ static int server_handle_cmd_new_worker(UNUSED const struct jsonrpc_request *req
 		return ret;
 
 	const int fd = ret;
-	struct worker *worker = NULL;
+	struct worker* worker = NULL;
 
 	ret = worker_create(&worker, fd);
 	if (ret < 0)
@@ -256,14 +251,14 @@ close:
 	return ret;
 }
 
-static int server_handle_cmd_queue_run(const struct jsonrpc_request *request,
-                                       struct jsonrpc_response **response, void *_ctx)
-{
-	struct cmd_conn_ctx *ctx = (struct cmd_conn_ctx *)_ctx;
-	struct server *server = (struct server *)ctx->arg;
+static int server_handle_cmd_queue_run(const struct jsonrpc_request* request,
+                                       struct jsonrpc_response** response,
+                                       void* _ctx) {
+	struct cmd_conn_ctx* ctx = (struct cmd_conn_ctx*)_ctx;
+	struct server* server = (struct server*)ctx->arg;
 	int ret = 0;
 
-	struct run *run = NULL;
+	struct run* run = NULL;
 
 	ret = request_parse_queue_run(request, &run);
 	if (ret < 0)
@@ -289,15 +284,15 @@ destroy_run:
 	return ret;
 }
 
-static int server_handle_cmd_finished_run(const struct jsonrpc_request *request,
-                                          UNUSED struct jsonrpc_response **response, void *_ctx)
-{
-	struct cmd_conn_ctx *ctx = (struct cmd_conn_ctx *)_ctx;
-	struct server *server = (struct server *)ctx->arg;
+static int server_handle_cmd_finished_run(const struct jsonrpc_request* request,
+                                          UNUSED struct jsonrpc_response** response,
+                                          void* _ctx) {
+	struct cmd_conn_ctx* ctx = (struct cmd_conn_ctx*)_ctx;
+	struct server* server = (struct server*)ctx->arg;
 	int ret = 0;
 
 	int run_id = 0;
-	struct process_output *output;
+	struct process_output* output;
 
 	ret = request_parse_finished_run(request, &run_id, &output);
 	if (ret < 0)
@@ -317,11 +312,11 @@ free_output:
 	return ret;
 }
 
-static int server_handle_cmd_get_runs(const struct jsonrpc_request *request,
-                                      struct jsonrpc_response **response, void *_ctx)
-{
-	struct cmd_conn_ctx *ctx = (struct cmd_conn_ctx *)_ctx;
-	struct server *server = (struct server *)ctx->arg;
+static int server_handle_cmd_get_runs(const struct jsonrpc_request* request,
+                                      struct jsonrpc_response** response,
+                                      void* _ctx) {
+	struct cmd_conn_ctx* ctx = (struct cmd_conn_ctx*)_ctx;
+	struct server* server = (struct server*)ctx->arg;
 	int ret = 0;
 
 	ret = request_parse_get_runs(request);
@@ -355,12 +350,11 @@ static struct cmd_desc commands[] = {
 
 static const size_t numof_commands = sizeof(commands) / sizeof(commands[0]);
 
-int server_create(struct server **_server, const struct settings *settings)
-{
+int server_create(struct server** _server, const struct settings* settings) {
 	struct storage_settings storage_settings;
 	int ret = 0;
 
-	struct server *server = malloc(sizeof(struct server));
+	struct server* server = malloc(sizeof(struct server));
 	if (!server) {
 		log_errno("malloc");
 		return -1;
@@ -393,8 +387,8 @@ int server_create(struct server **_server, const struct settings *settings)
 		goto destroy_event_loop;
 	server->signalfd = ret;
 
-	ret = event_loop_add(server->event_loop, server->signalfd, POLLIN, server_set_stopping,
-	                     server);
+	ret = event_loop_add(
+	    server->event_loop, server->signalfd, POLLIN, server_set_stopping, server);
 	if (ret < 0)
 		goto close_signalfd;
 
@@ -413,8 +407,11 @@ int server_create(struct server **_server, const struct settings *settings)
 	if (ret < 0)
 		goto destroy_storage;
 
-	ret = tcp_server_create(&server->tcp_server, server->event_loop, settings->port,
-	                        cmd_dispatcher_handle_conn, server->cmd_dispatcher);
+	ret = tcp_server_create(&server->tcp_server,
+	                        server->event_loop,
+	                        settings->port,
+	                        cmd_dispatcher_handle_conn,
+	                        server->cmd_dispatcher);
 	if (ret < 0)
 		goto destroy_run_queue;
 
@@ -460,8 +457,7 @@ free:
 	return ret;
 }
 
-void server_destroy(struct server *server)
-{
+void server_destroy(struct server* server) {
 	log("Shutting down\n");
 
 	pthread_errno_if(pthread_join(server->main_thread, NULL), "pthread_join");
@@ -477,8 +473,7 @@ void server_destroy(struct server *server)
 	free(server);
 }
 
-static int server_listen_thread(struct server *server)
-{
+static int server_listen_thread(struct server* server) {
 	int ret = 0;
 
 	while (!server->stopping) {
@@ -492,7 +487,6 @@ static int server_listen_thread(struct server *server)
 	return 0;
 }
 
-int server_main(struct server *server)
-{
+int server_main(struct server* server) {
 	return server_listen_thread(server);
 }

@@ -6,21 +6,21 @@
  */
 
 #include "git.h"
+
 #include "log.h"
 
 #include <git2.h>
 
 #include <stdlib.h>
 
-#define git_log_err(fn)                                                                            \
-	do {                                                                                       \
-		const git_error *error = git_error_last();                                         \
-		const char *msg = error && error->message ? error->message : "???";                \
-		log_err("%s: %s\n", fn, msg);                                                      \
+#define git_log_err(fn)                                                             \
+	do {                                                                        \
+		const git_error* error = git_error_last();                          \
+		const char* msg = error && error->message ? error->message : "???"; \
+		log_err("%s: %s\n", fn, msg);                                       \
 	} while (0)
 
-int libgit_init(void)
-{
+int libgit_init(void) {
 	int ret = 0;
 
 	ret = git_libgit2_init();
@@ -32,13 +32,11 @@ int libgit_init(void)
 	return 0;
 }
 
-void libgit_shutdown(void)
-{
+void libgit_shutdown(void) {
 	git_libgit2_shutdown();
 }
 
-int libgit_clone(git_repository **repo, const char *url, const char *dir)
-{
+int libgit_clone(git_repository** repo, const char* url, const char* dir) {
 	git_clone_options opts;
 	int ret = 0;
 
@@ -60,8 +58,7 @@ int libgit_clone(git_repository **repo, const char *url, const char *dir)
 	return 0;
 }
 
-int libgit_clone_to_tmp(git_repository **repo, const char *url)
-{
+int libgit_clone_to_tmp(git_repository** repo, const char* url) {
 	char dir[] = "/tmp/git.XXXXXX";
 
 	if (!mkdtemp(dir)) {
@@ -72,15 +69,13 @@ int libgit_clone_to_tmp(git_repository **repo, const char *url)
 	return libgit_clone(repo, url, dir);
 }
 
-void libgit_repository_free(git_repository *repo)
-{
+void libgit_repository_free(git_repository* repo) {
 	git_repository_free(repo);
 }
 
-int libgit_checkout(git_repository *repo, const char *rev)
-{
+int libgit_checkout(git_repository* repo, const char* rev) {
 	git_checkout_options opts;
-	git_object *obj;
+	git_object* obj;
 	int ret = 0;
 
 	log("Checking out revision %s\n", rev);

@@ -9,15 +9,15 @@
 #define __WORKER_H__
 
 struct settings {
-	const char *host;
-	const char *port;
+	const char* host;
+	const char* port;
 };
 
 struct worker;
 
-int worker_create(struct worker **, const struct settings *);
-void worker_destroy(struct worker *);
+int worker_create(struct worker**, const struct settings*);
+void worker_destroy(struct worker*);
 
-int worker_main(struct worker *);
+int worker_main(struct worker*);
 
 #endif

@@ -6,6 +6,7 @@
  */
 
 #include "signal.h"
+
 #include "file.h"
 #include "log.h"
 
@@ -15,15 +16,13 @@
 
 static int sigterm_signals[] = {SIGINT, SIGTERM, SIGQUIT};
 
-static void sigterms_mask(sigset_t *set)
-{
+static void sigterms_mask(sigset_t* set) {
 	sigemptyset(set);
 	for (size_t i = 0; i < sizeof(sigterm_signals) / sizeof(sigterm_signals[0]); ++i)
 		sigaddset(set, sigterm_signals[i]);
 }
 
-static int signal_set_mask_internal(const sigset_t *new, sigset_t *old)
-{
+static int signal_set_mask_internal(const sigset_t* new, sigset_t* old) {
 	int ret = 0;
 
 	ret = pthread_sigmask(SIG_SETMASK, new, old);
@@ -35,27 +34,23 @@ static int signal_set_mask_internal(const sigset_t *new, sigset_t *old)
 	return ret;
 }
 
-int signal_set_mask(const sigset_t *new)
-{
+int signal_set_mask(const sigset_t* new) {
 	return signal_set_mask_internal(new, NULL);
 }
 
-int signal_block_all(sigset_t *old)
-{
+int signal_block_all(sigset_t* old) {
 	sigset_t new;
 	sigfillset(&new);
 	return signal_set_mask_internal(&new, old);
 }
 
-int signal_block_sigterms(void)
-{
+int signal_block_sigterms(void) {
 	sigset_t set;
 	sigterms_mask(&set);
 	return signal_set_mask_internal(&set, NULL);
 }
 
-int signalfd_create(const sigset_t *set)
-{
+int signalfd_create(const sigset_t* set) {
 	static const int flags = SFD_CLOEXEC;
 	sigset_t old;
 	int ret = 0;
@@ -76,14 +71,12 @@ restore:
 	return ret;
 }
 
-int signalfd_create_sigterms(void)
-{
+int signalfd_create_sigterms(void) {
 	sigset_t set;
 	sigterms_mask(&set);
 	return signalfd_create(&set);
 }
 
-void signalfd_destroy(int fd)
-{
+void signalfd_destroy(int fd) {
 	file_close(fd);
 }

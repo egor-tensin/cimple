@@ -6,6 +6,7 @@
  */
 
 #include "file.h"
+
 #include "compiler.h"
 #include "log.h"
 
@@ -16,9 +17,10 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-static int unlink_cb(const char *fpath, UNUSED const struct stat *sb, UNUSED int typeflag,
-                     UNUSED struct FTW *ftwbuf)
-{
+static int unlink_cb(const char* fpath,
+                     UNUSED const struct stat* sb,
+                     UNUSED int typeflag,
+                     UNUSED struct FTW* ftwbuf) {
 	int ret = 0;
 
 	ret = remove(fpath);
@@ -30,14 +32,12 @@ static int unlink_cb(const char *fpath, UNUSED const struct stat *sb, UNUSED int
 	return ret;
 }
 
-int rm_rf(const char *dir)
-{
+int rm_rf(const char* dir) {
 	log("Recursively removing directory: %s\n", dir);
 	return nftw(dir, unlink_cb, 64, FTW_DEPTH | FTW_PHYS);
 }
 
-int chdir_wrapper(const char *dir, char **old)
-{
+int chdir_wrapper(const char* dir, char** old) {
 	int ret = 0;
 
 	if (old) {
@@ -63,13 +63,12 @@ free_old:
 	return ret;
 }
 
-char *readlink_wrapper(const char *path)
-{
+char* readlink_wrapper(const char* path) {
 	size_t current_size = 256;
-	char *buf = NULL;
+	char* buf = NULL;
 
 	while (1) {
-		char *tmp_buf = realloc(buf, current_size);
+		char* tmp_buf = realloc(buf, current_size);
 		if (!tmp_buf) {
 			log_errno("realloc");
 			goto free;
@@ -99,8 +98,7 @@ free:
 	return NULL;
 }
 
-int file_dup(int fd)
-{
+int file_dup(int fd) {
 	int ret = 0;
 
 	ret = fcntl(fd, F_DUPFD_CLOEXEC, 0);
@@ -112,26 +110,23 @@ int file_dup(int fd)
 	return ret;
 }
 
-void file_close(int fd)
-{
+void file_close(int fd) {
 	log_errno_if(close(fd), "close");
 }
 
-int file_exists(const char *path)
-{
+int file_exists(const char* path) {
 	struct stat stat;
 	int ret = lstat(path, &stat);
 	return !ret && S_ISREG(stat.st_mode);
 }
 
-int file_read(int fd, unsigned char **_contents, size_t *_size)
-{
+int file_read(int fd, unsigned char** _contents, size_t* _size) {
 	size_t alloc_size = 256;
-	unsigned char *contents = NULL;
+	unsigned char* contents = NULL;
 	size_t size = 0;
 
 	while (1) {
-		unsigned char *tmp_contents = realloc(contents, alloc_size);
+		unsigned char* tmp_contents = realloc(contents, alloc_size);
 		if (!tmp_contents) {
 			log_errno("realloc");
 			free(contents);

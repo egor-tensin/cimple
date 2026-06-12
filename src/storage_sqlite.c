@@ -6,6 +6,7 @@
  */
 
 #include "storage_sqlite.h"
+
 #include "log.h"
 #include "process.h"
 #include "run_queue.h"
@@ -21,12 +22,11 @@
 #include <string.h>
 
 struct storage_sqlite_settings {
-	char *path;
+	char* path;
 };
 
-int storage_sqlite_settings_create(struct storage_settings *settings, const char *path)
-{
-	struct storage_sqlite_settings *sqlite = malloc(sizeof(struct storage_sqlite_settings));
+int storage_sqlite_settings_create(struct storage_settings* settings, const char* path) {
+	struct storage_sqlite_settings* sqlite = malloc(sizeof(struct storage_sqlite_settings));
 	if (!sqlite) {
 		log_errno("malloc");
 		return -1;
@@ -48,19 +48,17 @@ free:
 	return -1;
 }
 
-void storage_sqlite_settings_destroy(const struct storage_settings *settings)
-{
+void storage_sqlite_settings_destroy(const struct storage_settings* settings) {
 	free(settings->sqlite->path);
 	free(settings->sqlite);
 }
 
 struct prepared_stmt {
 	pthread_mutex_t mtx;
-	sqlite3_stmt *impl;
+	sqlite3_stmt* impl;
 };
 
-static int prepared_stmt_init(struct prepared_stmt *stmt, sqlite3 *db, const char *sql)
-{
+static int prepared_stmt_init(struct prepared_stmt* stmt, sqlite3* db, const char* sql) {
 	int ret = 0;
 
 	ret = pthread_mutex_init(&stmt->mtx, NULL);
@@ -81,14 +79,12 @@ destroy_mtx:
 	return ret;
 }
 
-static void prepared_stmt_destroy(struct prepared_stmt *stmt)
-{
+static void prepared_stmt_destroy(struct prepared_stmt* stmt) {
 	pthread_errno_if(pthread_mutex_destroy(&stmt->mtx), "pthread_mutex_destroy");
 	sqlite_finalize(stmt->impl);
 }
 
-static int prepared_stmt_lock(struct prepared_stmt *stmt)
-{
+static int prepared_stmt_lock(struct prepared_stmt* stmt) {
 	int ret = pthread_mutex_lock(&stmt->mtx);
 	if (ret) {
 		pthread_errno(ret, "pthread_mutex_unlock");
@@ -97,13 +93,12 @@ static int prepared_stmt_lock(struct prepared_stmt *stmt)
 	return ret;
 }
 
-static void prepared_stmt_unlock(struct prepared_stmt *stmt)
-{
+static void prepared_stmt_unlock(struct prepared_stmt* stmt) {
 	pthread_errno_if(pthread_mutex_unlock(&stmt->mtx), "pthread_mutex_unlock");
 }
 
 struct storage_sqlite {
-	sqlite3 *db;
+	sqlite3* db;
 
 	struct prepared_stmt stmt_repo_find;
 	struct prepared_stmt stmt_repo_insert;
@@ -113,18 +108,17 @@ struct storage_sqlite {
 	struct prepared_stmt stmt_get_run_queue;
 };
 
-static int storage_sqlite_upgrade_to(struct storage_sqlite *storage, size_t version)
-{
-	static const char *const fmt = "%s PRAGMA user_version = %zu;";
+static int storage_sqlite_upgrade_to(struct storage_sqlite* storage, size_t version) {
+	static const char* const fmt = "%s PRAGMA user_version = %zu;";
 
-	const char *script = sqlite_schemas[version];
+	const char* script = sqlite_schemas[version];
 	int ret = 0;
 
 	ret = snprintf(NULL, 0, fmt, script, version + 1);
 	size_t nb = (size_t)ret + 1;
 	ret = 0;
 
-	char *full_script = malloc(nb);
+	char* full_script = malloc(nb);
 	if (!full_script) {
 		log_errno("malloc");
 		return -1;
@@ -140,8 +134,7 @@ free:
 	return ret;
 }
 
-static int storage_sqlite_upgrade_from_to(struct storage_sqlite *storage, size_t from, size_t to)
-{
+static int storage_sqlite_upgrade_from_to(struct storage_sqlite* storage, size_t from, size_t to) {
 	int ret = 0;
 
 	for (size_t i = from; i < to; ++i) {
@@ -156,8 +149,7 @@ static int storage_sqlite_upgrade_from_to(struct storage_sqlite *storage, size_t
 	return ret;
 }
 
-static int storage_sqlite_upgrade(struct storage_sqlite *storage)
-{
+static int storage_sqlite_upgrade(struct storage_sqlite* storage) {
 	unsigned int current_version = 0;
 	int ret = 0;
 
@@ -182,8 +174,7 @@ static int storage_sqlite_upgrade(struct storage_sqlite *storage)
 	return storage_sqlite_upgrade_from_to(storage, current_version, newest_version);
 }
 
-static int storage_sqlite_setup(struct storage_sqlite *storage)
-{
+static int storage_sqlite_setup(struct storage_sqlite* storage) {
 	int ret = 0;
 
 	ret = sqlite_set_foreign_keys(storage->db);
@@ -197,18 +188,17 @@ static int storage_sqlite_setup(struct storage_sqlite *storage)
 	return ret;
 }
 
-static int storage_sqlite_prepare_statements(struct storage_sqlite *storage)
-{
-	static const char *const fmt_repo_find = "SELECT id FROM cimple_repos WHERE url = ?;";
-	static const char *const fmt_repo_insert =
+static int storage_sqlite_prepare_statements(struct storage_sqlite* storage) {
+	static const char* const fmt_repo_find = "SELECT id FROM cimple_repos WHERE url = ?;";
+	static const char* const fmt_repo_insert =
 	    "INSERT INTO cimple_repos(url) VALUES (?) ON CONFLICT(url) DO NOTHING;";
-	static const char *const fmt_run_insert =
+	static const char* const fmt_run_insert =
 	    "INSERT INTO cimple_runs(status, exit_code, output, repo_id, repo_rev) VALUES (?, -1, x'', ?, ?) RETURNING id;";
-	static const char *const fmt_run_finished =
+	static const char* const fmt_run_finished =
 	    "UPDATE cimple_runs SET status = ?, exit_code = ?, output = ? WHERE id = ?;";
-	static const char *const fmt_get_runs =
+	static const char* const fmt_get_runs =
 	    "SELECT id, status, exit_code, repo_url, repo_rev FROM cimple_runs_view ORDER BY id DESC";
-	static const char *const fmt_get_run_queue =
+	static const char* const fmt_get_run_queue =
 	    "SELECT id, status, exit_code, repo_url, repo_rev FROM cimple_runs_view WHERE status = ? ORDER BY id;";
 
 	int ret = 0;
@@ -248,8 +238,7 @@ finalize_repo_find:
 	return ret;
 }
 
-static void storage_sqlite_finalize_statements(struct storage_sqlite *storage)
-{
+static void storage_sqlite_finalize_statements(struct storage_sqlite* storage) {
 	prepared_stmt_destroy(&storage->stmt_get_run_queue);
 	prepared_stmt_destroy(&storage->stmt_get_runs);
 	prepared_stmt_destroy(&storage->stmt_run_finished);
@@ -258,13 +247,12 @@ static void storage_sqlite_finalize_statements(struct storage_sqlite *storage)
 	prepared_stmt_destroy(&storage->stmt_repo_find);
 }
 
-int storage_sqlite_create(struct storage *storage, const struct storage_settings *settings)
-{
+int storage_sqlite_create(struct storage* storage, const struct storage_settings* settings) {
 	int ret = 0;
 
 	log("Using SQLite database at %s\n", settings->sqlite->path);
 
-	struct storage_sqlite *sqlite = malloc(sizeof(struct storage_sqlite));
+	struct storage_sqlite* sqlite = malloc(sizeof(struct storage_sqlite));
 	if (!sqlite) {
 		log_errno("malloc");
 		return -1;
@@ -296,17 +284,15 @@ free:
 	return ret;
 }
 
-void storage_sqlite_destroy(struct storage *storage)
-{
+void storage_sqlite_destroy(struct storage* storage) {
 	storage_sqlite_finalize_statements(storage->sqlite);
 	sqlite_close(storage->sqlite->db);
 	sqlite_destroy();
 	free(storage->sqlite);
 }
 
-static int storage_sqlite_find_repo(struct storage_sqlite *storage, const char *url)
-{
-	struct prepared_stmt *stmt = &storage->stmt_repo_find;
+static int storage_sqlite_find_repo(struct storage_sqlite* storage, const char* url) {
+	struct prepared_stmt* stmt = &storage->stmt_repo_find;
 	int ret = 0;
 
 	ret = prepared_stmt_lock(stmt);
@@ -332,9 +318,8 @@ reset:
 	return ret;
 }
 
-static int storage_sqlite_insert_repo(struct storage_sqlite *storage, const char *url)
-{
-	struct prepared_stmt *stmt = &storage->stmt_repo_insert;
+static int storage_sqlite_insert_repo(struct storage_sqlite* storage, const char* url) {
+	struct prepared_stmt* stmt = &storage->stmt_repo_insert;
 	int ret = 0;
 
 	ret = prepared_stmt_lock(stmt);
@@ -357,9 +342,8 @@ reset:
 	return storage_sqlite_find_repo(storage, url);
 }
 
-static int storage_sqlite_insert_run(struct storage_sqlite *storage, int repo_id, const char *rev)
-{
-	struct prepared_stmt *stmt = &storage->stmt_run_insert;
+static int storage_sqlite_insert_run(struct storage_sqlite* storage, int repo_id, const char* rev) {
+	struct prepared_stmt* stmt = &storage->stmt_run_insert;
 	int ret = 0;
 
 	ret = prepared_stmt_lock(stmt);
@@ -394,8 +378,7 @@ reset:
 	return ret;
 }
 
-int storage_sqlite_run_create(struct storage *storage, const char *repo_url, const char *rev)
-{
+int storage_sqlite_run_create(struct storage* storage, const char* repo_url, const char* rev) {
 	int ret = 0;
 
 	ret = storage_sqlite_insert_repo(storage->sqlite, repo_url);
@@ -409,10 +392,10 @@ int storage_sqlite_run_create(struct storage *storage, const char *repo_url, con
 	return ret;
 }
 
-int storage_sqlite_run_finished(struct storage *storage, int run_id,
-                                const struct process_output *output)
-{
-	struct prepared_stmt *stmt = &storage->sqlite->stmt_run_finished;
+int storage_sqlite_run_finished(struct storage* storage,
+                                int run_id,
+                                const struct process_output* output) {
+	struct prepared_stmt* stmt = &storage->sqlite->stmt_run_finished;
 	int ret = 0;
 
 	ret = prepared_stmt_lock(stmt);
@@ -441,20 +424,19 @@ reset:
 	return ret;
 }
 
-static int storage_sqlite_row_to_run(struct sqlite3_stmt *stmt, struct run **run)
-{
+static int storage_sqlite_row_to_run(struct sqlite3_stmt* stmt, struct run** run) {
 	int ret = 0;
 
 	int id = sqlite_column_int(stmt, 0);
 	int status = sqlite_column_int(stmt, 1);
 	int exit_code = sqlite_column_int(stmt, 2);
 
-	char *url = NULL;
+	char* url = NULL;
 	ret = sqlite_column_text(stmt, 3, &url);
 	if (ret < 0)
 		return ret;
 
-	char *rev = NULL;
+	char* rev = NULL;
 	ret = sqlite_column_text(stmt, 4, &rev);
 	if (ret < 0)
 		goto free_url;
@@ -474,8 +456,7 @@ free_url:
 	return ret;
 }
 
-static int storage_sqlite_rows_to_runs(struct sqlite3_stmt *stmt, struct run_queue *queue)
-{
+static int storage_sqlite_rows_to_runs(struct sqlite3_stmt* stmt, struct run_queue* queue) {
 	int ret = 0;
 
 	run_queue_create(queue);
@@ -487,7 +468,7 @@ static int storage_sqlite_rows_to_runs(struct sqlite3_stmt *stmt, struct run_que
 		if (ret < 0)
 			goto run_queue_destroy;
 
-		struct run *run = NULL;
+		struct run* run = NULL;
 
 		ret = storage_sqlite_row_to_run(stmt, &run);
 		if (ret < 0)
@@ -504,9 +485,8 @@ run_queue_destroy:
 	return ret;
 }
 
-int storage_sqlite_get_runs(struct storage *storage, struct run_queue *queue)
-{
-	struct prepared_stmt *stmt = &storage->sqlite->stmt_get_runs;
+int storage_sqlite_get_runs(struct storage* storage, struct run_queue* queue) {
+	struct prepared_stmt* stmt = &storage->sqlite->stmt_get_runs;
 	int ret = 0;
 
 	ret = prepared_stmt_lock(stmt);
@@ -523,9 +503,8 @@ reset:
 	return ret;
 }
 
-int storage_sqlite_get_run_queue(struct storage *storage, struct run_queue *queue)
-{
-	struct prepared_stmt *stmt = &storage->sqlite->stmt_get_run_queue;
+int storage_sqlite_get_run_queue(struct storage* storage, struct run_queue* queue) {
+	struct prepared_stmt* stmt = &storage->sqlite->stmt_get_run_queue;
 	int ret = 0;
 
 	ret = prepared_stmt_lock(stmt);

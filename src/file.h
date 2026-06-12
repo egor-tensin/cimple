@@ -10,19 +10,19 @@
 
 #include <stddef.h>
 
-int rm_rf(const char *dir);
+int rm_rf(const char* dir);
 
 /* This chdir(2) wrapper optionally saves the previous working directory in the
  * `old` pointer, allowing the user to switch back to it if necessary. */
-int chdir_wrapper(const char *dir, char **old);
+int chdir_wrapper(const char* dir, char** old);
 
 /* This readlink(2) wrapper allocates enough memory dynamically. */
-char *readlink_wrapper(const char *path);
+char* readlink_wrapper(const char* path);
 
 int file_dup(int fd);
 void file_close(int fd);
 
-int file_exists(const char *path);
-int file_read(int fd, unsigned char **output, size_t *size);
+int file_exists(const char* path);
+int file_read(int fd, unsigned char** output, size_t* size);
 
 #endif

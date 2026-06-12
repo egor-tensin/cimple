@@ -19,26 +19,26 @@ enum storage_type {
 struct storage_settings {
 	enum storage_type type;
 	union {
-		struct storage_sqlite_settings *sqlite;
+		struct storage_sqlite_settings* sqlite;
 	};
 };
 
-void storage_settings_destroy(const struct storage_settings *);
+void storage_settings_destroy(const struct storage_settings*);
 
 struct storage {
 	enum storage_type type;
 	union {
-		struct storage_sqlite *sqlite;
+		struct storage_sqlite* sqlite;
 	};
 };
 
-int storage_create(struct storage *, const struct storage_settings *);
-void storage_destroy(struct storage *);
+int storage_create(struct storage*, const struct storage_settings*);
+void storage_destroy(struct storage*);
 
-int storage_run_create(struct storage *, const char *repo_url, const char *rev);
-int storage_run_finished(struct storage *, int run_id, const struct process_output *);
+int storage_run_create(struct storage*, const char* repo_url, const char* rev);
+int storage_run_finished(struct storage*, int run_id, const struct process_output*);
 
-int storage_get_runs(struct storage *, struct run_queue *);
-int storage_get_run_queue(struct storage *, struct run_queue *);
+int storage_get_runs(struct storage*, struct run_queue*);
+int storage_get_run_queue(struct storage*, struct run_queue*);
 
 #endif

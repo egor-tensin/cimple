@@ -6,6 +6,7 @@
  */
 
 #include "worker.h"
+
 #include "ci.h"
 #include "command.h"
 #include "compiler.h"
@@ -24,21 +25,20 @@
 #include <string.h>
 
 struct worker {
-	struct settings *settings;
+	struct settings* settings;
 
 	int stopping;
 
-	struct cmd_dispatcher *cmd_dispatcher;
+	struct cmd_dispatcher* cmd_dispatcher;
 
-	struct event_loop *event_loop;
+	struct event_loop* event_loop;
 	int signalfd;
 
-	struct run *run;
+	struct run* run;
 };
 
-static struct settings *worker_settings_copy(const struct settings *src)
-{
-	struct settings *result = malloc(sizeof(*src));
+static struct settings* worker_settings_copy(const struct settings* src) {
+	struct settings* result = malloc(sizeof(*src));
 	if (!result) {
 		log_errno("malloc");
 		return NULL;
@@ -59,7 +59,7 @@ static struct settings *worker_settings_copy(const struct settings *src)
 	return result;
 
 free_host:
-	free((void *)result->host);
+	free((void*)result->host);
 
 free_result:
 	free(result);
@@ -67,26 +67,26 @@ free_result:
 	return NULL;
 }
 
-static void worker_settings_destroy(struct settings *settings)
-{
-	free((void *)settings->port);
-	free((void *)settings->host);
+static void worker_settings_destroy(struct settings* settings) {
+	free((void*)settings->port);
+	free((void*)settings->host);
 	free(settings);
 }
 
-static int worker_set_stopping(UNUSED struct event_loop *loop, UNUSED int fd, UNUSED short revents,
-                               void *_worker)
-{
-	struct worker *worker = (struct worker *)_worker;
+static int worker_set_stopping(UNUSED struct event_loop* loop,
+                               UNUSED int fd,
+                               UNUSED short revents,
+                               void* _worker) {
+	struct worker* worker = (struct worker*)_worker;
 	worker->stopping = 1;
 	return 0;
 }
 
-static int worker_handle_cmd_start_run(const struct jsonrpc_request *request,
-                                       UNUSED struct jsonrpc_response **response, void *_ctx)
-{
-	struct cmd_conn_ctx *ctx = (struct cmd_conn_ctx *)_ctx;
-	struct worker *worker = (struct worker *)ctx->arg;
+static int worker_handle_cmd_start_run(const struct jsonrpc_request* request,
+                                       UNUSED struct jsonrpc_response** response,
+                                       void* _ctx) {
+	struct cmd_conn_ctx* ctx = (struct cmd_conn_ctx*)_ctx;
+	struct worker* worker = (struct worker*)ctx->arg;
 	int ret = 0;
 
 	ret = request_parse_start_run(request, &worker->run);
@@ -102,11 +102,10 @@ static struct cmd_desc commands[] = {
 
 static const size_t numof_commands = sizeof(commands) / sizeof(commands[0]);
 
-int worker_create(struct worker **_worker, const struct settings *settings)
-{
+int worker_create(struct worker** _worker, const struct settings* settings) {
 	int ret = 0;
 
-	struct worker *worker = malloc(sizeof(struct worker));
+	struct worker* worker = malloc(sizeof(struct worker));
 	if (!worker) {
 		log_errno("malloc");
 		return -1;
@@ -133,8 +132,8 @@ int worker_create(struct worker **_worker, const struct settings *settings)
 		goto destroy_event_loop;
 	worker->signalfd = ret;
 
-	ret = event_loop_add(worker->event_loop, worker->signalfd, POLLIN, worker_set_stopping,
-	                     worker);
+	ret = event_loop_add(
+	    worker->event_loop, worker->signalfd, POLLIN, worker_set_stopping, worker);
 	if (ret < 0)
 		goto close_signalfd;
 
@@ -163,8 +162,7 @@ free:
 	return ret;
 }
 
-void worker_destroy(struct worker *worker)
-{
+void worker_destroy(struct worker* worker) {
 	log("Shutting down\n");
 
 	libgit_shutdown();
@@ -175,11 +173,10 @@ void worker_destroy(struct worker *worker)
 	free(worker);
 }
 
-static int worker_do_run(struct worker *worker)
-{
+static int worker_do_run(struct worker* worker) {
 	int ret = 0;
 
-	struct process_output *result = NULL;
+	struct process_output* result = NULL;
 	ret = process_output_create(&result);
 	if (ret < 0)
 		return ret;
@@ -192,7 +189,7 @@ static int worker_do_run(struct worker *worker)
 
 	process_output_dump(result);
 
-	struct jsonrpc_request *finished_request = NULL;
+	struct jsonrpc_request* finished_request = NULL;
 
 	ret = request_create_finished_run(&finished_request, run_get_id(worker->run), result);
 	if (ret < 0)
@@ -221,8 +218,7 @@ free_output:
 	return ret;
 }
 
-static int worker_get_run(struct worker *worker)
-{
+static int worker_get_run(struct worker* worker) {
 	int ret = 0, fd = -1;
 
 	ret = net_connect(worker->settings->host, worker->settings->port);
@@ -230,7 +226,7 @@ static int worker_get_run(struct worker *worker)
 		return ret;
 	fd = ret;
 
-	struct jsonrpc_request *new_worker_request = NULL;
+	struct jsonrpc_request* new_worker_request = NULL;
 	ret = request_create_new_worker(&new_worker_request);
 	if (ret < 0)
 		goto close;
@@ -240,8 +236,8 @@ static int worker_get_run(struct worker *worker)
 	if (ret < 0)
 		goto close;
 
-	ret = event_loop_add_once(worker->event_loop, fd, POLLIN, cmd_dispatcher_handle_event,
-	                          worker->cmd_dispatcher);
+	ret = event_loop_add_once(
+	    worker->event_loop, fd, POLLIN, cmd_dispatcher_handle_event, worker->cmd_dispatcher);
 	if (ret < 0)
 		goto close;
 
@@ -257,8 +253,7 @@ close:
 	return ret;
 }
 
-int worker_main(struct worker *worker)
-{
+int worker_main(struct worker* worker) {
 	int ret = 0;
 
 	while (1) {

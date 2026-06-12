@@ -5,6 +5,6 @@ struct data {
 	int x;
 };
 
-extern struct data *data;
+extern struct data* data;
 
 #endif

@@ -10,12 +10,12 @@
 
 #include <signal.h>
 
-int signal_set_mask(const sigset_t *new);
+int signal_set_mask(const sigset_t* new);
 
-int signal_block_all(sigset_t *old);
+int signal_block_all(sigset_t* old);
 int signal_block_sigterms(void);
 
-int signalfd_create(const sigset_t *);
+int signalfd_create(const sigset_t*);
 int signalfd_create_sigterms(void);
 void signalfd_destroy(int fd);
 

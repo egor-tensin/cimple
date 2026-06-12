@@ -6,6 +6,7 @@
  */
 
 #include "string.h"
+
 #include "log.h"
 
 #include <errno.h>
@@ -14,14 +15,13 @@
 
 /* glibc calls this stpecpy; it's not provided by glibc; however, it does
  * provide a possible implementation in string_copying(7), which I copied from. */
-char *string_append(char *dst, char *end, const char *src)
-{
+char* string_append(char* dst, char* end, const char* src) {
 	if (!dst)
 		return NULL;
 	if (dst == end)
 		return end;
 
-	char *p = memccpy(dst, src, '\0', end - dst);
+	char* p = memccpy(dst, src, '\0', end - dst);
 	if (p)
 		return p - 1;
 
@@ -29,9 +29,8 @@ char *string_append(char *dst, char *end, const char *src)
 	return end;
 }
 
-int string_to_int(const char *src, int *result)
-{
-	char *endptr = NULL;
+int string_to_int(const char* src, int* result) {
+	char* endptr = NULL;
 
 	errno = 0;
 	long ret = strtol(src, &endptr, 10);

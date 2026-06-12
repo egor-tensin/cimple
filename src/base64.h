@@ -10,7 +10,7 @@
 
 #include <stddef.h>
 
-int base64_encode(const unsigned char *src, size_t src_len, char **dst);
-int base64_decode(const char *src, unsigned char **dst, size_t *dst_len);
+int base64_encode(const unsigned char* src, size_t src_len, char** dst);
+int base64_decode(const char* src, unsigned char** dst, size_t* dst_len);
 
 #endif

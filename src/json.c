@@ -6,6 +6,7 @@
  */
 
 #include "json.h"
+
 #include "buf.h"
 #include "log.h"
 #include "net.h"
@@ -18,19 +19,17 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define libjson_errno(fn)                                                                          \
-	do {                                                                                       \
-		log_err("JSON: %s failed\n", fn);                                                  \
+#define libjson_errno(fn)                         \
+	do {                                      \
+		log_err("JSON: %s failed\n", fn); \
 	} while (0)
 
-void libjson_free(struct json_object *obj)
-{
+void libjson_free(struct json_object* obj) {
 	json_object_put(obj);
 }
 
-static const char *libjson_to_string_internal(struct json_object *obj, int flags)
-{
-	const char *result = json_object_to_json_string_ext(obj, flags);
+static const char* libjson_to_string_internal(struct json_object* obj, int flags) {
+	const char* result = json_object_to_json_string_ext(obj, flags);
 	if (!result) {
 		libjson_errno("json_object_to_json_string");
 		return NULL;
@@ -38,21 +37,18 @@ static const char *libjson_to_string_internal(struct json_object *obj, int flags
 	return result;
 }
 
-const char *libjson_to_string(struct json_object *obj)
-{
+const char* libjson_to_string(struct json_object* obj) {
 	return libjson_to_string_internal(obj, JSON_C_TO_STRING_SPACED);
 }
 
-const char *libjson_to_string_pretty(struct json_object *obj)
-{
+const char* libjson_to_string_pretty(struct json_object* obj) {
 	return libjson_to_string_internal(obj, JSON_C_TO_STRING_SPACED | JSON_C_TO_STRING_PRETTY);
 }
 
-struct json_object *libjson_from_string(const char *src)
-{
+struct json_object* libjson_from_string(const char* src) {
 	enum json_tokener_error error;
 
-	struct json_object *result = json_tokener_parse_verbose(src, &error);
+	struct json_object* result = json_tokener_parse_verbose(src, &error);
 	if (!result) {
 		libjson_errno("json_tokener_parse_verbose");
 		log_err("JSON: parsing failed: %s\n", json_tokener_error_desc(error));
@@ -62,16 +58,15 @@ struct json_object *libjson_from_string(const char *src)
 	return result;
 }
 
-int libjson_clone(const struct json_object *obj, const char *key, struct json_object **_value)
-{
+int libjson_clone(const struct json_object* obj, const char* key, struct json_object** _value) {
 	int ret = 0;
 
-	struct json_object *old_value = NULL;
+	struct json_object* old_value = NULL;
 	ret = libjson_get(obj, key, &old_value);
 	if (ret < 0)
 		return ret;
 
-	struct json_object *new_value = NULL;
+	struct json_object* new_value = NULL;
 	ret = json_object_deep_copy(old_value, &new_value, NULL);
 	if (ret < 0)
 		return ret;
@@ -80,15 +75,14 @@ int libjson_clone(const struct json_object *obj, const char *key, struct json_ob
 	return ret;
 }
 
-int libjson_send(struct json_object *obj, int fd)
-{
+int libjson_send(struct json_object* obj, int fd) {
 	int ret = 0;
 
-	const char *str = libjson_to_string(obj);
+	const char* str = libjson_to_string(obj);
 	if (!str)
 		return -1;
 
-	struct buf *buf = NULL;
+	struct buf* buf = NULL;
 	ret = buf_create_from_string(&buf, str);
 	if (ret < 0)
 		return ret;
@@ -98,30 +92,28 @@ int libjson_send(struct json_object *obj, int fd)
 	return ret;
 }
 
-struct json_object *libjson_recv(int fd)
-{
-	struct json_object *result = NULL;
+struct json_object* libjson_recv(int fd) {
+	struct json_object* result = NULL;
 	int ret = 0;
 
-	struct buf *buf = NULL;
+	struct buf* buf = NULL;
 	ret = net_recv_buf(fd, &buf);
 	if (ret < 0)
 		return NULL;
 
-	result = libjson_from_string((const char *)buf_get_data(buf));
+	result = libjson_from_string((const char*)buf_get_data(buf));
 	if (!result)
 		goto destroy_buf;
 
 destroy_buf:
-	free((void *)buf_get_data(buf));
+	free((void*)buf_get_data(buf));
 	buf_destroy(buf);
 
 	return result;
 }
 
-int libjson_new_object(struct json_object **_obj)
-{
-	struct json_object *obj = json_object_new_object();
+int libjson_new_object(struct json_object** _obj) {
+	struct json_object* obj = json_object_new_object();
 	if (!obj) {
 		libjson_errno("json_object_new_object");
 		return -1;
@@ -130,9 +122,8 @@ int libjson_new_object(struct json_object **_obj)
 	return 0;
 }
 
-int libjson_new_array(struct json_object **_arr)
-{
-	struct json_object *arr = json_object_new_array();
+int libjson_new_array(struct json_object** _arr) {
+	struct json_object* arr = json_object_new_array();
 	if (!arr) {
 		libjson_errno("json_object_new_array");
 		return -1;
@@ -141,13 +132,11 @@ int libjson_new_array(struct json_object **_arr)
 	return 0;
 }
 
-int libjson_has(const struct json_object *obj, const char *key)
-{
+int libjson_has(const struct json_object* obj, const char* key) {
 	return json_object_object_get_ex(obj, key, NULL);
 }
 
-int libjson_get(const struct json_object *obj, const char *key, struct json_object **value)
-{
+int libjson_get(const struct json_object* obj, const char* key, struct json_object** value) {
 	if (!libjson_has(obj, key)) {
 		log_err("JSON: key is missing: %s\n", key);
 		return -1;
@@ -156,9 +145,8 @@ int libjson_get(const struct json_object *obj, const char *key, struct json_obje
 	return json_object_object_get_ex(obj, key, value);
 }
 
-int libjson_get_string(const struct json_object *obj, const char *key, const char **_value)
-{
-	struct json_object *value = NULL;
+int libjson_get_string(const struct json_object* obj, const char* key, const char** _value) {
+	struct json_object* value = NULL;
 
 	int ret = libjson_get(obj, key, &value);
 	if (ret < 0)
@@ -173,9 +161,8 @@ int libjson_get_string(const struct json_object *obj, const char *key, const cha
 	return 0;
 }
 
-int libjson_get_int(const struct json_object *obj, const char *key, int64_t *_value)
-{
-	struct json_object *value = NULL;
+int libjson_get_int(const struct json_object* obj, const char* key, int64_t* _value) {
+	struct json_object* value = NULL;
 
 	int ret = libjson_get(obj, key, &value);
 	if (ret < 0)
@@ -197,9 +184,10 @@ int libjson_get_int(const struct json_object *obj, const char *key, int64_t *_va
 	return 0;
 }
 
-static int libjson_set_internal(struct json_object *obj, const char *key, struct json_object *value,
-                                unsigned flags)
-{
+static int libjson_set_internal(struct json_object* obj,
+                                const char* key,
+                                struct json_object* value,
+                                unsigned flags) {
 	int ret = 0;
 
 	ret = json_object_object_add_ex(obj, key, value, flags);
@@ -211,10 +199,11 @@ static int libjson_set_internal(struct json_object *obj, const char *key, struct
 	return 0;
 }
 
-static int libjson_set_string_internal(struct json_object *obj, const char *key, const char *_value,
-                                       unsigned flags)
-{
-	struct json_object *value = json_object_new_string(_value);
+static int libjson_set_string_internal(struct json_object* obj,
+                                       const char* key,
+                                       const char* _value,
+                                       unsigned flags) {
+	struct json_object* value = json_object_new_string(_value);
 	if (!value) {
 		libjson_errno("json_object_new_string");
 		return -1;
@@ -232,10 +221,11 @@ free_value:
 	return ret;
 }
 
-static int libjson_set_int_internal(struct json_object *obj, const char *key, int64_t _value,
-                                    unsigned flags)
-{
-	struct json_object *value = json_object_new_int64(_value);
+static int libjson_set_int_internal(struct json_object* obj,
+                                    const char* key,
+                                    int64_t _value,
+                                    unsigned flags) {
+	struct json_object* value = json_object_new_int64(_value);
 	if (!value) {
 		libjson_errno("json_object_new_int");
 		return -1;
@@ -253,18 +243,15 @@ free_value:
 	return ret;
 }
 
-int libjson_set(struct json_object *obj, const char *key, struct json_object *value)
-{
+int libjson_set(struct json_object* obj, const char* key, struct json_object* value) {
 	return libjson_set_internal(obj, key, value, 0);
 }
 
-int libjson_set_string(struct json_object *obj, const char *key, const char *value)
-{
+int libjson_set_string(struct json_object* obj, const char* key, const char* value) {
 	return libjson_set_string_internal(obj, key, value, 0);
 }
 
-int libjson_set_int(struct json_object *obj, const char *key, int64_t value)
-{
+int libjson_set_int(struct json_object* obj, const char* key, int64_t value) {
 	return libjson_set_int_internal(obj, key, value, 0);
 }
 
@@ -273,23 +260,19 @@ int libjson_set_int(struct json_object *obj, const char *key, int64_t value)
 #endif
 static const unsigned json_const_key_flags = JSON_C_OBJECT_ADD_CONSTANT_KEY;
 
-int libjson_set_const_key(struct json_object *obj, const char *key, struct json_object *value)
-{
+int libjson_set_const_key(struct json_object* obj, const char* key, struct json_object* value) {
 	return libjson_set_internal(obj, key, value, json_const_key_flags);
 }
 
-int libjson_set_string_const_key(struct json_object *obj, const char *key, const char *value)
-{
+int libjson_set_string_const_key(struct json_object* obj, const char* key, const char* value) {
 	return libjson_set_string_internal(obj, key, value, json_const_key_flags);
 }
 
-int libjson_set_int_const_key(struct json_object *obj, const char *key, int64_t value)
-{
+int libjson_set_int_const_key(struct json_object* obj, const char* key, int64_t value) {
 	return libjson_set_int_internal(obj, key, value, json_const_key_flags);
 }
 
-int libjson_append(struct json_object *arr, struct json_object *elem)
-{
+int libjson_append(struct json_object* arr, struct json_object* elem) {
 	int ret = json_object_array_add(arr, elem);
 	if (ret < 0) {
 		libjson_errno("json_object_array_add");

@@ -6,6 +6,7 @@
  */
 
 #include "tcp_server.h"
+
 #include "compiler.h"
 #include "event_loop.h"
 #include "file.h"
@@ -59,7 +60,7 @@
  */
 
 struct client {
-	struct tcp_server *server;
+	struct tcp_server* server;
 	int conn_fd;
 
 	int cleanup_fd;
@@ -73,18 +74,17 @@ struct client {
 SIMPLEQ_HEAD(client_queue, client);
 
 struct tcp_server {
-	struct event_loop *loop;
+	struct event_loop* loop;
 
 	tcp_server_conn_handler conn_handler;
-	void *conn_handler_arg;
+	void* conn_handler_arg;
 
 	struct client_queue client_queue;
 
 	int accept_fd;
 };
 
-static void client_destroy(struct client *client)
-{
+static void client_destroy(struct client* client) {
 	log_debug("Cleaning up client thread %d\n", client->tid);
 
 	SIMPLEQ_REMOVE(&client->server->client_queue, client, client, entries);
@@ -94,19 +94,19 @@ static void client_destroy(struct client *client)
 	free(client);
 }
 
-static int client_destroy_handler(UNUSED struct event_loop *loop, UNUSED int fd,
-                                  UNUSED short revents, void *_client)
-{
-	struct client *client = (struct client *)_client;
+static int client_destroy_handler(UNUSED struct event_loop* loop,
+                                  UNUSED int fd,
+                                  UNUSED short revents,
+                                  void* _client) {
+	struct client* client = (struct client*)_client;
 	log_debug("Client thread %d indicated that it's done\n", client->tid);
 
 	client_destroy(client);
 	return 0;
 }
 
-static void *client_thread_func(void *_client)
-{
-	struct client *client = (struct client *)_client;
+static void* client_thread_func(void* _client) {
+	struct client* client = (struct client*)_client;
 	int ret = 0;
 
 	client->tid = gettid();
@@ -128,8 +128,7 @@ cleanup:
 	return NULL;
 }
 
-static int client_create_thread(struct client *client)
-{
+static int client_create_thread(struct client* client) {
 	sigset_t old_mask;
 	int ret = 0;
 
@@ -153,11 +152,10 @@ restore_mask:
 	return ret;
 }
 
-static int client_create(struct tcp_server *server, int conn_fd)
-{
+static int client_create(struct tcp_server* server, int conn_fd) {
 	int ret = 0;
 
-	struct client *client = calloc(1, sizeof(struct client));
+	struct client* client = calloc(1, sizeof(struct client));
 	if (!client) {
 		log_errno("calloc");
 		return -1;
@@ -173,8 +171,8 @@ static int client_create(struct tcp_server *server, int conn_fd)
 	}
 	client->cleanup_fd = ret;
 
-	ret = event_loop_add_once(server->loop, client->cleanup_fd, POLLIN, client_destroy_handler,
-	                          client);
+	ret = event_loop_add_once(
+	    server->loop, client->cleanup_fd, POLLIN, client_destroy_handler, client);
 	if (ret < 0)
 		goto close_cleanup_fd;
 
@@ -198,34 +196,35 @@ free:
 	return ret;
 }
 
-static void client_queue_create(struct client_queue *client_queue)
-{
+static void client_queue_create(struct client_queue* client_queue) {
 	SIMPLEQ_INIT(client_queue);
 }
 
-static void client_queue_destroy(struct client_queue *client_queue)
-{
-	struct client *entry1 = SIMPLEQ_FIRST(client_queue);
+static void client_queue_destroy(struct client_queue* client_queue) {
+	struct client* entry1 = SIMPLEQ_FIRST(client_queue);
 	while (entry1) {
-		struct client *entry2 = SIMPLEQ_NEXT(entry1, entries);
+		struct client* entry2 = SIMPLEQ_NEXT(entry1, entries);
 		client_destroy(entry1);
 		entry1 = entry2;
 	}
 }
 
-static int tcp_server_accept_handler(UNUSED struct event_loop *loop, UNUSED int fd,
-                                     UNUSED short revents, void *_server)
-{
-	struct tcp_server *server = (struct tcp_server *)_server;
+static int tcp_server_accept_handler(UNUSED struct event_loop* loop,
+                                     UNUSED int fd,
+                                     UNUSED short revents,
+                                     void* _server) {
+	struct tcp_server* server = (struct tcp_server*)_server;
 	return tcp_server_accept(server);
 }
 
-int tcp_server_create(struct tcp_server **_server, struct event_loop *loop, const char *port,
-                      tcp_server_conn_handler conn_handler, void *conn_handler_arg)
-{
+int tcp_server_create(struct tcp_server** _server,
+                      struct event_loop* loop,
+                      const char* port,
+                      tcp_server_conn_handler conn_handler,
+                      void* conn_handler_arg) {
 	int ret = 0;
 
-	struct tcp_server *server = calloc(1, sizeof(struct tcp_server));
+	struct tcp_server* server = calloc(1, sizeof(struct tcp_server));
 	if (!server) {
 		log_errno("calloc");
 		return -1;
@@ -258,15 +257,13 @@ free:
 	return ret;
 }
 
-void tcp_server_destroy(struct tcp_server *server)
-{
+void tcp_server_destroy(struct tcp_server* server) {
 	net_close(server->accept_fd);
 	client_queue_destroy(&server->client_queue);
 	free(server);
 }
 
-int tcp_server_accept(struct tcp_server *server)
-{
+int tcp_server_accept(struct tcp_server* server) {
 	int conn_fd = -1, ret = 0;
 
 	ret = net_accept(server->accept_fd);

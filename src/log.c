@@ -14,8 +14,7 @@
 
 int g_log_lvl = LOG_LVL_INFO;
 
-static inline void log_prefix_timestamp(FILE *dest)
-{
+static inline void log_prefix_timestamp(FILE* dest) {
 	struct timeval tv;
 	struct tm tm;
 	char buf[64];
@@ -33,13 +32,11 @@ static inline void log_prefix_timestamp(FILE *dest)
 	fprintf(dest, "%s", buf);
 }
 
-static inline void log_prefix_thread_id(FILE *dest)
-{
+static inline void log_prefix_thread_id(FILE* dest) {
 	fprintf(dest, "%d | ", gettid());
 }
 
-int log_entry_start(int lvl, FILE *dest)
-{
+int log_entry_start(int lvl, FILE* dest) {
 	if (lvl < g_log_lvl)
 		return 0;
 	flockfile(dest);
@@ -48,7 +45,6 @@ int log_entry_start(int lvl, FILE *dest)
 	return 1;
 }
 
-void log_entry_end(FILE *dest)
-{
+void log_entry_end(FILE* dest) {
 	funlockfile(dest);
 }

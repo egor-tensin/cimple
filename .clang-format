@@ -1,14 +1,29 @@
 ---
-# The "Linux kernel" style, borrowed and modified from
-# https://clang.llvm.org/docs/ClangFormatStyleOptions.html#examples
-BasedOnStyle: LLVM
+Language: Cpp
+BasedOnStyle: Chromium
+
 IndentWidth: 8
 UseTab: AlignWithSpaces
-BreakBeforeBraces: Linux
-AllowShortIfStatementsOnASingleLine: false
-IndentCaseLabels: false
 
-ColumnLimit: 100
-AlignConsecutiveMacros: Consecutive
+AccessModifierOffset: -4
+AlignConsecutiveMacros: AcrossComments
 AllowShortFunctionsOnASingleLine: Empty
+BinPackArguments: false
+BreakConstructorInitializers: BeforeComma
+BreakInheritanceList: BeforeComma
 BreakStringLiterals: false
+ColumnLimit: 100
+IncludeBlocks: Regroup
+SpacesBeforeTrailingComments: 1
+WrapNamespaceBodyWithEmptyLines: Always
+
+IncludeCategories:
+  - Regex: '^".+'
+    Priority: 1
+  - Regex: '^<git2\.h>|<json-c\/|<sodium\.h>|<sqlite3\.h>'
+    Priority: 2
+  - Regex: '^<.*\.h>$'
+    Priority: 3
+  - Regex: '.*'
+    Priority: 4
+...

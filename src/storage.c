@@ -6,6 +6,7 @@
  */
 
 #include "storage.h"
+
 #include "log.h"
 #include "process.h"
 #include "run_queue.h"
@@ -13,14 +14,14 @@
 
 #include <stddef.h>
 
-typedef void (*storage_settings_destroy_t)(const struct storage_settings *);
-typedef int (*storage_create_t)(struct storage *, const struct storage_settings *);
-typedef void (*storage_destroy_t)(struct storage *);
+typedef void (*storage_settings_destroy_t)(const struct storage_settings*);
+typedef int (*storage_create_t)(struct storage*, const struct storage_settings*);
+typedef void (*storage_destroy_t)(struct storage*);
 
-typedef int (*storage_run_create_t)(struct storage *, const char *repo_url, const char *rev);
-typedef int (*storage_run_finished_t)(struct storage *, int repo_id, const struct process_output *);
+typedef int (*storage_run_create_t)(struct storage*, const char* repo_url, const char* rev);
+typedef int (*storage_run_finished_t)(struct storage*, int repo_id, const struct process_output*);
 
-typedef int (*storage_get_runs_t)(struct storage *, struct run_queue *);
+typedef int (*storage_get_runs_t)(struct storage*, struct run_queue*);
 typedef storage_get_runs_t storage_get_run_queue_t;
 
 struct storage_api {
@@ -49,13 +50,11 @@ static const struct storage_api apis[] = {
     },
 };
 
-static size_t numof_apis(void)
-{
+static size_t numof_apis(void) {
 	return sizeof(apis) / sizeof(apis[0]);
 }
 
-static const struct storage_api *get_api(enum storage_type type)
-{
+static const struct storage_api* get_api(enum storage_type type) {
 	if (type < 0)
 		goto invalid_type;
 	if ((size_t)type > numof_apis())
@@ -68,18 +67,16 @@ invalid_type:
 	return NULL;
 }
 
-void storage_settings_destroy(const struct storage_settings *settings)
-{
-	const struct storage_api *api = get_api(settings->type);
+void storage_settings_destroy(const struct storage_settings* settings) {
+	const struct storage_api* api = get_api(settings->type);
 	if (!api)
 		return;
 	api->destroy_settings(settings);
 }
 
-int storage_create(struct storage *storage, const struct storage_settings *settings)
-{
+int storage_create(struct storage* storage, const struct storage_settings* settings) {
 	int ret = 0;
-	const struct storage_api *api = get_api(settings->type);
+	const struct storage_api* api = get_api(settings->type);
 	if (!api)
 		return -1;
 	ret = api->create(storage, settings);
@@ -89,41 +86,36 @@ int storage_create(struct storage *storage, const struct storage_settings *setti
 	return ret;
 }
 
-void storage_destroy(struct storage *storage)
-{
-	const struct storage_api *api = get_api(storage->type);
+void storage_destroy(struct storage* storage) {
+	const struct storage_api* api = get_api(storage->type);
 	if (!api)
 		return;
 	api->destroy(storage);
 }
 
-int storage_run_create(struct storage *storage, const char *repo_url, const char *rev)
-{
-	const struct storage_api *api = get_api(storage->type);
+int storage_run_create(struct storage* storage, const char* repo_url, const char* rev) {
+	const struct storage_api* api = get_api(storage->type);
 	if (!api)
 		return -1;
 	return api->run_create(storage, repo_url, rev);
 }
 
-int storage_run_finished(struct storage *storage, int run_id, const struct process_output *output)
-{
-	const struct storage_api *api = get_api(storage->type);
+int storage_run_finished(struct storage* storage, int run_id, const struct process_output* output) {
+	const struct storage_api* api = get_api(storage->type);
 	if (!api)
 		return -1;
 	return api->run_finished(storage, run_id, output);
 }
 
-int storage_get_runs(struct storage *storage, struct run_queue *queue)
-{
-	const struct storage_api *api = get_api(storage->type);
+int storage_get_runs(struct storage* storage, struct run_queue* queue) {
+	const struct storage_api* api = get_api(storage->type);
 	if (!api)
 		return -1;
 	return api->get_runs(storage, queue);
 }
 
-int storage_get_run_queue(struct storage *storage, struct run_queue *queue)
-{
-	const struct storage_api *api = get_api(storage->type);
+int storage_get_run_queue(struct storage* storage, struct run_queue* queue) {
+	const struct storage_api* api = get_api(storage->type);
 	if (!api)
 		return -1;
 	return api->get_run_queue(storage, queue);

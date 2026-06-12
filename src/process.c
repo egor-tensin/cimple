@@ -6,6 +6,7 @@
  */
 
 #include "process.h"
+
 #include "file.h"
 #include "log.h"
 
@@ -14,14 +15,13 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-static int exec_child(const char *args[], const char *envp[])
-{
-	static const char *default_envp[] = {NULL};
+static int exec_child(const char* args[], const char* envp[]) {
+	static const char* default_envp[] = {NULL};
 
 	if (!envp)
 		envp = default_envp;
 
-	int ret = execvpe(args[0], (char *const *)args, (char *const *)envp);
+	int ret = execvpe(args[0], (char* const*)args, (char* const*)envp);
 	if (ret < 0) {
 		log_errno("execvpe");
 		return ret;
@@ -30,8 +30,7 @@ static int exec_child(const char *args[], const char *envp[])
 	return ret;
 }
 
-static int wait_for_child(pid_t pid, int *ec)
-{
+static int wait_for_child(pid_t pid, int* ec) {
 	int status;
 
 	pid_t ret = waitpid(pid, &status, __WNOTHREAD);
@@ -58,8 +57,7 @@ static int wait_for_child(pid_t pid, int *ec)
 	return 0;
 }
 
-int process_execute(const char *args[], const char *envp[], int *ec)
-{
+int process_execute(const char* args[], const char* envp[], int* ec) {
 	pid_t child_pid = fork();
 	if (child_pid < 0) {
 		log_errno("fork");
@@ -72,8 +70,7 @@ int process_execute(const char *args[], const char *envp[], int *ec)
 	return wait_for_child(child_pid, ec);
 }
 
-static int redirect_and_exec_child(int pipe_fds[2], const char *args[], const char *envp[])
-{
+static int redirect_and_exec_child(int pipe_fds[2], const char* args[], const char* envp[]) {
 	int ret = 0;
 
 	file_close(pipe_fds[0]);
@@ -93,9 +90,9 @@ static int redirect_and_exec_child(int pipe_fds[2], const char *args[], const ch
 	return exec_child(args, envp);
 }
 
-int process_execute_and_capture(const char *args[], const char *envp[],
-                                struct process_output *result)
-{
+int process_execute_and_capture(const char* args[],
+                                const char* envp[],
+                                struct process_output* result) {
 	static const int flags = O_CLOEXEC;
 	int pipe_fds[2];
 	int ret = 0;
@@ -138,9 +135,8 @@ close_pipe:
 	return ret;
 }
 
-int process_output_create(struct process_output **_output)
-{
-	struct process_output *output = calloc(1, sizeof(struct process_output));
+int process_output_create(struct process_output** _output) {
+	struct process_output* output = calloc(1, sizeof(struct process_output));
 	if (!output) {
 		log_errno("calloc");
 		return -1;
@@ -154,14 +150,12 @@ int process_output_create(struct process_output **_output)
 	return 0;
 }
 
-void process_output_destroy(struct process_output *output)
-{
+void process_output_destroy(struct process_output* output) {
 	free(output->data);
 	free(output);
 }
 
-void process_output_dump(const struct process_output *output)
-{
+void process_output_dump(const struct process_output* output) {
 	log("Process exit code: %d\n", output->ec);
 	log("Process output: %zu bytes\n", output->data_size);
 }
