@@ -90,9 +90,11 @@ static int redirect_and_exec_child(int pipe_fds[2], const char* args[], const ch
     return exec_child(args, envp);
 }
 
-int process_execute_and_capture(const char* args[],
-                                const char* envp[],
-                                struct process_output* result) {
+int process_execute_and_capture(
+    const char* args[],
+    const char* envp[],
+    struct process_output* result
+) {
     static const int flags = O_CLOEXEC;
     int pipe_fds[2];
     int ret = 0;

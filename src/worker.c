@@ -73,18 +73,22 @@ static void worker_settings_destroy(struct settings* settings) {
     free(settings);
 }
 
-static int worker_set_stopping(UNUSED struct event_loop* loop,
-                               UNUSED int fd,
-                               UNUSED short revents,
-                               void* _worker) {
+static int worker_set_stopping(
+    UNUSED struct event_loop* loop,
+    UNUSED int fd,
+    UNUSED short revents,
+    void* _worker
+) {
     struct worker* worker = (struct worker*)_worker;
     worker->stopping = 1;
     return 0;
 }
 
-static int worker_handle_cmd_start_run(const struct jsonrpc_request* request,
-                                       UNUSED struct jsonrpc_response** response,
-                                       void* _ctx) {
+static int worker_handle_cmd_start_run(
+    const struct jsonrpc_request* request,
+    UNUSED struct jsonrpc_response** response,
+    void* _ctx
+) {
     struct cmd_conn_ctx* ctx = (struct cmd_conn_ctx*)_ctx;
     struct worker* worker = (struct worker*)ctx->arg;
     int ret = 0;
@@ -236,7 +240,8 @@ static int worker_get_run(struct worker* worker) {
         goto close;
 
     ret = event_loop_add_once(
-        worker->event_loop, fd, POLLIN, cmd_dispatcher_handle_event, worker->cmd_dispatcher);
+        worker->event_loop, fd, POLLIN, cmd_dispatcher_handle_event, worker->cmd_dispatcher
+    );
     if (ret < 0)
         goto close;
 

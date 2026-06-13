@@ -17,10 +17,12 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-static int unlink_cb(const char* fpath,
-                     UNUSED const struct stat* sb,
-                     UNUSED int typeflag,
-                     UNUSED struct FTW* ftwbuf) {
+static int unlink_cb(
+    const char* fpath,
+    UNUSED const struct stat* sb,
+    UNUSED int typeflag,
+    UNUSED struct FTW* ftwbuf
+) {
     int ret = 0;
 
     ret = remove(fpath);

@@ -60,10 +60,12 @@ static void free_cmds(struct cmd_desc* cmds, size_t numof_cmds) {
         free_cmd(&cmds[i]);
 }
 
-int cmd_dispatcher_create(struct cmd_dispatcher** _dispatcher,
-                          struct cmd_desc* cmds,
-                          size_t numof_cmds,
-                          void* ctx) {
+int cmd_dispatcher_create(
+    struct cmd_dispatcher** _dispatcher,
+    struct cmd_desc* cmds,
+    size_t numof_cmds,
+    void* ctx
+) {
     int ret = 0;
 
     struct cmd_dispatcher* dispatcher = malloc(sizeof(struct cmd_dispatcher));
@@ -103,10 +105,12 @@ void cmd_dispatcher_destroy(struct cmd_dispatcher* dispatcher) {
     free(dispatcher);
 }
 
-static int cmd_dispatcher_handle_internal(const struct cmd_dispatcher* dispatcher,
-                                          const struct jsonrpc_request* request,
-                                          struct jsonrpc_response** result,
-                                          void* arg) {
+static int cmd_dispatcher_handle_internal(
+    const struct cmd_dispatcher* dispatcher,
+    const struct jsonrpc_request* request,
+    struct jsonrpc_response** result,
+    void* arg
+) {
     const char* actual_cmd = jsonrpc_request_get_method(request);
 
     for (size_t i = 0; i < dispatcher->numof_cmds; ++i) {
@@ -122,9 +126,11 @@ static int cmd_dispatcher_handle_internal(const struct cmd_dispatcher* dispatche
     return -1;
 }
 
-int cmd_dispatcher_handle(const struct cmd_dispatcher* dispatcher,
-                          const struct jsonrpc_request* command,
-                          struct jsonrpc_response** result) {
+int cmd_dispatcher_handle(
+    const struct cmd_dispatcher* dispatcher,
+    const struct jsonrpc_request* command,
+    struct jsonrpc_response** result
+) {
     return cmd_dispatcher_handle_internal(dispatcher, command, result, dispatcher->ctx);
 }
 
@@ -206,10 +212,12 @@ int cmd_dispatcher_handle_conn(int conn_fd, void* _dispatcher) {
     return cmd_dispatcher_handle_conn_internal(conn_fd, (struct cmd_dispatcher*)_dispatcher);
 }
 
-int cmd_dispatcher_handle_event(UNUSED struct event_loop* loop,
-                                int fd,
-                                short revents,
-                                void* _dispatcher) {
+int cmd_dispatcher_handle_event(
+    UNUSED struct event_loop* loop,
+    int fd,
+    short revents,
+    void* _dispatcher
+) {
     if (!(revents & POLLIN)) {
         log_err("Descriptor %d is not readable\n", fd);
         return -1;

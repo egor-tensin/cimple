@@ -392,9 +392,11 @@ int storage_sqlite_run_create(struct storage* storage, const char* repo_url, con
     return ret;
 }
 
-int storage_sqlite_run_finished(struct storage* storage,
-                                int run_id,
-                                const struct process_output* output) {
+int storage_sqlite_run_finished(
+    struct storage* storage,
+    int run_id,
+    const struct process_output* output
+) {
     struct prepared_stmt* stmt = &storage->sqlite->stmt_run_finished;
     int ret = 0;
 

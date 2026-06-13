@@ -23,9 +23,11 @@ int process_execute(const char* args[], const char* envp[], int* ec);
  * non-negative number.
  *
  * In that case, you'll need to free the output. */
-int process_execute_and_capture(const char* args[],
-                                const char* envp[],
-                                struct process_output* result);
+int process_execute_and_capture(
+    const char* args[],
+    const char* envp[],
+    struct process_output* result
+);
 
 int process_output_create(struct process_output**);
 void process_output_destroy(struct process_output*);

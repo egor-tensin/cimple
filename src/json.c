@@ -184,10 +184,12 @@ int libjson_get_int(const struct json_object* obj, const char* key, int64_t* _va
     return 0;
 }
 
-static int libjson_set_internal(struct json_object* obj,
-                                const char* key,
-                                struct json_object* value,
-                                unsigned flags) {
+static int libjson_set_internal(
+    struct json_object* obj,
+    const char* key,
+    struct json_object* value,
+    unsigned flags
+) {
     int ret = 0;
 
     ret = json_object_object_add_ex(obj, key, value, flags);
@@ -199,10 +201,12 @@ static int libjson_set_internal(struct json_object* obj,
     return 0;
 }
 
-static int libjson_set_string_internal(struct json_object* obj,
-                                       const char* key,
-                                       const char* _value,
-                                       unsigned flags) {
+static int libjson_set_string_internal(
+    struct json_object* obj,
+    const char* key,
+    const char* _value,
+    unsigned flags
+) {
     struct json_object* value = json_object_new_string(_value);
     if (!value) {
         libjson_errno("json_object_new_string");
@@ -221,10 +225,12 @@ free_value:
     return ret;
 }
 
-static int libjson_set_int_internal(struct json_object* obj,
-                                    const char* key,
-                                    int64_t _value,
-                                    unsigned flags) {
+static int libjson_set_int_internal(
+    struct json_object* obj,
+    const char* key,
+    int64_t _value,
+    unsigned flags
+) {
     struct json_object* value = json_object_new_int64(_value);
     if (!value) {
         libjson_errno("json_object_new_int");

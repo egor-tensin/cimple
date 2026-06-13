@@ -94,10 +94,12 @@ static void client_destroy(struct client* client) {
     free(client);
 }
 
-static int client_destroy_handler(UNUSED struct event_loop* loop,
-                                  UNUSED int fd,
-                                  UNUSED short revents,
-                                  void* _client) {
+static int client_destroy_handler(
+    UNUSED struct event_loop* loop,
+    UNUSED int fd,
+    UNUSED short revents,
+    void* _client
+) {
     struct client* client = (struct client*)_client;
     log_debug("Client thread %d indicated that it's done\n", client->tid);
 
@@ -172,7 +174,8 @@ static int client_create(struct tcp_server* server, int conn_fd) {
     client->cleanup_fd = ret;
 
     ret = event_loop_add_once(
-        server->loop, client->cleanup_fd, POLLIN, client_destroy_handler, client);
+        server->loop, client->cleanup_fd, POLLIN, client_destroy_handler, client
+    );
     if (ret < 0)
         goto close_cleanup_fd;
 
@@ -209,19 +212,23 @@ static void client_queue_destroy(struct client_queue* client_queue) {
     }
 }
 
-static int tcp_server_accept_handler(UNUSED struct event_loop* loop,
-                                     UNUSED int fd,
-                                     UNUSED short revents,
-                                     void* _server) {
+static int tcp_server_accept_handler(
+    UNUSED struct event_loop* loop,
+    UNUSED int fd,
+    UNUSED short revents,
+    void* _server
+) {
     struct tcp_server* server = (struct tcp_server*)_server;
     return tcp_server_accept(server);
 }
 
-int tcp_server_create(struct tcp_server** _server,
-                      struct event_loop* loop,
-                      const char* port,
-                      tcp_server_conn_handler conn_handler,
-                      void* conn_handler_arg) {
+int tcp_server_create(
+    struct tcp_server** _server,
+    struct event_loop* loop,
+    const char* port,
+    tcp_server_conn_handler conn_handler,
+    void* conn_handler_arg
+) {
     int ret = 0;
 
     struct tcp_server* server = calloc(1, sizeof(struct tcp_server));

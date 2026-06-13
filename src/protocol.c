@@ -114,9 +114,11 @@ static const char* const finished_key_run_id = "run_id";
 static const char* const finished_key_ec = "exit_code";
 static const char* const finished_key_data = "output";
 
-int request_create_finished_run(struct jsonrpc_request** request,
-                                int run_id,
-                                const struct process_output* output) {
+int request_create_finished_run(
+    struct jsonrpc_request** request,
+    int run_id,
+    const struct process_output* output
+) {
     int ret = 0;
 
     ret = jsonrpc_notification_create(request, CMD_FINISHED_RUN, NULL);
@@ -147,9 +149,11 @@ free_request:
     return ret;
 }
 
-int request_parse_finished_run(const struct jsonrpc_request* request,
-                               int* _run_id,
-                               struct process_output** _output) {
+int request_parse_finished_run(
+    const struct jsonrpc_request* request,
+    int* _run_id,
+    struct process_output** _output
+) {
     int ret = 0;
 
     struct process_output* output = NULL;
@@ -195,9 +199,11 @@ int request_parse_get_runs(UNUSED const struct jsonrpc_request* request) {
     return 0;
 }
 
-int response_create_get_runs(struct jsonrpc_response** response,
-                             const struct jsonrpc_request* request,
-                             const struct run_queue* runs) {
+int response_create_get_runs(
+    struct jsonrpc_response** response,
+    const struct jsonrpc_request* request,
+    const struct run_queue* runs
+) {
     struct json_object* runs_json = NULL;
     int ret = 0;
 

@@ -84,10 +84,12 @@ int sqlite_exec(sqlite3* db, const char* stmt, sqlite3_callback callback, void* 
     return ret;
 }
 
-int sqlite_exec_log_result(UNUSED void* arg,
-                           int numof_columns,
-                           char** values,
-                           char** column_names) {
+int sqlite_exec_log_result(
+    UNUSED void* arg,
+    int numof_columns,
+    char** values,
+    char** column_names
+) {
     log("Row:\n");
     for (int i = 0; i < numof_columns; ++i) {
         log("\t%s: %s\n", column_names[i], values[i]);

@@ -94,11 +94,13 @@ static void event_loop_add_internal(struct event_loop* loop, struct event_fd* en
     loop->nfds = nfds;
 }
 
-int event_loop_add(struct event_loop* loop,
-                   int fd,
-                   short events,
-                   event_handler handler,
-                   void* arg) {
+int event_loop_add(
+    struct event_loop* loop,
+    int fd,
+    short events,
+    event_handler handler,
+    void* arg
+) {
     struct event_fd* entry = event_fd_create(fd, events, handler, arg);
     if (!entry)
         return -1;
@@ -106,11 +108,13 @@ int event_loop_add(struct event_loop* loop,
     return 0;
 }
 
-int event_loop_add_once(struct event_loop* loop,
-                        int fd,
-                        short events,
-                        event_handler handler,
-                        void* arg) {
+int event_loop_add_once(
+    struct event_loop* loop,
+    int fd,
+    short events,
+    event_handler handler,
+    void* arg
+) {
     struct event_fd* entry = event_fd_create(fd, events, handler, arg);
     if (!entry)
         return -1;

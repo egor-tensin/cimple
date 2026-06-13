@@ -26,12 +26,14 @@ struct run {
     SIMPLEQ_ENTRY(run) entries;
 };
 
-int run_new(struct run** _entry,
-            int id,
-            const char* _repo_url,
-            const char* _repo_rev,
-            enum run_status status,
-            int exit_code) {
+int run_new(
+    struct run** _entry,
+    int id,
+    const char* _repo_url,
+    const char* _repo_rev,
+    enum run_status status,
+    int exit_code
+) {
     struct run* entry = malloc(sizeof(struct run));
     if (!entry) {
         log_errno("malloc");

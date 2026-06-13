@@ -178,10 +178,12 @@ static int jsonrpc_check_result_or_error(struct json_object* obj) {
     return jsonrpc_check_error(obj);
 }
 
-static int jsonrpc_request_create_internal(struct jsonrpc_request** _request,
-                                           int* id,
-                                           const char* method,
-                                           struct json_object* params) {
+static int jsonrpc_request_create_internal(
+    struct jsonrpc_request** _request,
+    int* id,
+    const char* method,
+    struct json_object* params
+) {
     int ret = 0;
 
     struct jsonrpc_request* request = malloc(sizeof(struct jsonrpc_request));
@@ -226,10 +228,12 @@ exit:
     return ret;
 }
 
-int jsonrpc_request_create(struct jsonrpc_request** _request,
-                           int id,
-                           const char* method,
-                           struct json_object* params) {
+int jsonrpc_request_create(
+    struct jsonrpc_request** _request,
+    int id,
+    const char* method,
+    struct json_object* params
+) {
     return jsonrpc_request_create_internal(_request, &id, method, params);
 }
 
@@ -238,9 +242,11 @@ void jsonrpc_request_destroy(struct jsonrpc_request* request) {
     free(request);
 }
 
-int jsonrpc_notification_create(struct jsonrpc_request** _request,
-                                const char* method,
-                                struct json_object* params) {
+int jsonrpc_notification_create(
+    struct jsonrpc_request** _request,
+    const char* method,
+    struct json_object* params
+) {
     return jsonrpc_request_create_internal(_request, NULL, method, params);
 }
 
@@ -334,9 +340,11 @@ static struct json_object* jsonrpc_request_create_params(struct jsonrpc_request*
     return params;
 }
 
-int jsonrpc_request_get_param_string(const struct jsonrpc_request* request,
-                                     const char* name,
-                                     const char** value) {
+int jsonrpc_request_get_param_string(
+    const struct jsonrpc_request* request,
+    const char* name,
+    const char** value
+) {
     struct json_object* params = NULL;
     int ret = libjson_get(request->impl, jsonrpc_key_params, &params);
     if (ret < 0)
@@ -344,18 +352,22 @@ int jsonrpc_request_get_param_string(const struct jsonrpc_request* request,
     return libjson_get_string(params, name, value);
 }
 
-int jsonrpc_request_set_param_string(struct jsonrpc_request* request,
-                                     const char* name,
-                                     const char* value) {
+int jsonrpc_request_set_param_string(
+    struct jsonrpc_request* request,
+    const char* name,
+    const char* value
+) {
     struct json_object* params = jsonrpc_request_create_params(request);
     if (!params)
         return -1;
     return libjson_set_string(params, name, value);
 }
 
-int jsonrpc_request_get_param_int(const struct jsonrpc_request* request,
-                                  const char* name,
-                                  int64_t* value) {
+int jsonrpc_request_get_param_int(
+    const struct jsonrpc_request* request,
+    const char* name,
+    int64_t* value
+) {
     struct json_object* params = NULL;
     int ret = libjson_get(request->impl, jsonrpc_key_params, &params);
     if (ret < 0)
@@ -363,9 +375,11 @@ int jsonrpc_request_get_param_int(const struct jsonrpc_request* request,
     return libjson_get_int(params, name, value);
 }
 
-int jsonrpc_request_set_param_int(struct jsonrpc_request* request,
-                                  const char* name,
-                                  int64_t value) {
+int jsonrpc_request_set_param_int(
+    struct jsonrpc_request* request,
+    const char* name,
+    int64_t value
+) {
     struct json_object* params = jsonrpc_request_create_params(request);
     if (!params)
         return -1;
@@ -376,10 +390,12 @@ const char* jsonrpc_response_to_string(const struct jsonrpc_response* response) 
     return libjson_to_string_pretty(response->impl);
 }
 
-int jsonrpc_response_create_internal(struct jsonrpc_response** _response,
-                                     const struct jsonrpc_request* request,
-                                     struct json_object* result,
-                                     struct json_object* error) {
+int jsonrpc_response_create_internal(
+    struct jsonrpc_response** _response,
+    const struct jsonrpc_request* request,
+    struct json_object* result,
+    struct json_object* error
+) {
     int ret = 0;
 
     struct jsonrpc_response* response = malloc(sizeof(struct jsonrpc_response));
@@ -429,9 +445,11 @@ exit:
     return ret;
 }
 
-int jsonrpc_response_create(struct jsonrpc_response** response,
-                            const struct jsonrpc_request* request,
-                            struct json_object* result) {
+int jsonrpc_response_create(
+    struct jsonrpc_response** response,
+    const struct jsonrpc_request* request,
+    struct json_object* result
+) {
     return jsonrpc_response_create_internal(response, request, result, NULL);
 }
 
@@ -440,10 +458,12 @@ void jsonrpc_response_destroy(struct jsonrpc_response* response) {
     free(response);
 }
 
-int jsonrpc_error_create(struct jsonrpc_response** response,
-                         struct jsonrpc_request* request,
-                         int code,
-                         const char* message) {
+int jsonrpc_error_create(
+    struct jsonrpc_response** response,
+    struct jsonrpc_request* request,
+    int code,
+    const char* message
+) {
     int ret = 0;
     struct json_object* error = NULL;
 
@@ -474,8 +494,10 @@ int jsonrpc_response_is_error(const struct jsonrpc_response* response) {
     return libjson_has(response->impl, jsonrpc_key_error);
 }
 
-static int jsonrpc_response_from_json(struct jsonrpc_response** _response,
-                                      struct json_object* impl) {
+static int jsonrpc_response_from_json(
+    struct jsonrpc_response** _response,
+    struct json_object* impl
+) {
     int ret = 0;
 
     ret = jsonrpc_check_version(impl);

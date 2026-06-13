@@ -67,10 +67,12 @@ static int make_request(struct jsonrpc_request** request, int argc, const char**
     return -1;
 }
 
-int client_main(UNUSED const struct client* client,
-                const struct settings* settings,
-                int argc,
-                const char** argv) {
+int client_main(
+    UNUSED const struct client* client,
+    const struct settings* settings,
+    int argc,
+    const char** argv
+) {
     int ret = 0;
 
     struct jsonrpc_request* request = NULL;

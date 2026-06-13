@@ -19,12 +19,14 @@ enum run_status {
 
 struct run;
 
-int run_new(struct run**,
-            int id,
-            const char* repo_url,
-            const char* repo_rev,
-            enum run_status,
-            int exit_code);
+int run_new(
+    struct run**,
+    int id,
+    const char* repo_url,
+    const char* repo_rev,
+    enum run_status,
+    int exit_code
+);
 void run_destroy(struct run*);
 
 int run_queued(struct run**, const char* repo_url, const char* repo_rev);
