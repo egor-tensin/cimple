@@ -13,8 +13,8 @@
 #include <sys/queue.h>
 
 enum run_status {
-	RUN_STATUS_CREATED = 1,
-	RUN_STATUS_FINISHED = 2,
+    RUN_STATUS_CREATED = 1,
+    RUN_STATUS_FINISHED = 2,
 };
 
 struct run;

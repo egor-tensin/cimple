@@ -2,7 +2,7 @@
 #define __LIB_H__
 
 struct data {
-	int x;
+    int x;
 };
 
 extern struct data* data;

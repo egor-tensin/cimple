@@ -25,75 +25,75 @@
 #include <string.h>
 
 struct worker {
-	struct settings* settings;
+    struct settings* settings;
 
-	int stopping;
+    int stopping;
 
-	struct cmd_dispatcher* cmd_dispatcher;
+    struct cmd_dispatcher* cmd_dispatcher;
 
-	struct event_loop* event_loop;
-	int signalfd;
+    struct event_loop* event_loop;
+    int signalfd;
 
-	struct run* run;
+    struct run* run;
 };
 
 static struct settings* worker_settings_copy(const struct settings* src) {
-	struct settings* result = malloc(sizeof(*src));
-	if (!result) {
-		log_errno("malloc");
-		return NULL;
-	}
+    struct settings* result = malloc(sizeof(*src));
+    if (!result) {
+        log_errno("malloc");
+        return NULL;
+    }
 
-	result->host = strdup(src->host);
-	if (!result->host) {
-		log_errno("strdup");
-		goto free_result;
-	}
+    result->host = strdup(src->host);
+    if (!result->host) {
+        log_errno("strdup");
+        goto free_result;
+    }
 
-	result->port = strdup(src->port);
-	if (!result->port) {
-		log_errno("strdup");
-		goto free_host;
-	}
+    result->port = strdup(src->port);
+    if (!result->port) {
+        log_errno("strdup");
+        goto free_host;
+    }
 
-	return result;
+    return result;
 
 free_host:
-	free((void*)result->host);
+    free((void*)result->host);
 
 free_result:
-	free(result);
+    free(result);
 
-	return NULL;
+    return NULL;
 }
 
 static void worker_settings_destroy(struct settings* settings) {
-	free((void*)settings->port);
-	free((void*)settings->host);
-	free(settings);
+    free((void*)settings->port);
+    free((void*)settings->host);
+    free(settings);
 }
 
 static int worker_set_stopping(UNUSED struct event_loop* loop,
                                UNUSED int fd,
                                UNUSED short revents,
                                void* _worker) {
-	struct worker* worker = (struct worker*)_worker;
-	worker->stopping = 1;
-	return 0;
+    struct worker* worker = (struct worker*)_worker;
+    worker->stopping = 1;
+    return 0;
 }
 
 static int worker_handle_cmd_start_run(const struct jsonrpc_request* request,
                                        UNUSED struct jsonrpc_response** response,
                                        void* _ctx) {
-	struct cmd_conn_ctx* ctx = (struct cmd_conn_ctx*)_ctx;
-	struct worker* worker = (struct worker*)ctx->arg;
-	int ret = 0;
+    struct cmd_conn_ctx* ctx = (struct cmd_conn_ctx*)_ctx;
+    struct worker* worker = (struct worker*)ctx->arg;
+    int ret = 0;
 
-	ret = request_parse_start_run(request, &worker->run);
-	if (ret < 0)
-		return ret;
+    ret = request_parse_start_run(request, &worker->run);
+    if (ret < 0)
+        return ret;
 
-	return ret;
+    return ret;
 }
 
 static struct cmd_desc commands[] = {
@@ -103,171 +103,170 @@ static struct cmd_desc commands[] = {
 static const size_t numof_commands = sizeof(commands) / sizeof(commands[0]);
 
 int worker_create(struct worker** _worker, const struct settings* settings) {
-	int ret = 0;
+    int ret = 0;
 
-	struct worker* worker = malloc(sizeof(struct worker));
-	if (!worker) {
-		log_errno("malloc");
-		return -1;
-	}
+    struct worker* worker = malloc(sizeof(struct worker));
+    if (!worker) {
+        log_errno("malloc");
+        return -1;
+    }
 
-	worker->settings = worker_settings_copy(settings);
-	if (!worker->settings) {
-		ret = -1;
-		goto free;
-	}
+    worker->settings = worker_settings_copy(settings);
+    if (!worker->settings) {
+        ret = -1;
+        goto free;
+    }
 
-	worker->stopping = 0;
+    worker->stopping = 0;
 
-	ret = cmd_dispatcher_create(&worker->cmd_dispatcher, commands, numof_commands, worker);
-	if (ret < 0)
-		goto free_settings;
+    ret = cmd_dispatcher_create(&worker->cmd_dispatcher, commands, numof_commands, worker);
+    if (ret < 0)
+        goto free_settings;
 
-	ret = event_loop_create(&worker->event_loop);
-	if (ret < 0)
-		goto destroy_cmd_dispatcher;
+    ret = event_loop_create(&worker->event_loop);
+    if (ret < 0)
+        goto destroy_cmd_dispatcher;
 
-	ret = signalfd_create_sigterms();
-	if (ret < 0)
-		goto destroy_event_loop;
-	worker->signalfd = ret;
+    ret = signalfd_create_sigterms();
+    if (ret < 0)
+        goto destroy_event_loop;
+    worker->signalfd = ret;
 
-	ret = event_loop_add(
-	    worker->event_loop, worker->signalfd, POLLIN, worker_set_stopping, worker);
-	if (ret < 0)
-		goto close_signalfd;
+    ret = event_loop_add(worker->event_loop, worker->signalfd, POLLIN, worker_set_stopping, worker);
+    if (ret < 0)
+        goto close_signalfd;
 
-	ret = libgit_init();
-	if (ret < 0)
-		goto close_signalfd;
+    ret = libgit_init();
+    if (ret < 0)
+        goto close_signalfd;
 
-	*_worker = worker;
-	return ret;
+    *_worker = worker;
+    return ret;
 
 close_signalfd:
-	signalfd_destroy(worker->signalfd);
+    signalfd_destroy(worker->signalfd);
 
 destroy_event_loop:
-	event_loop_destroy(worker->event_loop);
+    event_loop_destroy(worker->event_loop);
 
 destroy_cmd_dispatcher:
-	cmd_dispatcher_destroy(worker->cmd_dispatcher);
+    cmd_dispatcher_destroy(worker->cmd_dispatcher);
 
 free_settings:
-	worker_settings_destroy(worker->settings);
+    worker_settings_destroy(worker->settings);
 
 free:
-	free(worker);
+    free(worker);
 
-	return ret;
+    return ret;
 }
 
 void worker_destroy(struct worker* worker) {
-	log("Shutting down\n");
+    log("Shutting down\n");
 
-	libgit_shutdown();
-	signalfd_destroy(worker->signalfd);
-	event_loop_destroy(worker->event_loop);
-	cmd_dispatcher_destroy(worker->cmd_dispatcher);
-	worker_settings_destroy(worker->settings);
-	free(worker);
+    libgit_shutdown();
+    signalfd_destroy(worker->signalfd);
+    event_loop_destroy(worker->event_loop);
+    cmd_dispatcher_destroy(worker->cmd_dispatcher);
+    worker_settings_destroy(worker->settings);
+    free(worker);
 }
 
 static int worker_do_run(struct worker* worker) {
-	int ret = 0;
+    int ret = 0;
 
-	struct process_output* result = NULL;
-	ret = process_output_create(&result);
-	if (ret < 0)
-		return ret;
+    struct process_output* result = NULL;
+    ret = process_output_create(&result);
+    if (ret < 0)
+        return ret;
 
-	ret = ci_run_git_repo(run_get_repo_url(worker->run), run_get_repo_rev(worker->run), result);
-	if (ret < 0) {
-		log_err("Run failed with an error\n");
-		goto free_output;
-	}
+    ret = ci_run_git_repo(run_get_repo_url(worker->run), run_get_repo_rev(worker->run), result);
+    if (ret < 0) {
+        log_err("Run failed with an error\n");
+        goto free_output;
+    }
 
-	process_output_dump(result);
+    process_output_dump(result);
 
-	struct jsonrpc_request* finished_request = NULL;
+    struct jsonrpc_request* finished_request = NULL;
 
-	ret = request_create_finished_run(&finished_request, run_get_id(worker->run), result);
-	if (ret < 0)
-		goto free_output;
+    ret = request_create_finished_run(&finished_request, run_get_id(worker->run), result);
+    if (ret < 0)
+        goto free_output;
 
-	ret = net_connect(worker->settings->host, worker->settings->port);
-	if (ret < 0)
-		goto free_request;
-	int fd = ret;
+    ret = net_connect(worker->settings->host, worker->settings->port);
+    if (ret < 0)
+        goto free_request;
+    int fd = ret;
 
-	ret = jsonrpc_request_send(finished_request, fd);
-	if (ret < 0)
-		goto close_conn;
+    ret = jsonrpc_request_send(finished_request, fd);
+    if (ret < 0)
+        goto close_conn;
 
 close_conn:
-	net_close(fd);
+    net_close(fd);
 
 free_request:
-	jsonrpc_request_destroy(finished_request);
+    jsonrpc_request_destroy(finished_request);
 
 free_output:
-	process_output_destroy(result);
+    process_output_destroy(result);
 
-	run_destroy(worker->run);
+    run_destroy(worker->run);
 
-	return ret;
+    return ret;
 }
 
 static int worker_get_run(struct worker* worker) {
-	int ret = 0, fd = -1;
+    int ret = 0, fd = -1;
 
-	ret = net_connect(worker->settings->host, worker->settings->port);
-	if (ret < 0)
-		return ret;
-	fd = ret;
+    ret = net_connect(worker->settings->host, worker->settings->port);
+    if (ret < 0)
+        return ret;
+    fd = ret;
 
-	struct jsonrpc_request* new_worker_request = NULL;
-	ret = request_create_new_worker(&new_worker_request);
-	if (ret < 0)
-		goto close;
+    struct jsonrpc_request* new_worker_request = NULL;
+    ret = request_create_new_worker(&new_worker_request);
+    if (ret < 0)
+        goto close;
 
-	ret = jsonrpc_request_send(new_worker_request, fd);
-	jsonrpc_request_destroy(new_worker_request);
-	if (ret < 0)
-		goto close;
+    ret = jsonrpc_request_send(new_worker_request, fd);
+    jsonrpc_request_destroy(new_worker_request);
+    if (ret < 0)
+        goto close;
 
-	ret = event_loop_add_once(
-	    worker->event_loop, fd, POLLIN, cmd_dispatcher_handle_event, worker->cmd_dispatcher);
-	if (ret < 0)
-		goto close;
+    ret = event_loop_add_once(
+        worker->event_loop, fd, POLLIN, cmd_dispatcher_handle_event, worker->cmd_dispatcher);
+    if (ret < 0)
+        goto close;
 
-	log("Waiting for a new command\n");
+    log("Waiting for a new command\n");
 
-	ret = event_loop_run(worker->event_loop);
-	if (ret < 0)
-		goto close;
+    ret = event_loop_run(worker->event_loop);
+    if (ret < 0)
+        goto close;
 
 close:
-	net_close(fd);
+    net_close(fd);
 
-	return ret;
+    return ret;
 }
 
 int worker_main(struct worker* worker) {
-	int ret = 0;
+    int ret = 0;
 
-	while (1) {
-		ret = worker_get_run(worker);
-		if (ret < 0)
-			return ret;
+    while (1) {
+        ret = worker_get_run(worker);
+        if (ret < 0)
+            return ret;
 
-		if (worker->stopping)
-			break;
+        if (worker->stopping)
+            break;
 
-		ret = worker_do_run(worker);
-		if (ret < 0)
-			return ret;
-	}
+        ret = worker_do_run(worker);
+        if (ret < 0)
+            return ret;
+    }
 
-	return ret;
+    return ret;
 }

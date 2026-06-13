@@ -13,23 +13,23 @@
 #include "storage_sqlite.h"
 
 enum storage_type {
-	STORAGE_TYPE_SQLITE,
+    STORAGE_TYPE_SQLITE,
 };
 
 struct storage_settings {
-	enum storage_type type;
-	union {
-		struct storage_sqlite_settings* sqlite;
-	};
+    enum storage_type type;
+    union {
+        struct storage_sqlite_settings* sqlite;
+    };
 };
 
 void storage_settings_destroy(const struct storage_settings*);
 
 struct storage {
-	enum storage_type type;
-	union {
-		struct storage_sqlite* sqlite;
-	};
+    enum storage_type type;
+    union {
+        struct storage_sqlite* sqlite;
+    };
 };
 
 int storage_create(struct storage*, const struct storage_settings*);

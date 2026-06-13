@@ -21,137 +21,137 @@ static int unlink_cb(const char* fpath,
                      UNUSED const struct stat* sb,
                      UNUSED int typeflag,
                      UNUSED struct FTW* ftwbuf) {
-	int ret = 0;
+    int ret = 0;
 
-	ret = remove(fpath);
-	if (ret < 0) {
-		log_errno("remove");
-		return ret;
-	}
+    ret = remove(fpath);
+    if (ret < 0) {
+        log_errno("remove");
+        return ret;
+    }
 
-	return ret;
+    return ret;
 }
 
 int rm_rf(const char* dir) {
-	log("Recursively removing directory: %s\n", dir);
-	return nftw(dir, unlink_cb, 64, FTW_DEPTH | FTW_PHYS);
+    log("Recursively removing directory: %s\n", dir);
+    return nftw(dir, unlink_cb, 64, FTW_DEPTH | FTW_PHYS);
 }
 
 int chdir_wrapper(const char* dir, char** old) {
-	int ret = 0;
+    int ret = 0;
 
-	if (old) {
-		*old = get_current_dir_name();
-		if (!*old) {
-			log_errno("get_current_dir_name");
-			return -1;
-		}
-	}
+    if (old) {
+        *old = get_current_dir_name();
+        if (!*old) {
+            log_errno("get_current_dir_name");
+            return -1;
+        }
+    }
 
-	ret = chdir(dir);
-	if (ret < 0) {
-		log_errno("chdir");
-		goto free_old;
-	}
+    ret = chdir(dir);
+    if (ret < 0) {
+        log_errno("chdir");
+        goto free_old;
+    }
 
-	return ret;
+    return ret;
 
 free_old:
-	if (old)
-		free(*old);
+    if (old)
+        free(*old);
 
-	return ret;
+    return ret;
 }
 
 char* readlink_wrapper(const char* path) {
-	size_t current_size = 256;
-	char* buf = NULL;
+    size_t current_size = 256;
+    char* buf = NULL;
 
-	while (1) {
-		char* tmp_buf = realloc(buf, current_size);
-		if (!tmp_buf) {
-			log_errno("realloc");
-			goto free;
-		}
-		buf = tmp_buf;
+    while (1) {
+        char* tmp_buf = realloc(buf, current_size);
+        if (!tmp_buf) {
+            log_errno("realloc");
+            goto free;
+        }
+        buf = tmp_buf;
 
-		ssize_t res = readlink(path, buf, current_size);
-		if (res < 0) {
-			log_errno("readlink");
-			goto free;
-		}
+        ssize_t res = readlink(path, buf, current_size);
+        if (res < 0) {
+            log_errno("readlink");
+            goto free;
+        }
 
-		if ((size_t)res == current_size) {
-			current_size *= 2;
-			continue;
-		}
+        if ((size_t)res == current_size) {
+            current_size *= 2;
+            continue;
+        }
 
-		buf[res] = '\0';
-		break;
-	}
+        buf[res] = '\0';
+        break;
+    }
 
-	return buf;
+    return buf;
 
 free:
-	free(buf);
+    free(buf);
 
-	return NULL;
+    return NULL;
 }
 
 int file_dup(int fd) {
-	int ret = 0;
+    int ret = 0;
 
-	ret = fcntl(fd, F_DUPFD_CLOEXEC, 0);
-	if (ret < 0) {
-		log_errno("fcntl");
-		return ret;
-	}
+    ret = fcntl(fd, F_DUPFD_CLOEXEC, 0);
+    if (ret < 0) {
+        log_errno("fcntl");
+        return ret;
+    }
 
-	return ret;
+    return ret;
 }
 
 void file_close(int fd) {
-	log_errno_if(close(fd), "close");
+    log_errno_if(close(fd), "close");
 }
 
 int file_exists(const char* path) {
-	struct stat stat;
-	int ret = lstat(path, &stat);
-	return !ret && S_ISREG(stat.st_mode);
+    struct stat stat;
+    int ret = lstat(path, &stat);
+    return !ret && S_ISREG(stat.st_mode);
 }
 
 int file_read(int fd, unsigned char** _contents, size_t* _size) {
-	size_t alloc_size = 256;
-	unsigned char* contents = NULL;
-	size_t size = 0;
+    size_t alloc_size = 256;
+    unsigned char* contents = NULL;
+    size_t size = 0;
 
-	while (1) {
-		unsigned char* tmp_contents = realloc(contents, alloc_size);
-		if (!tmp_contents) {
-			log_errno("realloc");
-			free(contents);
-			return -1;
-		}
-		contents = tmp_contents;
+    while (1) {
+        unsigned char* tmp_contents = realloc(contents, alloc_size);
+        if (!tmp_contents) {
+            log_errno("realloc");
+            free(contents);
+            return -1;
+        }
+        contents = tmp_contents;
 
-		ssize_t read_size = read(fd, contents + size, alloc_size - size);
+        ssize_t read_size = read(fd, contents + size, alloc_size - size);
 
-		if (read_size < 0) {
-			log_errno("read");
-			free(contents);
-			return read_size;
-		}
+        if (read_size < 0) {
+            log_errno("read");
+            free(contents);
+            return read_size;
+        }
 
-		if (!read_size) {
-			*_contents = contents;
-			*_size = size;
-			return 0;
-		}
+        if (!read_size) {
+            *_contents = contents;
+            *_size = size;
+            return 0;
+        }
 
-		size += read_size;
+        size += read_size;
 
-		if (size == alloc_size) {
-			alloc_size *= 2;
-		}
-	}
+        if (size == alloc_size) {
+            alloc_size *= 2;
+        }
+    }
 }

@@ -9,9 +9,9 @@
 #define __SERVER_H__
 
 struct settings {
-	const char* port;
+    const char* port;
 
-	const char* sqlite_path;
+    const char* sqlite_path;
 };
 
 struct server;

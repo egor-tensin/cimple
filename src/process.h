@@ -11,9 +11,9 @@
 #include <stddef.h>
 
 struct process_output {
-	int ec;
-	unsigned char* data;
-	size_t data_size;
+    int ec;
+    unsigned char* data;
+    size_t data_size;
 };
 
 /* The exit code is only valid if the functions returns a non-negative number. */

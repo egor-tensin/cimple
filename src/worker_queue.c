@@ -14,60 +14,60 @@
 #include <sys/queue.h>
 
 struct worker {
-	int fd;
-	SIMPLEQ_ENTRY(worker) entries;
+    int fd;
+    SIMPLEQ_ENTRY(worker) entries;
 };
 
 int worker_create(struct worker** _entry, int fd) {
-	struct worker* entry = malloc(sizeof(struct worker));
-	if (!entry) {
-		log_errno("malloc");
-		return -1;
-	}
+    struct worker* entry = malloc(sizeof(struct worker));
+    if (!entry) {
+        log_errno("malloc");
+        return -1;
+    }
 
-	entry->fd = fd;
+    entry->fd = fd;
 
-	*_entry = entry;
-	return 0;
+    *_entry = entry;
+    return 0;
 }
 
 void worker_destroy(struct worker* entry) {
-	net_close(entry->fd);
-	free(entry);
+    net_close(entry->fd);
+    free(entry);
 }
 
 int worker_get_fd(const struct worker* entry) {
-	return entry->fd;
+    return entry->fd;
 }
 
 void worker_queue_create(struct worker_queue* queue) {
-	SIMPLEQ_INIT(queue);
+    SIMPLEQ_INIT(queue);
 }
 
 void worker_queue_destroy(struct worker_queue* queue) {
-	struct worker* entry1 = SIMPLEQ_FIRST(queue);
-	while (entry1) {
-		struct worker* entry2 = SIMPLEQ_NEXT(entry1, entries);
-		worker_destroy(entry1);
-		entry1 = entry2;
-	}
-	SIMPLEQ_INIT(queue);
+    struct worker* entry1 = SIMPLEQ_FIRST(queue);
+    while (entry1) {
+        struct worker* entry2 = SIMPLEQ_NEXT(entry1, entries);
+        worker_destroy(entry1);
+        entry1 = entry2;
+    }
+    SIMPLEQ_INIT(queue);
 }
 
 int worker_queue_is_empty(const struct worker_queue* queue) {
-	return SIMPLEQ_EMPTY(queue);
+    return SIMPLEQ_EMPTY(queue);
 }
 
 void worker_queue_add_first(struct worker_queue* queue, struct worker* entry) {
-	SIMPLEQ_INSERT_HEAD(queue, entry, entries);
+    SIMPLEQ_INSERT_HEAD(queue, entry, entries);
 }
 
 void worker_queue_add_last(struct worker_queue* queue, struct worker* entry) {
-	SIMPLEQ_INSERT_TAIL(queue, entry, entries);
+    SIMPLEQ_INSERT_TAIL(queue, entry, entries);
 }
 
 struct worker* worker_queue_remove_first(struct worker_queue* queue) {
-	struct worker* entry = SIMPLEQ_FIRST(queue);
-	SIMPLEQ_REMOVE_HEAD(queue, entries);
-	return entry;
+    struct worker* entry = SIMPLEQ_FIRST(queue);
+    SIMPLEQ_REMOVE_HEAD(queue, entries);
+    return entry;
 }

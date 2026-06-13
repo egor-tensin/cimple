@@ -18,8 +18,8 @@ typedef int (*cmd_handler)(const struct jsonrpc_request* request,
                            void* ctx);
 
 struct cmd_desc {
-	char* name;
-	cmd_handler handler;
+    char* name;
+    cmd_handler handler;
 };
 
 struct cmd_dispatcher;
@@ -32,8 +32,8 @@ int cmd_dispatcher_handle(const struct cmd_dispatcher*,
                           struct jsonrpc_response** response);
 
 struct cmd_conn_ctx {
-	int fd;
-	void* arg;
+    int fd;
+    void* arg;
 };
 
 /* This is supposed to be used as an argument to tcp_server_accept. */

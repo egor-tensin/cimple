@@ -2,8 +2,7 @@
 Language: Cpp
 BasedOnStyle: Chromium
 
-IndentWidth: 8
-UseTab: AlignWithSpaces
+IndentWidth: 4
 
 AccessModifierOffset: -4
 AlignConsecutiveMacros: AcrossComments
