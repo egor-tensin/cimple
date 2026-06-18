@@ -25,7 +25,8 @@ execute_process(
     WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
     OUTPUT_VARIABLE PROJECT_REV
     OUTPUT_STRIP_TRAILING_WHITESPACE
-    COMMAND_ERROR_IS_FATAL ANY)
+    COMMAND_ERROR_IS_FATAL ANY
+)
 
 set(DEFAULT_HOST "127.0.0.1" CACHE STRING "Set default --host value")
 set(DEFAULT_PORT "5556" CACHE STRING "Set default --port value")
@@ -46,7 +47,8 @@ function(generate_sql_header engine)
             "${CMAKE_CURRENT_SOURCE_DIR}/generate-sql-header.py"
             "${CMAKE_CURRENT_SOURCE_DIR}/${engine}/"
             -o "${CMAKE_CURRENT_BINARY_DIR}/sql/${engine}_sql.h"
-        DEPENDS ${sql_files})
+        DEPENDS ${sql_files}
+    )
 endfunction()
 
 generate_sql_header(sqlite)
@@ -80,7 +82,8 @@ add_my_executable(server server_main.c server.c
     storage_sqlite.c
     string.c
     tcp_server.c
-    worker_queue.c)
+    worker_queue.c
+)
 target_link_libraries(server PRIVATE json-c pthread sodium sqlite3)
 target_include_directories(server PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
 
@@ -96,7 +99,8 @@ add_my_executable(client client_main.c client.c
     net.c
     process.c
     protocol.c
-    run_queue.c)
+    run_queue.c
+)
 target_link_libraries(client PRIVATE json-c sodium)
 
 add_my_executable(worker worker_main.c worker.c
@@ -117,5 +121,6 @@ add_my_executable(worker worker_main.c worker.c
     protocol.c
     run_queue.c
     signal.c
-    string.c)
+    string.c
+)
 target_link_libraries(worker PRIVATE git2 json-c sodium)
