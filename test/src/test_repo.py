@@ -55,7 +55,10 @@ def _test_repo_internal(env, repo, numof_processes, runs_per_process):
     with child_logging_thread() as log_queue:
         ctx = mp.get_context('spawn')
         args = (log_queue, env.client, runs_per_process, repo)
-        processes = [ctx.Process(target=client_runner_process, args=args) for i in range(numof_processes)]
+        processes = [
+            ctx.Process(target=client_runner_process, args=args)
+            for i in range(numof_processes)
+        ]
 
         for proc in processes:
             proc.start()
@@ -94,12 +97,14 @@ def test_repo(env, test_repo, numof_clients, runs_per_client):
 
 
 @pytest.mark.stress
-@my_parametrize('numof_clients,runs_per_client',
-                [
-                    (10, 50),
-                    (1, 2000),
-                    (4, 500),
-                ])
+@my_parametrize(
+    'numof_clients,runs_per_client',
+    [
+        (10, 50),
+        (1, 2000),
+        (4, 500),
+    ],
+)
 def test_repo_stress(env, stress_test_repo, numof_clients, runs_per_client):
     _test_repo_internal(env, stress_test_repo, numof_clients, runs_per_client)
 

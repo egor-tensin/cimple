@@ -76,7 +76,13 @@ class TestRepo(Repo):
         return CI_SCRIPT.format(runs_dir=runs_dir)
 
     def _count_run_files(self):
-        return len([name for name in os.listdir(self.runs_dir) if os.path.isfile(os.path.join(self.runs_dir, name))])
+        return len(
+            [
+                name
+                for name in os.listdir(self.runs_dir)
+                if os.path.isfile(os.path.join(self.runs_dir, name))
+            ]
+        )
 
     def run_files_are_present(self, expected):
         assert expected == self._count_run_files()
@@ -98,7 +104,8 @@ class TestRepoOutput(TestRepo, abc.ABC):
     def format_ci_script(self):
         script = super().format_ci_script()
         added = r'{output_script} | tee -a "$run_output_path"'.format(
-            output_script=shlex.quote(self.output_script_path))
+            output_script=shlex.quote(self.output_script_path)
+        )
         return f'{script}\n{added}\n'
 
     def write_output_script(self):
@@ -226,7 +233,10 @@ class TestRepoSegfault(TestRepo):
 
     def run_output_matches(self, output):
         output = output.decode()
-        return output.startswith("Started the test program.\n") and "You shouldn't see this." not in output
+        return (
+            output.startswith("Started the test program.\n")
+            and "You shouldn't see this." not in output
+        )
 
     def run_files_are_present(self, *args):
         return True

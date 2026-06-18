@@ -38,7 +38,10 @@ class Generator:
         self.write(f'#endif')
 
     def enum_sql_files(self):
-        return [os.path.join(self.dir, path) for path in sorted(glob('*.sql', root_dir=self.dir))]
+        return [
+            os.path.join(self.dir, path)
+            for path in sorted(glob('*.sql', root_dir=self.dir))
+        ]
 
     @property
     def var_name_prefix(self):
@@ -85,10 +88,8 @@ def parse_args(argv=None):
     if argv is None:
         argv = sys.argv[1:]
     parser = argparse.ArgumentParser()
-    parser.add_argument('-o', '--output', metavar='PATH',
-                        help='set output file path')
-    parser.add_argument('dir', metavar='INPUT_DIR',
-                        help='input directory')
+    parser.add_argument('-o', '--output', metavar='PATH', help='set output file path')
+    parser.add_argument('dir', metavar='INPUT_DIR', help='input directory')
     return parser.parse_args()
 
 

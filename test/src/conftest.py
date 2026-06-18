@@ -157,8 +157,7 @@ def server(server_cmd):
 
 @fixture
 def workers(worker_cmd):
-    with worker_cmd.run_async() as worker1, \
-         worker_cmd.run_async() as worker2:
+    with worker_cmd.run_async() as worker1, worker_cmd.run_async() as worker2:
         yield [worker1, worker2]
     assert worker1.returncode == 0
     assert worker2.returncode == 0
