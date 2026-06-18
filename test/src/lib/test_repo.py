@@ -15,43 +15,43 @@ from .process import Process
 
 
 class Repo:
-    BRANCH = 'main'
+    BRANCH = "main"
 
     def __init__(self, path):
         self.path = os.path.abspath(path)
         os.makedirs(path, exist_ok=True)
-        self.run('git', 'init', '-q', f'--initial-branch={Repo.BRANCH}')
-        self.run('git', 'config', 'user.name', 'Test User')
-        self.run('git', 'config', 'user.email', 'test@example.com')
+        self.run("git", "init", "-q", f"--initial-branch={Repo.BRANCH}")
+        self.run("git", "config", "user.name", "Test User")
+        self.run("git", "config", "user.email", "test@example.com")
 
     def run(self, *args, **kwargs):
         Process.run(*args, cwd=self.path, **kwargs)
 
 
-CI_SCRIPT = r'''#!/usr/bin/env bash
+CI_SCRIPT = r"""#!/usr/bin/env bash
 set -o errexit -o nounset -o pipefail
 readonly runs_dir={runs_dir}
 readonly run_output_template=run_XXXXXX
 run_output_path="$( mktemp --tmpdir="$runs_dir" "$run_output_template" )"
 touch -- "$run_output_path"
-'''
+"""
 
 
 class TestRepo(Repo):
     # Prevent Pytest from discovering test cases in this class:
     __test__ = False
 
-    def __init__(self, path, ci_script='ci'):
+    def __init__(self, path, ci_script="ci"):
         super().__init__(path)
 
-        self.runs_dir = os.path.join(self.path, 'runs')
+        self.runs_dir = os.path.join(self.path, "runs")
         os.makedirs(self.runs_dir, exist_ok=True)
 
         self.ci_script_path = os.path.join(self.path, ci_script)
 
         self.write_ci_script()
-        self.run('git', 'add', '--', ci_script)
-        self.run('git', 'commit', '-q', '-m', 'add CI script')
+        self.run("git", "add", "--", ci_script)
+        self.run("git", "commit", "-q", "-m", "add CI script")
 
     @staticmethod
     @abc.abstractmethod
@@ -67,7 +67,7 @@ class TestRepo(Repo):
         pass
 
     def write_ci_script(self):
-        with open(self.ci_script_path, mode='x') as f:
+        with open(self.ci_script_path, mode="x") as f:
             f.write(self.format_ci_script())
         os.chmod(self.ci_script_path, 0o755)
 
@@ -91,25 +91,25 @@ class TestRepo(Repo):
 class TestRepoOutput(TestRepo, abc.ABC):
     __test__ = False
 
-    OUTPUT_SCRIPT_NAME = 'generate-output'
+    OUTPUT_SCRIPT_NAME = "generate-output"
 
     def __init__(self, path):
         self.output_script_path = os.path.join(path, TestRepoOutput.OUTPUT_SCRIPT_NAME)
         super().__init__(path)
 
         self.write_output_script()
-        self.run('git', 'add', '--', TestRepoOutput.OUTPUT_SCRIPT_NAME)
-        self.run('git', 'commit', '-q', '-m', 'add output script')
+        self.run("git", "add", "--", TestRepoOutput.OUTPUT_SCRIPT_NAME)
+        self.run("git", "commit", "-q", "-m", "add output script")
 
     def format_ci_script(self):
         script = super().format_ci_script()
         added = r'{output_script} | tee -a "$run_output_path"'.format(
             output_script=shlex.quote(self.output_script_path)
         )
-        return f'{script}\n{added}\n'
+        return f"{script}\n{added}\n"
 
     def write_output_script(self):
-        with open(self.output_script_path, mode='x') as f:
+        with open(self.output_script_path, mode="x") as f:
             f.write(self.format_output_script())
         os.chmod(self.output_script_path, 0o755)
 
@@ -121,10 +121,10 @@ class TestRepoOutput(TestRepo, abc.ABC):
         return ec == 0
 
 
-OUTPUT_SCRIPT_SIMPLE = r'''#!/bin/sh -e
+OUTPUT_SCRIPT_SIMPLE = r"""#!/bin/sh -e
 timestamp="$( date --iso-8601=ns )"
 echo "A CI run happened at $timestamp"
-'''
+"""
 
 
 class TestRepoOutputSimple(TestRepoOutput):
@@ -132,17 +132,17 @@ class TestRepoOutputSimple(TestRepoOutput):
 
     @staticmethod
     def codename():
-        return 'output_simple'
+        return "output_simple"
 
     def format_output_script(self):
         return OUTPUT_SCRIPT_SIMPLE
 
     def run_output_matches(self, output):
-        return output.decode().startswith('A CI run happened at ')
+        return output.decode().startswith("A CI run happened at ")
 
 
-OUTPUT_SCRIPT_EMPTY = r'''#!/bin/sh
-'''
+OUTPUT_SCRIPT_EMPTY = r"""#!/bin/sh
+"""
 
 
 class TestRepoOutputEmpty(TestRepoOutput):
@@ -150,7 +150,7 @@ class TestRepoOutputEmpty(TestRepoOutput):
 
     @staticmethod
     def codename():
-        return 'output_empty'
+        return "output_empty"
 
     def format_output_script(self):
         return OUTPUT_SCRIPT_EMPTY
@@ -159,9 +159,9 @@ class TestRepoOutputEmpty(TestRepoOutput):
         return len(output) == 0
 
 
-OUTPUT_SCRIPT_LONG = r'''#!/bin/sh -e
+OUTPUT_SCRIPT_LONG = r"""#!/bin/sh -e
 dd if=/dev/urandom count={output_len_kb} bs=1024 | base64
-'''
+"""
 
 
 class TestRepoOutputLong(TestRepoOutput):
@@ -171,7 +171,7 @@ class TestRepoOutputLong(TestRepoOutput):
 
     @staticmethod
     def codename():
-        return 'output_long'
+        return "output_long"
 
     def format_output_script(self):
         output_len = TestRepoOutputLong.OUTPUT_LEN_KB
@@ -182,18 +182,18 @@ class TestRepoOutputLong(TestRepoOutput):
         return len(output) > TestRepoOutputLong.OUTPUT_LEN_KB * 1024
 
 
-OUTPUT_SCRIPT_NULL = r'''#!/usr/bin/env python3
+OUTPUT_SCRIPT_NULL = r"""#!/usr/bin/env python3
 output = {output}
 import sys
 sys.stdout.buffer.write(output)
 sys.exit(-2)
-'''
+"""
 
 
 class TestRepoOutputNull(TestRepoOutput):
     __test__ = False
 
-    OUTPUT = b'123\x00456\x00789'
+    OUTPUT = b"123\x00456\x00789"
 
     def __init__(self, *args, **kwargs):
         assert len(TestRepoOutputNull.OUTPUT) == 11
@@ -202,7 +202,7 @@ class TestRepoOutputNull(TestRepoOutput):
 
     @staticmethod
     def codename():
-        return 'output_null'
+        return "output_null"
 
     def format_output_script(self):
         return OUTPUT_SCRIPT_NULL.format(output=repr(self.output))
@@ -223,7 +223,7 @@ class TestRepoSegfault(TestRepo):
 
     @staticmethod
     def codename():
-        return 'segfault'
+        return "segfault"
 
     def write_ci_script(self):
         shutil.copy(self.prog_path, self.ci_script_path)

@@ -18,7 +18,7 @@ from lib.tests import my_parametrize
 def test_sigsegv(sigsegv):
     ec, output = sigsegv.try_run()
     assert ec == -11
-    assert output.startswith('Started the test program.\n')
+    assert output.startswith("Started the test program.\n")
     assert "You shouldn't see this." not in output
 
 
@@ -26,7 +26,7 @@ class LoggingEventRunComplete(LoggingEvent):
     def __init__(self, target):
         self.counter = 0
         self.target = target
-        self.re = re.compile(r'run \d+ as finished')
+        self.re = re.compile(r"run \d+ as finished")
         super().__init__(timeout=150)
 
     def log_line_matches(self, line):
@@ -40,9 +40,9 @@ class LoggingEventRunComplete(LoggingEvent):
 
 def client_runner_process(log_queue, client, runs_per_process, repo):
     with configure_logging_in_child(log_queue):
-        logging.info('Executing %s clients', runs_per_process)
+        logging.info("Executing %s clients", runs_per_process)
         for i in range(runs_per_process):
-            client.run('queue-run', repo.path, 'HEAD')
+            client.run("queue-run", repo.path, "HEAD")
 
 
 def _test_repo_internal(env, repo, numof_processes, runs_per_process):
@@ -53,7 +53,7 @@ def _test_repo_internal(env, repo, numof_processes, runs_per_process):
     env.server.logger.add_event(event)
 
     with child_logging_thread() as log_queue:
-        ctx = mp.get_context('spawn')
+        ctx = mp.get_context("spawn")
         args = (log_queue, env.client, runs_per_process, repo)
         processes = [
             ctx.Process(target=client_runner_process, args=args)
@@ -72,33 +72,33 @@ def _test_repo_internal(env, repo, numof_processes, runs_per_process):
     assert numof_runs == len(runs)
 
     for id, status, ec, output, url, rev in runs:
-        assert status == 'finished', f'Invalid status for run {id}: {status}'
+        assert status == "finished", f"Invalid status for run {id}: {status}"
         assert repo.run_exit_code_matches(ec), f"Exit code doesn't match: {ec}"
         assert repo.run_output_matches(output), f"Output doesn't match: {output}"
 
-    runs = env.client.run('get-runs')
-    runs = json.loads(runs)['result']
+    runs = env.client.run("get-runs")
+    runs = json.loads(runs)["result"]
     assert len(runs) == numof_runs
 
     for run in runs:
-        id = run['id']
-        ec = run['exit_code']
+        id = run["id"]
+        ec = run["exit_code"]
 
         assert repo.run_exit_code_matches(ec), f"Exit code doesn't match: {ec}"
         # Not implemented yet:
-        assert 'status' not in run
-        assert 'output' not in run
+        assert "status" not in run
+        assert "output" not in run
 
 
-@my_parametrize('runs_per_client', [1, 5])
-@my_parametrize('numof_clients', [1, 5])
+@my_parametrize("runs_per_client", [1, 5])
+@my_parametrize("numof_clients", [1, 5])
 def test_repo(env, test_repo, numof_clients, runs_per_client):
     _test_repo_internal(env, test_repo, numof_clients, runs_per_client)
 
 
 @pytest.mark.stress
 @my_parametrize(
-    'numof_clients,runs_per_client',
+    "numof_clients,runs_per_client",
     [
         (10, 50),
         (1, 2000),

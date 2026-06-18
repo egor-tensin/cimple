@@ -21,7 +21,7 @@ class LoggingEvent(Event):
 
     def wait(self):
         if not super().wait(self.timeout):
-            raise RuntimeError('timed out while waiting for an event')
+            raise RuntimeError("timed out while waiting for an event")
 
 
 class LoggingThread(Thread):
@@ -41,8 +41,8 @@ class LoggingThread(Thread):
 
     def process_output_lines(self):
         for line in self.process.stdout:
-            line = line.removesuffix('\n')
-            logging.info('%s: %s', self.process.log_id, line)
+            line = line.removesuffix("\n")
+            logging.info("%s: %s", self.process.log_id, line)
             with self.events_lock:
                 for event in self.events:
                     if event.is_set():
@@ -66,7 +66,7 @@ class CmdLine:
 
     @staticmethod
     def unbuffered():
-        return CmdLine('stdbuf', '-o0')
+        return CmdLine("stdbuf", "-o0")
 
     def __init__(self, binary, *args, name=None):
         binary = self.which(binary)
@@ -104,7 +104,7 @@ class LoggingEventProcessReady(LoggingEvent):
         super().__init__()
 
     def set(self):
-        logging.info('Process %s is ready', self.process.log_id)
+        logging.info("Process %s is ready", self.process.log_id)
         super().set()
 
     def log_line_matches(self, line):
@@ -113,15 +113,15 @@ class LoggingEventProcessReady(LoggingEvent):
 
 class Process(subprocess.Popen):
     _COMMON_ARGS = {
-        'text': True,
-        'stdin': subprocess.DEVNULL,
-        'stdout': subprocess.PIPE,
-        'stderr': subprocess.STDOUT,
+        "text": True,
+        "stdin": subprocess.DEVNULL,
+        "stdout": subprocess.PIPE,
+        "stderr": subprocess.STDOUT,
     }
 
     @staticmethod
     def _log_process_start(argv):
-        logging.info('Executing command: %s', argv)
+        logging.info("Executing command: %s", argv)
 
     @staticmethod
     def _log_process_end(argv, ec, output):
@@ -129,11 +129,11 @@ class Process(subprocess.Popen):
         if ec:
             log = logging.error
         if ec:
-            log('Command %s exited with code %s', argv, ec)
+            log("Command %s exited with code %s", argv, ec)
         else:
-            log('Command %s completed successfully', argv)
+            log("Command %s completed successfully", argv)
         if output:
-            log('Output:\n%s', output)
+            log("Output:\n%s", output)
 
     @staticmethod
     def run(*args, **kwargs):
@@ -163,7 +163,7 @@ class Process(subprocess.Popen):
         self._log_process_start(argv)
 
         super().__init__(argv, **Process._COMMON_ARGS)
-        logging.info('Process %s has started', self.log_id)
+        logging.info("Process %s has started", self.log_id)
 
         ready_event = LoggingEventProcessReady(self)
         self.logger = LoggingThread(self, [ready_event])
@@ -171,7 +171,7 @@ class Process(subprocess.Popen):
 
     @property
     def log_id(self):
-        return f'{self.pid}/{self.cmd_line.process_name}'
+        return f"{self.pid}/{self.cmd_line.process_name}"
 
     def __exit__(self, *args):
         try:
@@ -189,13 +189,13 @@ class Process(subprocess.Popen):
         ec = self.poll()
         if ec is not None:
             return
-        logging.info('Terminating process %s', self.log_id)
+        logging.info("Terminating process %s", self.log_id)
         self.terminate()
         try:
             self.wait(timeout=Process.SHUT_DOWN_TIMEOUT_SEC)
             return
         except subprocess.TimeoutExpired:
             pass
-        logging.info('Process %s failed to terminate in time, killing it', self.log_id)
+        logging.info("Process %s failed to terminate in time, killing it", self.log_id)
         self.kill()
         self.wait(timeout=Process.SHUT_DOWN_TIMEOUT_SEC)

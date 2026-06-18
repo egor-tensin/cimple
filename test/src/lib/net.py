@@ -10,6 +10,6 @@ import socket
 def random_unused_port():
     with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as sock:
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        sock.bind(('0.0.0.0', 0))
+        sock.bind(("0.0.0.0", 0))
         port = sock.getsockname()[1]
         return port

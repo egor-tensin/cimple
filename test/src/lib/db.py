@@ -10,8 +10,8 @@ import sqlite3
 
 class Database:
     def __init__(self, path):
-        logging.info('Opening SQLite database: %s', path)
-        self.conn = sqlite3.connect(f'file:{path}?mode=ro', uri=True)
+        logging.info("Opening SQLite database: %s", path)
+        self.conn = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
 
     def __enter__(self):
         return self
@@ -26,5 +26,5 @@ class Database:
 
     def get_all_runs(self):
         with self.get_cursor() as cur:
-            cur.execute('SELECT * FROM cimple_runs_view')
+            cur.execute("SELECT * FROM cimple_runs_view")
             return cur.fetchall()

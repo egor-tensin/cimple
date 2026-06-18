@@ -30,15 +30,15 @@ class Param:
 
 
 PARAMS = [
-    Param(f'{name}', f'cimple-{name} binary path')
-    for name in ('server', 'worker', 'client')
+    Param(f"{name}", f"cimple-{name} binary path")
+    for name in ("server", "worker", "client")
 ]
 PARAMS += [
-    Param('sigsegv', 'sigsegv binary path'),
-    Param('project_version', 'project version'),
-    Param('valgrind', 'path to valgrind.sh', required=False),
-    Param('flamegraph', 'path to flamegraph.sh', required=False),
-    Param('flame_graphs_dir', 'directory to store flame graphs', required=False),
+    Param("sigsegv", "sigsegv binary path"),
+    Param("project_version", "project version"),
+    Param("valgrind", "path to valgrind.sh", required=False),
+    Param("flamegraph", "path to flamegraph.sh", required=False),
+    Param("flame_graphs_dir", "directory to store flame graphs", required=False),
 ]
 
 
@@ -59,7 +59,7 @@ class Params:
             setattr(self, opt.codename, path)
 
 
-@fixture(scope='session')
+@fixture(scope="session")
 def params(pytestconfig):
     return Params(pytestconfig)
 
@@ -68,10 +68,10 @@ class CmdLineValgrind(CmdLine):
     def __init__(self, binary):
         # Signal to Valgrind that ci scripts should obviously be exempt from
         # memory leak checking:
-        super().__init__(binary, '--trace-children-skip=*/ci', '--')
+        super().__init__(binary, "--trace-children-skip=*/ci", "--")
 
 
-@fixture(scope='session')
+@fixture(scope="session")
 def base_cmd_line(params):
     cmd_line = CmdLine.unbuffered()
     valgrind = params.valgrind
@@ -80,19 +80,19 @@ def base_cmd_line(params):
     return cmd_line
 
 
-@fixture(scope='session')
+@fixture(scope="session")
 def version(params):
     return params.project_version
 
 
-@fixture(scope='session')
+@fixture(scope="session")
 def server_port():
     return str(random_unused_port())
 
 
 @fixture
 def sqlite_path(tmp_path):
-    return os.path.join(tmp_path, 'cimple.sqlite')
+    return os.path.join(tmp_path, "cimple.sqlite")
 
 
 @fixture
@@ -102,12 +102,12 @@ def sqlite_db(server, sqlite_path):
 
 class CmdLineServer(CmdLine):
     def log_line_means_process_ready(self, line):
-        return line.endswith('Waiting for new connections')
+        return line.endswith("Waiting for new connections")
 
 
 class CmdLineWorker(CmdLine):
     def log_line_means_process_ready(self, line):
-        return line.endswith('Waiting for a new command')
+        return line.endswith("Waiting for a new command")
 
 
 @fixture
@@ -127,19 +127,19 @@ def client_exe(params):
 
 @fixture
 def server_cmd(base_cmd_line, params, server_port, sqlite_path):
-    args = ['--port', server_port, '--sqlite', sqlite_path]
+    args = ["--port", server_port, "--sqlite", sqlite_path]
     return CmdLineServer.wrap(base_cmd_line, CmdLine(params.server, *args))
 
 
 @fixture
 def worker_cmd(base_cmd_line, params, server_port):
-    args = ['--host', '127.0.0.1', '--port', server_port]
+    args = ["--host", "127.0.0.1", "--port", server_port]
     return CmdLineWorker.wrap(base_cmd_line, CmdLine(params.worker, *args))
 
 
 @fixture
 def client(base_cmd_line, params, server_port):
-    args = ['--host', '127.0.0.1', '--port', server_port]
+    args = ["--host", "127.0.0.1", "--port", server_port]
     return CmdLine.wrap(base_cmd_line, CmdLine(params.client, *args))
 
 
@@ -167,9 +167,9 @@ def workers(worker_cmd):
 def flame_graph_svg(params, tmp_path, flame_graph_repo):
     dir = params.flame_graphs_dir
     if dir is None:
-        return os.path.join(tmp_path, 'flame_graph.svg')
+        return os.path.join(tmp_path, "flame_graph.svg")
     os.makedirs(dir, exist_ok=True)
-    return os.path.join(dir, f'flame_graph_{flame_graph_repo.codename()}.svg')
+    return os.path.join(dir, f"flame_graph_{flame_graph_repo.codename()}.svg")
 
 
 @fixture
@@ -184,7 +184,7 @@ def profiler(params, server, workers, flame_graph_svg):
 
 @fixture
 def repo_path(tmp_path):
-    return os.path.join(tmp_path, 'repo')
+    return os.path.join(tmp_path, "repo")
 
 
 TEST_REPOS = [
@@ -223,7 +223,7 @@ def flame_graph_repo(stress_test_repo):
     return stress_test_repo
 
 
-Env = namedtuple('Env', ['server', 'workers', 'client', 'db'])
+Env = namedtuple("Env", ["server", "workers", "client", "db"])
 
 
 @fixture

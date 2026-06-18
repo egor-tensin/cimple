@@ -16,12 +16,12 @@ class Generator:
     def __init__(self, fd, dir):
         self.fd = fd
         if not os.path.isdir(dir):
-            raise RuntimeError('must be a directory: ' + dir)
+            raise RuntimeError("must be a directory: " + dir)
         self.dir = os.path.abspath(dir)
         self.name = os.path.basename(self.dir)
 
     def write(self, line):
-        self.fd.write(f'{line}\n')
+        self.fd.write(f"{line}\n")
 
     def do(self):
         self.include_guard_start()
@@ -29,34 +29,34 @@ class Generator:
         self.include_guard_end()
 
     def include_guard_start(self):
-        self.write(f'#ifndef __{self.name.upper()}_SQL_H__')
-        self.write(f'#define __{self.name.upper()}_SQL_H__')
-        self.write('')
+        self.write(f"#ifndef __{self.name.upper()}_SQL_H__")
+        self.write(f"#define __{self.name.upper()}_SQL_H__")
+        self.write("")
 
     def include_guard_end(self):
-        self.write('')
-        self.write(f'#endif')
+        self.write("")
+        self.write(f"#endif")
 
     def enum_sql_files(self):
         return [
             os.path.join(self.dir, path)
-            for path in sorted(glob('*.sql', root_dir=self.dir))
+            for path in sorted(glob("*.sql", root_dir=self.dir))
         ]
 
     @property
     def var_name_prefix(self):
-        return f'{self.name}'
+        return f"{self.name}"
 
     def sql_file_to_var_name(self, path):
         name = os.path.splitext(os.path.basename(path))[0]
-        return f'{self.var_name_prefix}_schema_{name}'
+        return f"{self.var_name_prefix}_schema_{name}"
 
     @staticmethod
     def sql_file_to_string_literal(path):
         with open(path) as fd:
             sql = fd.read()
         sql = sql.encode().hex().upper()
-        sql = ''.join((f'\\x{sql[i:i + 2]}' for i in range(0, len(sql), 2)))
+        sql = "".join((f"\\x{sql[i:i + 2]}" for i in range(0, len(sql), 2)))
         return sql
 
     def include_sql_files(self):
@@ -66,11 +66,11 @@ class Generator:
             vars.append(name)
             value = self.sql_file_to_string_literal(path)
             self.write(f'static const char *const {name} = "{value}";')
-        self.write('')
-        self.write(f'static const char *const {self.var_name_prefix}_schemas[] = {{')
+        self.write("")
+        self.write(f"static const char *const {self.var_name_prefix}_schemas[] = {{")
         for var in vars:
-            self.write(f'\t{var},')
-        self.write('};')
+            self.write(f"\t{var},")
+        self.write("};")
 
 
 @contextmanager
@@ -80,7 +80,7 @@ def open_output(path):
     else:
         path = os.path.abspath(path)
         os.makedirs(os.path.dirname(path), exist_ok=True)
-        with open(path, 'w') as fd:
+        with open(path, "w") as fd:
             yield fd
 
 
@@ -88,8 +88,8 @@ def parse_args(argv=None):
     if argv is None:
         argv = sys.argv[1:]
     parser = argparse.ArgumentParser()
-    parser.add_argument('-o', '--output', metavar='PATH', help='set output file path')
-    parser.add_argument('dir', metavar='INPUT_DIR', help='input directory')
+    parser.add_argument("-o", "--output", metavar="PATH", help="set output file path")
+    parser.add_argument("dir", metavar="INPUT_DIR", help="input directory")
     return parser.parse_args()
 
 
@@ -100,5 +100,5 @@ def main(argv=None):
         generator.do()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

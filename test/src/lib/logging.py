@@ -13,7 +13,7 @@ import multiprocessing as mp
 @contextmanager
 def child_logging_thread():
     # Delegating logging to the parent logger.
-    ctx = mp.get_context('spawn')
+    ctx = mp.get_context("spawn")
     queue = ctx.Queue()
     listener = logging.handlers.QueueListener(queue, logging.getLogger())
     listener.start()
@@ -26,16 +26,16 @@ def child_logging_thread():
 @contextmanager
 def configure_logging_in_child(queue):
     config = {
-        'version': 1,
-        'handlers': {
-            'sink': {
-                'class': 'logging.handlers.QueueHandler',
-                'queue': queue,
+        "version": 1,
+        "handlers": {
+            "sink": {
+                "class": "logging.handlers.QueueHandler",
+                "queue": queue,
             },
         },
-        'root': {
-            'handlers': ['sink'],
-            'level': 'DEBUG',
+        "root": {
+            "handlers": ["sink"],
+            "level": "DEBUG",
         },
     }
     logging.config.dictConfig(config)
