@@ -14,7 +14,7 @@ jobs:
     continue-on-error: ${{ github.ref != 'refs/heads/master' }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - name: Set up clang-format
         uses: egor-tensin/setup-clang@v2
         with:
@@ -43,7 +43,7 @@ jobs:
       CONFIGURATION: '${{ matrix.configuration }}'
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
@@ -80,7 +80,7 @@ jobs:
     name: 'Code coverage'
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - name: Install dependencies
         run: |
           sudo apt-get update
@@ -102,7 +102,7 @@ jobs:
     name: 'Flame graphs'
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - name: Install dependencies
         run: |
           sudo apt-get update
@@ -135,7 +135,7 @@ jobs:
     name: 'Publish: reports'
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - name: Download test report - clang/debug
         uses: actions/download-artifact@v8
         with:
@@ -169,7 +169,7 @@ jobs:
     name: 'Publish: Docker Hub'
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v4
       - name: Set up Docker Buildx
