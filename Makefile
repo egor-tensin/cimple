@@ -34,7 +34,7 @@ build:
 	@echo -----------------------------------------------------------------
 	@mkdir -p -- '$(call escape,$(build_dir)/cmake)'
 	cmake \
-		-G 'Unix Makefiles' \
+		-G 'Ninja' \
 		-D 'CMAKE_C_COMPILER=$(call escape,$(COMPILER))' \
 		-D 'CMAKE_BUILD_TYPE=$(call escape,$(CONFIGURATION))' \
 		-D 'CMAKE_INSTALL_PREFIX=$(call escape,$(build_dir)/install)' \
@@ -46,7 +46,7 @@ build:
 		-D 'FLAME_GRAPHS_DIR=$(call escape,$(build_dir)/flame_graphs)' \
 		-S '$(call escape,$(src_dir))' \
 		-B '$(call escape,$(build_dir)/cmake)'
-	cmake --build '$(call escape,$(build_dir)/cmake)' -- -j
+	cmake --build '$(call escape,$(build_dir)/cmake)'
 
 .PHONY: debug
 debug debug/%: CONFIGURATION := debug

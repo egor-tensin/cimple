@@ -2,7 +2,7 @@ FROM alpine:3.24 AS base
 
 FROM base AS builder
 
-RUN build_deps='bash bsd-compat-headers build-base clang cmake coreutils git json-c-dev libgit2-dev libsodium-dev py3-pytest sqlite-dev valgrind' && \
+RUN build_deps='bash bsd-compat-headers build-base clang cmake coreutils git json-c-dev libgit2-dev libsodium-dev ninja py3-pytest sqlite-dev valgrind' && \
     apk add -q --no-cache $build_deps
 
 ARG COMPILER=clang
