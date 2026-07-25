@@ -17,8 +17,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 
-/* clang-format off */
-static const char *ci_scripts[] = {
+static const char* ci_scripts[] = {
     "./.ci.sh",
     "./.ci",
     "./ci.sh",
@@ -26,12 +25,11 @@ static const char *ci_scripts[] = {
     NULL,
 };
 
-static const char *ci_env[] = {
+static const char* ci_env[] = {
     "CI=y",
     "CIMPLE=y",
     NULL,
 };
-/* clang-format on */
 
 static int ci_run_script(const char* script, struct process_output* result) {
     const char* args[] = {script, NULL};

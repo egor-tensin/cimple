@@ -33,16 +33,14 @@ static int parse_settings(struct settings* settings, int argc, char* argv[]) {
 
     *settings = default_settings();
 
-    /* clang-format off */
-	static struct option long_options[] = {
-	    {"help", no_argument, 0, 'h'},
-	    {"version", no_argument, 0, 'V'},
-	    {"verbose", no_argument, 0, 'v'},
-	    {"host", required_argument, 0, 'H'},
-	    {"port", required_argument, 0, 'p'},
-	    {0, 0, 0, 0},
-	};
-    /* clang-format on */
+    static struct option long_options[] = {
+        {"help", no_argument, 0, 'h'},
+        {"version", no_argument, 0, 'V'},
+        {"verbose", no_argument, 0, 'v'},
+        {"host", required_argument, 0, 'H'},
+        {"port", required_argument, 0, 'p'},
+        {0, 0, 0, 0},
+    };
 
     while ((opt = getopt_long(argc, argv, "hVvH:p:", long_options, &longind)) != -1) {
         switch (opt) {
