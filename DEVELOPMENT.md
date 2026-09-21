@@ -61,7 +61,7 @@ build/coverage/html:
     make coverage
 
 The latest code coverage report for the `master` branch can be found at
-https://egor-tensin.github.io/cimple/coverage/.
+https://egor-tensin.github.io/cimple/coverage/
 
 ### Static analysis
 
