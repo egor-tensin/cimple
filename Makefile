@@ -20,9 +20,6 @@ build_dir := $(src_dir)/build
 .PHONY: all
 all: debug
 
-.PHONY: DO
-DO:
-
 .PHONY: clean
 clean:
 	rm -rf -- '$(call escape,$(build_dir))'
