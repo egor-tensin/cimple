@@ -1,0 +1,26 @@
+option(
+    'DEFAULT_HOST',
+    type: 'string',
+    value: '127.0.0.1',
+)
+option(
+    'DEFAULT_PORT',
+    type: 'integer',
+    value: 5556,
+)
+option(
+    'DEFAULT_SQLITE_PATH',
+    type: 'string',
+    value: '/var/lib/cimple/cimple.sqlite',
+)
+
+option(
+    'COVERAGE',
+    type: 'feature',
+    value: 'disabled',
+)
+option(
+    'STATIC_ANALYZER',
+    type: 'feature',
+    value: 'disabled',
+)

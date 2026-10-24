@@ -10,9 +10,10 @@
 #include "log.h"
 #include "process.h"
 #include "run_queue.h"
-#include "sql/sqlite_sql.h"
 #include "sqlite.h"
 #include "storage.h"
+
+#include <sqlite_sql.h>
 
 #include <sqlite3.h>
 
