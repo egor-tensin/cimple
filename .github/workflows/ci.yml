@@ -4,6 +4,8 @@ on:
   push:
   workflow_dispatch:
 
+permissions: {}
+
 env:
   DEPS: libgit2-dev libjson-c-dev libsodium-dev libsqlite3-dev python3-pytest
 
@@ -15,6 +17,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+        with:
+          persist-credentials: false
       - name: Set up clang-format
         uses: egor-tensin/setup-clang@v2
         with:
@@ -37,13 +41,16 @@ jobs:
         compiler: [gcc, clang]
         configuration: [debug, release]
     runs-on: ubuntu-latest
-    name: 'Build: ${{ matrix.compiler }} / ${{ matrix.configuration }}'
+    name: |
+      Build: ${{ matrix.compiler }} / ${{ matrix.configuration }}
     env:
-      COMPILER: '${{ matrix.compiler }}'
-      CONFIGURATION: '${{ matrix.configuration }}'
+      COMPILER: ${{ matrix.compiler }}
+      CONFIGURATION: ${{ matrix.configuration }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+        with:
+          persist-credentials: false
       - name: Set up Python
         uses: actions/setup-python@v7
         with:
@@ -56,7 +63,8 @@ jobs:
           sudo DEBIAN_FRONTEND=noninteractive apt-get install -yq --no-install-recommends $DEPS valgrind
           pip install -q -r ./test/requirements.txt
       - name: Build
-        run: make '${{ matrix.configuration }}/install'
+        run: |
+          make '${{ matrix.configuration }}/install'
       - name: Upload binaries
         uses: actions/upload-artifact@v7
         with:
@@ -64,7 +72,8 @@ jobs:
           path: './build/${{ matrix.configuration }}/install/'
           if-no-files-found: error
       - name: Run tests
-        run: make '${{ matrix.configuration }}/report'
+        run: |
+          make '${{ matrix.configuration }}/report'
       - name: Upload test report
         uses: actions/upload-artifact@v7
         with:
@@ -73,14 +82,17 @@ jobs:
           if-no-files-found: error
         if: always()
       - name: Run Valgrind tests
-        run: make '${{ matrix.configuration }}/valgrind'
+        run: |
+          make '${{ matrix.configuration }}/valgrind'
 
   coverage:
     runs-on: ubuntu-latest
-    name: 'Code coverage'
+    name: Code coverage
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+        with:
+          persist-credentials: false
       - name: Install dependencies
         run: |
           sudo apt-get update
@@ -99,10 +111,12 @@ jobs:
     # latest (Noble) image. There's no linux-tools-6.14.0-1017-azure kernel or
     # whatever.
     runs-on: ubuntu-22.04
-    name: 'Flame graphs'
+    name: Flame graphs
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+        with:
+          persist-credentials: false
       - name: Install dependencies
         run: |
           sudo apt-get update
@@ -130,12 +144,19 @@ jobs:
           if-no-files-found: error
 
   publish_reports:
-    needs: [build, coverage, flame_graphs]
+    needs:
+      - build
+      - coverage
+      - flame_graphs
     runs-on: ubuntu-latest
     name: 'Publish: reports'
+    permissions:
+      contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+        with:
+          persist-credentials: false
       - name: Download test report - clang/debug
         uses: actions/download-artifact@v8
         with:
@@ -164,12 +185,16 @@ jobs:
         if: github.ref == 'refs/heads/master'
 
   publish_docker:
-    needs: [lint, build]
+    needs:
+      - lint
+      - build
     runs-on: ubuntu-latest
     name: 'Publish: Docker Hub'
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+        with:
+          persist-credentials: false
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v4
       - name: Set up Docker Buildx
@@ -190,14 +215,14 @@ jobs:
         if: steps.params.outputs.push == 'true'
         uses: docker/login-action@v4
         with:
-          username: '${{ secrets.DOCKERHUB_USERNAME }}'
-          password: '${{ secrets.DOCKERHUB_TOKEN }}'
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Publish
         uses: docker/build-push-action@v7
         with:
           # Without context, .dockerignore is not respected?
           # https://stackoverflow.com/a/74552407/514684
           context: .
-          platforms: '${{ steps.params.outputs.platforms }}'
-          push: '${{ steps.params.outputs.push }}'
+          platforms: ${{ steps.params.outputs.platforms }}
+          push: ${{ steps.params.outputs.push }}
           tags: '${{ secrets.DOCKERHUB_USERNAME }}/cimple:latest'
