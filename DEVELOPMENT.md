@@ -72,7 +72,8 @@ Build w/ GCC's `-fanalyzer`:
 ### Flame graphs
 
 Some performance analysis can be done by looking at flame graphs.
-Generate them after building the project (depends on `perf` & [FlameGraph]):
+Generate them after building the project (depends on `perf` & [FlameGraph]
+(bundled in scripts/)):
 
     make debug/flame_graphs
 
