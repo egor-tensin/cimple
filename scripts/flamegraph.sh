@@ -64,7 +64,7 @@ record_pid=''
 
 stop_record() {
 	echo "Stopping 'perf record' process $record_pid"
-	kill -SIGINT "$record_pid"
+	kill -SIGTERM "$record_pid"
 	make_graph
 }
 
