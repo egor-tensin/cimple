@@ -124,14 +124,11 @@ jobs:
         uses: actions/checkout@v7
         with:
           persist-credentials: false
+          submodules: recursive
       - name: Install dependencies
         run: |
           sudo apt-get update
           sudo DEBIAN_FRONTEND=noninteractive apt-get install -yq --no-install-recommends $DEPS
-      - name: Install FlameGraph
-        run: |
-          git clone --depth 1 https://github.com/brendangregg/FlameGraph.git ~/FlameGraph
-          echo ~/FlameGraph >> "$GITHUB_PATH"
       - name: Enable profiling
         run: |
           echo -1 | sudo tee /proc/sys/kernel/perf_event_paranoid
@@ -139,10 +136,7 @@ jobs:
         run: make debug/install
       - name: Make flame graphs
         run: |
-          # sudo is used to resolve kernel symbols. Plus, it would be required
-          # if we didn't fix perf_event_paranoid. PATH needs to be preserved
-          # for FlameGraph.
-          sudo --preserve-env=PATH DEBUGINFOD_URLS='https://debuginfod.ubuntu.com' make debug/flame_graphs
+          sudo DEBUGINFOD_URLS='https://debuginfod.ubuntu.com' make debug/flame_graphs
       - name: Upload flame graphs
         uses: actions/upload-artifact@v7
         with:
