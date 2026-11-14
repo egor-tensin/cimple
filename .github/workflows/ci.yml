@@ -136,7 +136,8 @@ jobs:
         run: make debug/install
       - name: Make flame graphs
         run: |
-          env DEBUGINFOD_URLS='https://debuginfod.ubuntu.com' make debug/flame_graphs
+          # sudo is required for kernel symbol resolution, at least.
+          sudo DEBUGINFOD_URLS='https://debuginfod.ubuntu.com' make debug/flame_graphs
       - name: Upload flame graphs
         uses: actions/upload-artifact@v7
         with:
