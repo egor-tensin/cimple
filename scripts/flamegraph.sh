@@ -47,8 +47,8 @@ cleanup() {
 make_graph() {
 	wait "$record_pid" || true
 	perf script -i "$output_dir/perf.data" > "$output_dir/perf.out"
-	stackcollapse-perf.pl "$output_dir/perf.out" > "$output_dir/perf.folded"
-	flamegraph.pl --width 1400 --color mem "$output_dir/perf.folded" > "$output_path"
+	stackcollapse-perf "$output_dir/perf.out" > "$output_dir/perf.folded"
+	flamegraph --width 1400 --color mem "$output_dir/perf.folded" > "$output_path"
 }
 
 record_pid=''
@@ -61,7 +61,7 @@ stop_record() {
 
 check_tools() {
 	local tool
-	for tool in perf stackcollapse-perf.pl flamegraph.pl; do
+	for tool in perf stackcollapse-perf flamegraph; do
 		if ! command -v "$tool" &> /dev/null; then
 			echo "$script_name: $tool is missing" >&2
 			exit 1
