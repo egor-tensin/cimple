@@ -69,8 +69,8 @@ jobs:
           cache-dependency-path: ./test/requirements.txt
       - name: Install dependencies
         run: |
-          sudo apt-get update
-          sudo DEBIAN_FRONTEND=noninteractive apt-get install -yq --no-install-recommends $DEPS valgrind
+          sudo apt update
+          sudo DEBIAN_FRONTEND=noninteractive apt install -yq --no-install-recommends $DEPS valgrind
           pip install -q -r ./test/requirements.txt
       - name: Build
         run: |
@@ -105,8 +105,8 @@ jobs:
           persist-credentials: false
       - name: Install dependencies
         run: |
-          sudo apt-get update
-          sudo DEBIAN_FRONTEND=noninteractive apt-get install -yq --no-install-recommends $DEPS gcovr
+          sudo apt update
+          sudo DEBIAN_FRONTEND=noninteractive apt install -yq --no-install-recommends $DEPS gcovr
       - name: Generate coverage report
         run: make coverage
       - name: Upload coverage report
@@ -127,8 +127,8 @@ jobs:
           submodules: recursive
       - name: Install dependencies
         run: |
-          sudo apt-get update
-          sudo DEBIAN_FRONTEND=noninteractive apt-get install -yq --no-install-recommends $DEPS
+          sudo apt update
+          sudo DEBIAN_FRONTEND=noninteractive apt install -yq --no-install-recommends $DEPS
       - name: Enable profiling
         run: |
           echo -1 | sudo tee /proc/sys/kernel/perf_event_paranoid
