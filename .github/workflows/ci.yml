@@ -44,7 +44,9 @@ jobs:
       matrix:
         compiler: [gcc, clang]
         configuration: [debug, release]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    # ^^^ Valgrind reports errors on Resolute.
+    # TODO: change to -latest when those are resolved.
     name: |
       Build: ${{ matrix.compiler }} / ${{ matrix.configuration }}
     env:
