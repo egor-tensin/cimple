@@ -188,7 +188,7 @@ jobs:
   publish_docker:
     needs:
       - lint
-      - build
+      - publish_reports
     runs-on: ubuntu-latest
     name: 'Publish: Docker Hub'
     steps:
